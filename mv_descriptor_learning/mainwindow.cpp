@@ -5,23 +5,27 @@
 #include <QProgressDialog>
 #include <QMessageBox>
 
-using namespace cv;
-using namespace std;
-using namespace R4R;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
+    m_preferences(new Preferences),
     m_cap(),
     m_pyramid(),
     m_timer(this),
     m_params(),
     m_trackers()
 {
+
+    // set gui
     ui->setupUi(this);
 
-    // connect timer with step button
+    // connect signals and slots
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
+    connect(m_preferences,SIGNAL(params_changed(CParameters)),this,SLOT(set_params(CParameters)));
+
+    // set parameters
+    m_preferences->on_applyButton_clicked();
 
 }
 
@@ -42,9 +46,7 @@ void MainWindow::on_actionExit_triggered()
      QApplication::exit();
 }
 
-
-
-void MainWindow::show_image(const cv::Mat& img) {
+void MainWindow::show_image(const Mat& img) {
 
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
     ui->labelImage->setPixmap(QPixmap::fromImage(qimg.rgbSwapped()));
@@ -70,22 +72,6 @@ void MainWindow::on_actionOpen_triggered()
 
     if(!m_cap.isOpened() && !filename.isEmpty()) {
         QMessageBox::critical(this,"Error","Could not open file. Check path and whether required codecs are installed.");
-        return;
-    }
-
-    // open parameters
-    CParameters params = CParameters();
-
-    filename = QString("/home/jbalzer/Workspace/~r4r/examples/tracking/params_simple.txt");
-
-//    filename = QFileDialog::getOpenFileName(this,
-//                                            "Open parameter file...",
-//                                            ".",
-//                                            "(*.txt)");
-
-    if(m_params.OpenFromFile(filename.toStdString().c_str())) {
-   //if(m_params.OpenFromFile(filename.toStdString().c_str())) {
-        QMessageBox::critical(this,"Error","Could not open file.");
         return;
     }
 
@@ -209,4 +195,9 @@ void MainWindow::on_actionSave_Tracks_triggered()
     }
 
 
+}
+
+void MainWindow::on_actionPreferemces_triggered()
+{
+    m_preferences->show();
 }

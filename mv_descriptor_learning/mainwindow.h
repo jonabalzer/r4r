@@ -4,11 +4,16 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QKeyEvent>
+#include "preferences.h"
 
 #include "opencv2/opencv.hpp"
 
 #include "params.h"
 #include "stracker.h"
+
+using namespace cv;
+using namespace std;
+using namespace R4R;
 
 namespace Ui {
 class MainWindow;
@@ -21,7 +26,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    
+
 private slots:
     void on_actionExit_triggered();
 
@@ -35,17 +40,22 @@ private slots:
 
     void on_actionSave_Tracks_triggered();
 
+    void on_actionPreferemces_triggered();
+
+    void set_params(CParameters params) { m_params = params; };
+
 private:
-    Ui::MainWindow *ui;
-    cv::VideoCapture m_cap;
-    std::vector<cv::Mat> m_pyramid;
+    Ui::MainWindow* ui;
+
+    Preferences* m_preferences;
+
+    VideoCapture m_cap;
+    vector<cv::Mat> m_pyramid;
     QTimer m_timer;
-    R4R::CParameters m_params;
-    std::vector<R4R::CTracker*> m_trackers;
+    CParameters m_params;
+    vector<R4R::CTracker*> m_trackers;
 
-
-
-    void show_image(const cv::Mat& img);
+    void show_image(const Mat& img);
 
 };
 

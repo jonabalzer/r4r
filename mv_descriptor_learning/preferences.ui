@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Preferences</class>
+ <widget class="QWidget" name="Preferences">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>592</width>
+    <height>534</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Preferences</string>
+  </property>
+  <widget class="QGroupBox" name="descGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>20</y>
+     <width>301</width>
+     <height>451</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Descriptors</string>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>100</y>
+      <width>210</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="idDescLayout">
+     <item>
+      <widget class="QCheckBox" name="idOnCheckBox">
+       <property name="text">
+        <string>Raw image</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="idNormComboBox">
+       <item>
+        <property name="text">
+         <string>Off</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Center</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Normalize</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Weber</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>170</y>
+      <width>281</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="gradDescLayout">
+     <item>
+      <widget class="QCheckBox" name="gradOnCheckBox">
+       <property name="text">
+        <string>Normalized gradients</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="gradNormComboBox">
+       <item>
+        <property name="text">
+         <string>Off</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Normalize</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Smooth</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_13">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>180</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="descSizeLayout">
+     <item>
+      <widget class="QLabel" name="descSizeLabel">
+       <property name="text">
+        <string>Window half size</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="descSizeEdit">
+       <property name="text">
+        <string>30</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_14">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>200</y>
+      <width>205</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="sigmaLayout">
+     <item>
+      <widget class="QLabel" name="sigmaLable">
+       <property name="text">
+        <string>Smoothing filter size</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="sigmaEdit">
+       <property name="text">
+        <string>2</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_15">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>230</y>
+      <width>235</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="alphaLayout">
+     <item>
+      <widget class="QLabel" name="alphaLabel">
+       <property name="text">
+        <string>Normalization parameter</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="alphaEdit">
+       <property name="text">
+        <string>0.001</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="detectorGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>271</width>
+     <height>201</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Detector</string>
+   </property>
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>171</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="scaleLayout">
+     <item>
+      <widget class="QLabel" name="scaleLabel">
+       <property name="text">
+        <string>Maximum scale</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="scaleSpinBox">
+       <property name="maximum">
+        <number>5</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_4">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>60</y>
+      <width>160</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="thresholdLayout">
+     <item>
+      <widget class="QLabel" name="thresholdlabel">
+       <property name="text">
+        <string>Threshold</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="thresholdEdit">
+       <property name="text">
+        <string>20</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_5">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>90</y>
+      <width>224</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="minLayout">
+     <item>
+      <widget class="QLabel" name="minFeatLabel">
+       <property name="text">
+        <string>Min number of features</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="minFeatEdit">
+       <property name="text">
+        <string>20</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_16">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>120</y>
+      <width>160</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="minInitDistLayout">
+     <item>
+      <widget class="QLabel" name="minInitDistLabel">
+       <property name="text">
+        <string>Min distance</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="minInitDistEdit">
+       <property name="text">
+        <string>10</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="trackerGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>230</y>
+     <width>311</width>
+     <height>271</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Tracker</string>
+   </property>
+   <widget class="QWidget" name="horizontalLayoutWidget_6">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>189</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="mergeLayout">
+     <item>
+      <widget class="QLabel" name="minDistLabel">
+       <property name="text">
+        <string>Min track distance</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="minDistEdit">
+       <property name="text">
+        <string>10</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_7">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>222</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="hammingLayout">
+     <item>
+      <widget class="QLabel" name="hammingLabel">
+       <property name="text">
+        <string>Max Hamming distance</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="hammingEdit">
+       <property name="text">
+        <string>128</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_8">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>90</y>
+      <width>160</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="lkLevelLayout">
+     <item>
+      <widget class="QLabel" name="lkLevelLabel">
+       <property name="text">
+        <string>LK Levels</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="lkLevelSpinBox">
+       <property name="maximum">
+        <number>5</number>
+       </property>
+       <property name="value">
+        <number>3</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_9">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>120</y>
+      <width>182</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="maxIterLayout">
+     <item>
+      <widget class="QLabel" name="maxIterLabel">
+       <property name="text">
+        <string>Max iterations</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="maxIterEdit">
+       <property name="text">
+        <string>20</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_10">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>150</y>
+      <width>160</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="accLayout">
+     <item>
+      <widget class="QLabel" name="accLabel">
+       <property name="text">
+        <string>Accuracy</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="accEdit">
+       <property name="text">
+        <string>0.1</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_11">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>180</y>
+      <width>160</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="lambdaLayout">
+     <item>
+      <widget class="QLabel" name="lambdaLabel">
+       <property name="text">
+        <string>LM Weight</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lambdaEdit">
+       <property name="text">
+        <string>0</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_12">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>210</y>
+      <width>180</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="trackSizeLayout">
+     <item>
+      <widget class="QLabel" name="trackSizeLabel">
+       <property name="text">
+        <string>Window half size</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="trackSizeEdit">
+       <property name="text">
+        <string>19</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="horizontalLayoutWidget_17">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>490</y>
+     <width>373</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="buttonLayout">
+    <item>
+     <widget class="QPushButton" name="loadButton">
+      <property name="text">
+       <string>Load</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="saveButton">
+      <property name="text">
+       <string>Save</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="cancelButton">
+      <property name="text">
+       <string>Cancel</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="applyButton">
+      <property name="text">
+       <string>Apply</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>cancelButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Preferences</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>458</x>
+     <y>413</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>310</x>
+     <y>219</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

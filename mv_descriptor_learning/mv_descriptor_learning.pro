@@ -13,11 +13,14 @@ TEMPLATE = app
 QMAKE_CXXFLAGS += -std=c++0x
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    preferences.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    preferences.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    preferences.ui
 
 unix:!symbian|win32: LIBS += \
                         -L/usr/local/lib/\

@@ -41,13 +41,13 @@ bool CIdentityDescriptor::Compute(cv::Mat& img) {
 	switch(m_method) {
 
 	case 1:
-		NormalizeWeber();
+        Center();
 		break;
 	case 2:
 		Normalize();
 		break;
-	case 3:
-		Center();
+    case 3:
+        NormalizeWeber();
 		break;
 	default:
 		break;
