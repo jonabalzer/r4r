@@ -23,7 +23,7 @@ using namespace cv;
 namespace R4R {
 
 
-CMotionTracker::CMotionTracker(CParameters params, CCam cam):
+CMotionTracker::CMotionTracker(CParameters* params, CCam cam):
 		CSimpleTracker(params),
 		m_cam(cam),
 		m_motion() {
@@ -246,7 +246,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 	// do LK tracking at every time instance, FIXME: how to do descriptor aggregation with 3d info
 	CSimpleTracker::Update(pyramid0,pyramid1);
 
-	size_t kfr = (size_t)m_params.GetIntParameter("KEYFRAME_RATE");
+    size_t kfr = (size_t)m_params->GetIntParameter("KEYFRAME_RATE");
 
 	if(m_global_t>0 && (m_global_t)%kfr==0) {
 
@@ -360,34 +360,34 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 		smat M(0,0);
 		CPreconditioner<smat,vec,double> precond = CPreconditioner<smat,vec,double>(M);
 		CIterativeSolver<smat,vec,double> solver = CIterativeSolver<smat,vec,double>(precond,
-																					 m_params.GetIntParameter("CGLS_NITER"),
-																					 m_params.GetDoubleParameter("CGLS_EPS"),
+                                                                                     m_params->GetIntParameter("CGLS_NITER"),
+                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),
 																					 true);
 
 		// init least-squares problem
 		CMagicSfM problem(m_cam,corri2i,corrs2i,F0inv);
 
 		// set up LM method, FIXME: get params from file
-		CLevenbergMarquardt<smat> lms(problem,solver,m_params.GetDoubleParameter("LM_LAMBDA"));
+        CLevenbergMarquardt<smat> lms(problem,solver,m_params->GetDoubleParameter("LM_LAMBDA"));
 
 		// initialize
 		vec& x = problem.Get();
 
 		for(size_t i=0; i<corri2i.size(); i++)
-			x(i) = m_params.GetDoubleParameter("INIT_DISTANCE");
+            x(i) = m_params->GetDoubleParameter("INIT_DISTANCE");
 
 		for(size_t i=0; i<6; i++)
 			x(corri2i.size()+i) = m0(i);
 
 		// iterate
-		vec r = lms.Iterate(m_params.GetIntParameter("LM_NITER_OUTER"),
-							m_params.GetIntParameter("LM_NITER_INNER"),
-							m_params.GetDoubleParameter("LM_EPS"),
+        vec r = lms.Iterate(m_params->GetIntParameter("LM_NITER_OUTER"),
+                            m_params->GetIntParameter("LM_NITER_INNER"),
+                            m_params->GetDoubleParameter("LM_EPS"),
 							false,
 							true);
 
 		// add new points to the map
-		double threshold = m_params.GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_DEPTH");
+        double threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_DEPTH");
 
 		for(size_t i=0; i<corri2i.size(); i++) {
 
@@ -426,7 +426,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 		}
 
 		// process motion
-		threshold = m_params.GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_MOTION");
+        threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_MOTION");
 
 		vec m1(6);
 		for(size_t i=0; i<6; i++)
@@ -476,7 +476,7 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 	for(size_t s=0; s<size(); s++) {
 
 		Mat imsmooth;
-		GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params.GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
+        GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params->GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
 
 		for(it=at(s).begin(); it!=at(s).end(); it++) {
 
@@ -488,8 +488,8 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 				// create new feature
 				CRectangle<double> droi(u0.Get(0),
 										u0.Get(1),
-									    m_params.GetIntParameter("DESCRIPTOR_HSIZE"),
-									    m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                        m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
+                                        m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
 				// adjust region to scale
 				droi.Scale(1.0/pow(2,s));
@@ -537,8 +537,8 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
 #if COMPUTE_ID == 1
 				CIdentityDescriptor* tempid = new CIdentityDescriptor(droi,
-																	  (size_t)m_params.GetIntParameter("NORMALIZE_ID"),
-																	  (size_t)m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                                                      (size_t)m_params->GetIntParameter("NORMALIZE_ID"),
+                                                                      (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
 				tempid->Compute(pyramid[s]);
 

@@ -16,9 +16,9 @@ using namespace cv;
 
 namespace R4R {
 
-CSimpleTracker::CSimpleTracker(CParameters params):
+CSimpleTracker::CSimpleTracker(CParameters* params):
 	CTracker(params),
-	m_detector(m_params.GetIntParameter("FEATURE_THRESHOLD"))
+    m_detector(m_params->GetDoubleParameter("FEATURE_THRESHOLD"))
 	{
 
 	// generate sample points for tests performed in BRIEF descriptor
@@ -40,7 +40,7 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 		// make a smooth copy of current pyramid level for descriptor computation
 		Mat imsmooth;
-		GaussianBlur(pyramid1[s],imsmooth,Size(0,0),m_params.GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
+        GaussianBlur(pyramid1[s],imsmooth,Size(0,0),m_params->GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
 
 		vector<Point2f> points0;
 		vector<Point2f> points1;
@@ -73,12 +73,12 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 								 points1,
 								 status,
 								 error,
-								 Size(2*m_params.GetIntParameter("TRACKING_HSIZE")+1,2*m_params.GetIntParameter("TRACKING_HSIZE")+1),
-								 m_params.GetIntParameter("LK_PYRAMID_LEVEL"),
+                                 Size(2*m_params->GetIntParameter("TRACKING_HSIZE")+1,2*m_params->GetIntParameter("TRACKING_HSIZE")+1),
+                                 m_params->GetIntParameter("LK_PYRAMID_LEVEL"),
 								 TermCriteria(TermCriteria::COUNT|TermCriteria::EPS,
-											  m_params.GetIntParameter("MAX_ITER"),
-											  m_params.GetDoubleParameter("ACCURACY")),
-								 m_params.GetDoubleParameter("LAMBDA"),
+                                              m_params->GetIntParameter("MAX_ITER"),
+                                              m_params->GetDoubleParameter("ACCURACY")),
+                                 m_params->GetDoubleParameter("LAMBDA"),
 								 0);
 
 			size_t counter = 0;
@@ -137,8 +137,8 @@ void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 				vec x = (*it)->GetLatestLocation();
 
 				// check quality and distance criterion
-                if((*it)->GetLatestState().GetQuality()>m_params.GetIntParameter("MAX_HAMMING_DISTANCE") ||
-				   cimg.EvaluateFast(x(0),x(1),m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"),m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"))>1) {
+                if((*it)->GetLatestState().GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE") ||
+                   cimg.EvaluateFast(x(0),x(1),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"))>1) {
 
 					// delete last feature
 					(*it)->pop_back();
@@ -163,7 +163,7 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
 
 		// make a smooth copy of current pyramid level for descriptor computation
 		Mat imsmooth;
-		GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params.GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
+        GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params->GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
 
 		// compute integral image for counting features
 		CIntegralImage<size_t> cimg = ComputeFeatureDensity(pyramid[s].cols,pyramid[s].rows,s);
@@ -178,7 +178,7 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
 
 			cimg.Compute();
 
-			double hsize = m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT");
+            double hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT");
 
 			for(size_t i=0; i<keypoints.size(); i++) {
 
@@ -209,7 +209,7 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 	for(size_t s=0; s<size(); s++) {
 
 		Mat imsmooth;
-		GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params.GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
+        GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params->GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
 
 		for(it=at(s).begin(); it!=at(s).end(); it++) {
 
@@ -221,8 +221,8 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 				// create new feature
 				CRectangle<double> droi(u0.Get(0),
 										u0.Get(1),
-									    m_params.GetIntParameter("DESCRIPTOR_HSIZE"),
-									    m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                        m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
+                                        m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
 				// adjust region to scale
 				droi.Scale(1.0/pow(2,s));
@@ -247,14 +247,14 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
                 x.SetQuality(quality);
 
-				if(m_params.GetIntParameter("COMPUTE_ID")) {
+                if(m_params->GetIntParameter("COMPUTE_ID")) {
 
 
 
 					// compute identity descriptor
 					CIdentityDescriptor* tempid = new CIdentityDescriptor(droi,
-																		  (size_t)m_params.GetIntParameter("NORMALIZE_ID"),
-																		  (size_t)m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                                                          (size_t)m_params->GetIntParameter("NORMALIZE_ID"),
+                                                                          (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
 					tempid->Compute(pyramid[s]);
 
@@ -263,13 +263,13 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
 				}
 
-				if(m_params.GetIntParameter("COMPUTE_GRAD")) {
+                if(m_params->GetIntParameter("COMPUTE_GRAD")) {
 
 					// compute normalized gradient field
 					CIdentityGradientDescriptor* temp = new CIdentityGradientDescriptor(droi,
-																						m_params.GetDoubleParameter("ALPHA_GRAD_NORM"),
-																						(size_t)m_params.GetIntParameter("NORMALIZE_GRAD"),
-																						(size_t)m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                                                                        m_params->GetDoubleParameter("ALPHA_GRAD_NORM"),
+                                                                                        (size_t)m_params->GetIntParameter("NORMALIZE_GRAD"),
+                                                                                        (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
 					temp->Compute(imsmooth);
 
@@ -281,8 +281,8 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 #if COMPUTE_CURVE == 1
 				// compute curvature of isocontours
 				CCurvatureDescriptor* tempcurve = new CCurvatureDescriptor(droi,
-																		   m_params.GetDoubleParameter("ALPHA_GRAD_NORM"),
-																		   m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                                                           m_params->GetDoubleParameter("ALPHA_GRAD_NORM"),
+                                                                           m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
 				tempcurve->Compute(imsmooth);
 

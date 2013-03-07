@@ -350,8 +350,7 @@ bool CFeature::OpenFromFile(const char* filename, std::list<CFeature>& features,
 
 }
 
-
-bool CFeature::SaveToFileBlockwise(const char* filename, std::list<CFeature>& features, size_t stride, size_t descn) {
+bool CFeature::SaveDescriptors(const char* filename, list<CFeature>& features, const char* name, const char* comment, int type, size_t t0) {
 
     string fndata;
 
@@ -387,38 +386,35 @@ bool CFeature::SaveToFileBlockwise(const char* filename, std::list<CFeature>& fe
         stringstream ss;
         ss << filename << ".dat";
         fndata = ss.str();
-        headers << fndata << endl;
+        headers << fndata;
 
-    } else
-        headers << endl;        // just break line to add more features
+    }
 
-    // write headers
     list<CFeature>::iterator it;
 
-    size_t counter = 0;
     for(it = features.begin(); it!=features.end(); it++) {
 
-            vec u = it->GetLocation();
-            headers << u.Get(0) << " " << u.Get(1) << endl;
+        // check if descriptor exists
+        if(it->HasDescriptor(name)) {
 
-            // scale
-            headers << it->GetScale() << endl;
+            // break line first
+            headers << endl;
 
-            // quality
-            headers << it->GetQuality() << endl;
+            // create header and write it
+            CDescriptorFileHeader header(*it);
+            header.SetDescriptor(*it,name,type);
+            header.SetTime(t0);
+            header.SetComment(comment);
 
-            // name of the descriptor
-            headers << it->GetDescriptorName(descn);
+            headers << header;
+        }
 
-            if(counter<features.size()-1)
-                headers << endl;
-
-            counter++;
 
     }
 
     headers.close();
 
+    // now write data
     ofstream data(fndata,ios_base::app);
 
     if(!data.is_open()) {
@@ -426,129 +422,29 @@ bool CFeature::SaveToFileBlockwise(const char* filename, std::list<CFeature>& fe
         cout << "ERROR: Could not open file." << endl;
         return 1;
 
-   }
+    }
 
-   for(it = features.begin(); it!=features.end(); it++) {
+    for(it = features.begin(); it!=features.end(); it++) {
 
-       CAbstractDescriptor* padesc = it->GetDescriptor(descn).get();
-       CDescriptor<vecf>* pdesc = static_cast<CDescriptor<vecf>*>(padesc);
-       vecf& c = pdesc->Get();
 
-       if(stride!=c.NElems()) {
+        if(it->HasDescriptor(name)) {
 
-           cout << "ERROR: Lenght of the descriptors does not match stride." << endl;
-           data.close();
-           return 1;
+            CAbstractDescriptor* padesc = it->GetDescriptor(name).get();
+            CDescriptor<vecf>* pdesc = static_cast<CDescriptor<vecf>*>(padesc);              // make distinction between data types
+            vecf& container = pdesc->Get();
+            data.write((char*)(container.Data()),sizeof(float)*container.NElems());
 
-       }
+        }
 
-       data.write((char*)(c.Data()),sizeof(float)*stride);
+    }
 
-   }
+    data.close();
 
-   data.close();
-
-   // create a data file for each descriptor? all features must have the same number of descriptors
-
-   return 0;
-
-//    out << "# created by r4r_motion" << endl;
-
-//    // write number of features
-//    out << features.size() << endl;
-
-//    // look at first descriptor, store length and names
-//    list<CFeature>::iterator it = features.begin();
-//    map<string,shared_ptr<CAbstractDescriptor> >& descriptors = it->GetDescriptors();
-//    map<string,size_t> props;
-//    map<string,shared_ptr<CAbstractDescriptor> >::iterator it2;
-
-//   for(it2 = descriptors.begin(); it2!=descriptors.end(); it2++) {
-
-//       CDescriptor<vecf>* pdesc = static_cast<CDescriptor<vecf>*>(it2->second.get());
-//       vecf& c = pdesc->Get();
-//       cout << it2->first << endl;
-//       props.insert(pair<string,size_t>(it2->first,c.NElems()));
-
-//   }
-
-//   map<string,size_t>::iterator it3;
-
-//    // first write all headers first
-//    for(; it!=features.end(); it++) {
-
-//        vec u = it->GetLocation();
-//        out << u.Get(0) << " " << u.Get(1) << endl;
-
-//        // scale
-//        out << it->GetScale() << endl;
-
-//        // quality
-//        out << it->GetQuality() << endl;
-
-//        // number of descriptors that follow
-//        size_t nod = it->NoDescriptors();
-//        out << it->NoDescriptors() << endl;
-
-//        // check if number of descriptors are consistent over the input features
-//        if(nod!=props.size()) {
-
-//            cout << "ERROR: Write failed." << endl;
-//            out.close();
-//            return 1;
-
-//        }
-
-//        // access descriptors
-//        descriptors = it->GetDescriptors();
-
-//        for(it2 = descriptors.begin(); it2!=descriptors.end(); it2++) {
-
-//            // does the descriptor exist
-//            if(props.find(it2->first) == props.end()) {
-
-//                cout << "ERROR: Write failed." << endl;
-//                out.close();
-//                return 1;
-
-//            }
-
-//            CDescriptor<vecf>* pdesc = static_cast<CDescriptor<vecf>*>(it2->second.get());
-//            vecf& c = pdesc->Get();
-
-//            if(c.NElems()!=props[it2->first]) {
-
-//                cout << "ERROR: Write failed." << endl;
-//                out.close();
-//                return 1;
-
-//            }
-
-//        }
-
-//    }
-
-//    // now go through all consistent descriptors
-//    for(it3=props.begin(); it3!=props.end(); it3++) {
-
-//        out << it3->first << endl;
-
-//        // write names and data
-//        for(it=features.begin(); it!=features.end(); it++) {
-
-//            CDescriptor<vecf>* pdesc = static_cast<CDescriptor<vecf>*>(it->GetDescriptor(it3->first.c_str()).get());
-//            vecf& c = pdesc->Get();
-//            out.write((char*)(c.Data()),sizeof(float)*c.NElems());
-
-//        }
-
-//        out << endl;
-
-//    }
+    return 0;
 
 }
 
-bool CFeature::OpenFromFileBlockwise(const char* filename, vector<CFeature>& features, vector<string>& names, matf& data, size_t stride) {
+bool CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHeader>& headers, float* data) {
 
     string fndata;
 
@@ -571,32 +467,19 @@ bool CFeature::OpenFromFileBlockwise(const char* filename, vector<CFeature>& fea
     }
 
     // read headers
-    size_t counter = 0;
+    size_t nelems, counter;
+    counter = 0;
+    nelems = 0;
 
     while(in.good()) {
 
-        double u, v;
-        in >> u;
-        in >> v;
+        CDescriptorFileHeader header;
+        in >> header;
         in.get();
+        headers.push_back(header);
 
-        size_t scale;
-        in >> scale;
-        in.get();
-
-        float quality;
-        in >> quality;
-        in.get();
-
-        CFeature x(u,v,scale,quality);
-        features.push_back(x);
-
-        string name;
-        getline(in,name);
-
-        names.push_back(name);
-
-        counter++;
+        nelems += header.NElems();                      // we assume that the containers are floats
+        counter ++;
 
     }
 
@@ -611,10 +494,11 @@ bool CFeature::OpenFromFileBlockwise(const char* filename, vector<CFeature>& fea
 
     }
 
+    // create buffer or memory map
+    data = new float[nelems];
 
-    data = matf(stride,counter);
-
-    ind.read((char*)data.Data(),sizeof(float)*stride*counter);
+    // read into buffer
+    ind.read((char*)data,sizeof(float)*nelems);
 
     ind.close();
 
@@ -622,10 +506,10 @@ bool CFeature::OpenFromFileBlockwise(const char* filename, vector<CFeature>& fea
 
     return 0;
 
+
+
+
 }
-
-
-
 
 
 }

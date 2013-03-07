@@ -22,9 +22,14 @@ int main()
 
     CRectangle<double> roi = CRectangle<double>(0,0,1,1,0);
 
-    //CBRIEF* desc = new CBRIEF(roi);
-
     CIdentityDescriptor* desc = new CIdentityDescriptor(roi,0,7);
+
+    matf& B = desc->Get();
+
+    B(1,1)=20;
+
+
+
 
 
     //cout << test << endl;
@@ -44,13 +49,24 @@ int main()
     l.push_back(x);
     l.push_back(y);
 
-    CFeature::SaveToFileBlockwise("bw.txt",l,(15*15),0);
+    CFeature::SaveDescriptors("bw.txt",l,"ID","Comment2");
+    vector<CDescriptorFileHeader> featin;
 
-    vector<CFeature> featin;
-    vector<string> names;
+    float* buffer = new float[10000000];
 
-    matf data;
-    CFeature::OpenFromFileBlockwise("bw.txt",featin,names,data,(15*15));
+    CFeature::LoadDescriptors("bw.txt",featin,buffer);
+
+    for(size_t i=0;i<featin.size(); i++)
+        cout << featin[i] << endl;
+
+
+    cout << buffer[0] << endl;
+
+    matf A(15,15,buffer);
+    cout << A << endl;
+
+
+    //    CFeature::OpenFromFileBlockwise("bw.txt",featin,names,data,(15*15));
 
 //    for(size_t i=0; i<names.size(); i++) {
 //        cout << featin[i] << endl;

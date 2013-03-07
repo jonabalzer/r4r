@@ -24,14 +24,14 @@ CTracker::CTracker():
 
 }
 
-CTracker::CTracker(CParameters params):
-	vector<list<shared_ptr<CTracklet> > >(params.GetIntParameter("SCALE")+1),
+CTracker::CTracker(CParameters* params):
+    vector<list<shared_ptr<CTracklet> > >(params->GetIntParameter("SCALE")+1),
 	m_params(params),
 	m_global_t(0)
 {
 
 	cout << "Tracking parameters: " << endl;
-	cout << m_params;
+    cout << *m_params;
 
 }
 
@@ -271,27 +271,25 @@ bool CTracker::SaveToFile(const char* dir, const char* prefix) {
 
 }
 
-bool CTracker::SaveToFileBlockwise(const char* dir, size_t stride, size_t descn) {
+bool CTracker::SaveDescriptors(const char* filename, const char* name, const char* comment, int type) {
+
     cout << "Writing tracks to file..." << endl;
 
     list<shared_ptr<CTracklet> >::iterator it;
 
-    size_t counter = 0;
-
-    stringstream filename;
-    filename << dir << "descriptors.txt";
 
     for(size_t s=0; s<size(); s++) {
 
         for(it=at(s).begin(); it!=at(s).end(); it++) {
 
-            CFeature::SaveToFileBlockwise(filename.str().c_str(),*(*it),stride,descn);
+            CFeature::SaveDescriptors(filename,*(*it),name,comment,type,(*it)->GetCreationTime());
 
         }
 
     }
 
     return 0;
+
 
 }
 

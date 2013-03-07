@@ -40,9 +40,13 @@ private slots:
 
     void on_actionSave_Tracks_triggered();
 
-    void on_actionPreferemces_triggered();
+    void on_actionPreferences_triggered();
 
     void set_params(CParameters params) { m_params = params; };
+
+    void on_actionSave_Descriptors_triggered();
+
+    void on_actionClose_triggered();
 
 private:
     Ui::MainWindow* ui;
@@ -53,7 +57,7 @@ private:
     vector<cv::Mat> m_pyramid;
     QTimer m_timer;
     CParameters m_params;
-    vector<R4R::CTracker*> m_trackers;
+    CTracker* m_tracker;
 
     void show_image(const Mat& img);
 

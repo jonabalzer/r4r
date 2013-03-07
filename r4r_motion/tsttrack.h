@@ -29,7 +29,7 @@ public:
 
 
 	//! Constructor.
-	CTST(CParameters params);
+    CTST(CParameters* params);
 
 	//! Initializes the tree with the given image representing the root node.
 	virtual bool Init(std::vector<cv::Mat>& pyramid);
@@ -148,7 +148,7 @@ public:
 
 
 	//! Constructor.
-	CTSTLK(CParameters params);
+    CTSTLK(CParameters* params);
 
 	//! Destructor.
 	~CTSTLK() { delete m_root; };

@@ -19,11 +19,11 @@ using namespace std;
 
 namespace R4R {
 
-CTST::CTST(CParameters params):
+CTST::CTST(CParameters* params):
 	CTracker(params),
 	m_root(nullptr),
-	m_detector(10000000,m_params.GetDoubleParameter("FEATURE_THRESHOLD"),0,2*m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE")+1) {
-//	m_detector(m_params.GetIntParameter("FEATURE_THRESHOLD"),true) {
+    m_detector(10000000,m_params->GetDoubleParameter("FEATURE_THRESHOLD"),0,2*m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE")+1) {
+//	m_detector(m_params->GetIntParameter("FEATURE_THRESHOLD"),true) {
 
 	// generate sample points for tests performed in BRIEF descriptor
     CBRIEF::GenerateSamplePoints();
@@ -33,7 +33,7 @@ CTST::CTST(CParameters params):
 void CTST::Detect(vector<Mat>& pyramid) {
 
 	// first create tracklet for every feature point fulfilling distance condition
-	for(size_t s = 0; s<=(size_t)m_params.GetIntParameter("SCALE"); s++) {
+    for(size_t s = 0; s<=(size_t)m_params->GetIntParameter("SCALE"); s++) {
 
 		// compute integral image for feature counting
 		CIntegralImage<size_t> cimg = ComputeFeatureDensity(pyramid[s].cols,pyramid[s].rows,s);
@@ -48,7 +48,7 @@ void CTST::Detect(vector<Mat>& pyramid) {
 
 			cimg.Compute();
 
-			double hsize = m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE");
+            double hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE");
 
 			for(size_t i=0; i<keypoints.size(); i++) {
 
@@ -60,8 +60,8 @@ void CTST::Detect(vector<Mat>& pyramid) {
 					// compute descriptor
 					CRectangle<double> roi(keypoints[i].pt.x,
 										   keypoints[i].pt.y,
-										   m_params.GetIntParameter("DESCRIPTOR_HSIZE"),
-										   m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                           m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
+                                           m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
                     shared_ptr<CAbstractDescriptor> brief(new CBRIEF(roi));
 					brief->Compute(pyramid[s]);
@@ -91,7 +91,7 @@ void CTST::Detect(vector<Mat>& pyramid) {
 bool CTST::Init(vector<Mat>& pyramid) {
 
 	// create virtual feature/tracklet one scale above desired, FIXME: select scale such that there is actually one feature
-	size_t s = m_params.GetIntParameter("SCALE") + 1;
+    size_t s = m_params->GetIntParameter("SCALE") + 1;
 
 	// root node will be center of image
 	vec center(2);
@@ -175,7 +175,7 @@ shared_ptr<CSTTracklet> CTST::FindParent(shared_ptr<CTracklet> tracklet) {
 
 			double dist = (xp - xc).Norm2();
 
-			if(dist<m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"))
+            if(dist<m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"))
 				return static_pointer_cast<CSTTracklet>((*it));
 
 		}
@@ -200,7 +200,7 @@ void CTST::DrawChildren(cv::Mat& img, shared_ptr<CSTTracklet> node) {
 
 			size_t s = (*it)->GetScale();
 
-            (*it)->GetLatestState().Draw(img,CFeature::COLORS[s],(m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE")+1)*pow(2,s));
+            (*it)->GetLatestState().Draw(img,CFeature::COLORS[s],(m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE")+1)*pow(2,s));
 
 		}
 
@@ -353,7 +353,7 @@ void CTST::PruneTree(shared_ptr<CSTTracklet> node) {
 
 void CTST::TrackSubTree(std::vector<cv::Mat>& pyramid0, vector<Mat>& pyramid1, shared_ptr<CSTTracklet> node, vec t0) {
 
-	size_t hdist = m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE");
+    size_t hdist = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE");
 
 	vec u0 = node->GetLatestLocation();
 
@@ -468,8 +468,8 @@ void CTST::TrackSubTree(std::vector<cv::Mat>& pyramid0, vector<Mat>& pyramid1, s
 
 		// compute BRIEF descriptors for putative feature points
 		CRectangle<double> droi(roi.tl().x+keypoints[i].pt.x,roi.tl().y+keypoints[i].pt.y,
-								m_params.GetIntParameter("DESCRIPTOR_HSIZE"),
-								m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
+                                m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
 
         descriptors[i] = new CBRIEF(droi,7);
@@ -522,8 +522,8 @@ void CTST::TrackSubTree(std::vector<cv::Mat>& pyramid0, vector<Mat>& pyramid1, s
 #if COMPUTE_ID_TST == 1
 
 				CRectangle<double> droi(u1(0),u1(1),
-										m_params.GetIntParameter("DESCRIPTOR_HSIZE"),
-										m_params.GetIntParameter("DESCRIPTOR_HSIZE"));
+                                        m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
+                                        m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
 				shared_ptr<CDescriptor> id(new CIdentityDescriptor(droi));
 				id->Compute(pyramid1[node->GetScale()]);
@@ -612,18 +612,18 @@ CTSTNode::~CTSTNode() {
 
 }
 
-CTSTLK::CTSTLK(CParameters params):
+CTSTLK::CTSTLK(CParameters* params):
 	CTracker(params),
 	m_root(nullptr),
-//	m_detector(10000000,m_params.GetDoubleParameter("FEATURE_THRESHOLD"),0) {
-	m_detector(m_params.GetIntParameter("FEATURE_THRESHOLD")) {
+//	m_detector(10000000,m_params->GetDoubleParameter("FEATURE_THRESHOLD"),0) {
+    m_detector(m_params->GetIntParameter("FEATURE_THRESHOLD")) {
 
 }
 
 bool CTSTLK::Init(vector<Mat>& pyramid) {
 
 	// get scale
-	size_t s = m_params.GetIntParameter("SCALE");
+    size_t s = m_params->GetIntParameter("SCALE");
 
 	// root node will be center of image
 	Point2f center(0.5*(pyramid[0].cols-1),0.5*(pyramid[0].rows-1));
@@ -657,20 +657,20 @@ bool CTSTLK::ValidateDescendants(Mat& img, CTSTNode* node) {
 	// get appropriately scaled bounding box around feature
 	Rect_<float> roi;
 
-	if(s==(size_t)m_params.GetIntParameter("SCALE")-1) {
+    if(s==(size_t)m_params->GetIntParameter("SCALE")-1) {
 
-		roi = Rect_<float>(m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-						   m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-						   img.size().width/pow(2,s)-1-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-						   img.size().height/pow(2,s)-1-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
+        roi = Rect_<float>(m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
+                           m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
+                           img.size().width/pow(2,s)-1-m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
+                           img.size().height/pow(2,s)-1-m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
 
 	}
 	else {
 
-		roi = Rect_<float>(2*(xp(0)-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
-						   2*(xp(1)-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
-						   4*m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-						   4*m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
+        roi = Rect_<float>(2*(xp(0)-m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
+                           2*(xp(1)-m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
+                           4*m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
+                           4*m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
 
 	}
 
@@ -699,8 +699,8 @@ bool CTSTLK::ValidateDescendants(Mat& img, CTSTNode* node) {
 
 		size_t no = cimg.EvaluateFast(xc(0)-roi.tl().x,
 						 	 	 	  xc(1)-roi.tl().y,
-						 	 	 	  m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),										// FIXME: add factor 2 that enforces that the windows are disjoint
-						 	 	 	  m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
+                                      m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),										// FIXME: add factor 2 that enforces that the windows are disjoint
+                                      m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
 
 		if(no!=1)
 			(*it)->m_tracklet->SetStatus(false);		// if we find a bad track, mark it
@@ -716,14 +716,14 @@ bool CTSTLK::ValidateDescendants(Mat& img, CTSTNode* node) {
 bool CTSTLK::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 	// collects all nodes in the tree
-	vector<list<CTSTNode*> > nodes(m_params.GetIntParameter("SCALE")+1);
+    vector<list<CTSTNode*> > nodes(m_params->GetIntParameter("SCALE")+1);
 	CollectSiblings(nodes,m_root);
 
 	if(nodes.size()==0)
 		return 0;
 
 	// start just below the root node
-	for(int s=m_params.GetIntParameter("SCALE")-1; s>=0; s--) {
+    for(int s=m_params->GetIntParameter("SCALE")-1; s>=0; s--) {
 
 		// check whether there is something to track at scale s
 		if(nodes[s].size()>0) {
@@ -769,13 +769,13 @@ bool CTSTLK::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 								 points1,
 								 status,
 								 error,
-								 Size(2*m_params.GetIntParameter("TRACKING_HSIZE")+1,2*m_params.GetIntParameter("TRACKING_HSIZE")+1),
-								 m_params.GetIntParameter("LK_PYRAMID_LEVEL"),
+                                 Size(2*m_params->GetIntParameter("TRACKING_HSIZE")+1,2*m_params->GetIntParameter("TRACKING_HSIZE")+1),
+                                 m_params->GetIntParameter("LK_PYRAMID_LEVEL"),
 								 TermCriteria(TermCriteria::COUNT|TermCriteria::EPS,
-										 	  m_params.GetIntParameter("MAX_ITER"),
-										 	  m_params.GetDoubleParameter("ACCURACY")),
-							     m_params.GetDoubleParameter("LAMBDA"),
-								 OPTFLOW_USE_INITIAL_FLOW);
+                                              m_params->GetIntParameter("MAX_ITER"),
+                                              m_params->GetDoubleParameter("ACCURACY")),
+                                 m_params->GetDoubleParameter("LAMBDA"),
+                                 OPTFLOW_USE_INITIAL_FLOW);
 
 			counter = 0;
 
@@ -856,7 +856,7 @@ void CTSTLK::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 	}
 
 	// if there are more than one level, recursively check the nodes in the tree
-	if(m_params.GetIntParameter("SCALE")>0) {
+    if(m_params->GetIntParameter("SCALE")>0) {
 
 		// find bad nodes and mark them
 		ValidateDescendants(pyramid1[0],m_root);
@@ -873,7 +873,7 @@ void CTSTLK::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 bool CTSTLK::AddTracklets(vector<Mat>& pyramid) {
 
 	// if there are more than one level, recursively expand the tree
-	if(m_params.GetIntParameter("SCALE")>0)
+    if(m_params->GetIntParameter("SCALE")>0)
 		return Reproduce(pyramid,m_root);
 
 	return 0;
@@ -891,20 +891,20 @@ bool CTSTLK::Reproduce(vector<Mat>& pyramid, CTSTNode* node) {
 	// get appropriately scaled bounding box around feature
 	Rect_<float> roi;
 
-	if(s==(size_t)m_params.GetIntParameter("SCALE")-1) {
+    if(s==(size_t)m_params->GetIntParameter("SCALE")-1) {
 
-		roi = Rect_<float>(m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-						   m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-						   pyramid[s].size().width-1-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-						   pyramid[s].size().height-1-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
+        roi = Rect_<float>(m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
+                           m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
+                           pyramid[s].size().width-1-m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
+                           pyramid[s].size().height-1-m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
 
 	}
 	else {
 
-		roi = Rect_<float>(2*(xp(0)-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
-						   2*(xp(1)-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
-						   4*m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-						   4*m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
+        roi = Rect_<float>(2*(xp(0)-m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
+                           2*(xp(1)-m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
+                           4*m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
+                           4*m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
 
 	}
 
@@ -951,8 +951,8 @@ bool CTSTLK::Reproduce(vector<Mat>& pyramid, CTSTNode* node) {
 		// evaluate integral image, using down-scaled window, newly-detected keypoints are integral
 		size_t no = cimg.EvaluateFast(keypoints[i].pt.x,
 						 	 	 	  keypoints[i].pt.y,
-						 	 	 	  m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),			// FIXME: add factor 2 that enforces that the windows are disjoint
-						 	 	 	  m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
+                                      m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),			// FIXME: add factor 2 that enforces that the windows are disjoint
+                                      m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
 
 		if(no==1) {
 

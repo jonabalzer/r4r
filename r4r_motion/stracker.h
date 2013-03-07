@@ -46,7 +46,7 @@ class CSimpleTracker: public CTracker {
 public:
 
 	//! Constructor.
-	CSimpleTracker(CParameters params);
+    CSimpleTracker(CParameters* params);
 
 	/*! \copydoc CTracker::Init(cv::Mat& img)
 	 *

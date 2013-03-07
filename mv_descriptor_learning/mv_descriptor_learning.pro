@@ -14,10 +14,10 @@ QMAKE_CXXFLAGS += -std=c++0x
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    preferences.cpp
+        preferences.cpp
 
 HEADERS  += mainwindow.h \
-    preferences.h
+        preferences.h
 
 FORMS    += mainwindow.ui \
     preferences.ui

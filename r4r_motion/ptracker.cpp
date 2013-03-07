@@ -15,7 +15,7 @@ namespace R4R {
 
 
 
-CPlaneTracker::CPlaneTracker(CParameters params, CCam cam, Mat& img0):
+CPlaneTracker::CPlaneTracker(CParameters* params, CCam cam, Mat& img0):
 		CSimpleTracker(params),
 		m_cam(cam),
 		m_img0(img0),
@@ -74,7 +74,7 @@ bool CPlaneTracker::Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>&
 	// do LK tracking at every time instance
 	CSimpleTracker::Update(pyramid0,pyramid1);
 
-	size_t kfr = (size_t)m_params.GetIntParameter("KEYFRAME_RATE");
+    size_t kfr = (size_t)m_params->GetIntParameter("KEYFRAME_RATE");
 
 	if(m_global_t>0 && (m_global_t)%kfr==0) {
 

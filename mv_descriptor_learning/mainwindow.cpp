@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QProgressDialog>
 #include <QMessageBox>
 
@@ -14,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_pyramid(),
     m_timer(this),
     m_params(),
-    m_trackers()
+    m_tracker()
 {
 
     // set gui
@@ -32,8 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
 
-    for(size_t i=0; i<m_trackers.size(); i++)
-        delete m_trackers[i];
+    delete m_tracker;
 
     m_cap.release();
 
@@ -89,22 +89,21 @@ void MainWindow::on_actionOpen_triggered()
     cvtColor(img, img_gray, CV_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
+    cout << "PARAMS: " << endl;
+    cout << m_params << endl;
+
     // init tracker
-    CSimpleTracker* tracker = new CSimpleTracker(m_params);
-    m_trackers.push_back(tracker);
+    m_tracker = new CSimpleTracker(&m_params);
 
-    for(size_t i = 0; i<m_trackers.size(); i++) {
+    // initial detection
+    m_tracker->Init(m_pyramid);
 
-         // initial detection
-         m_trackers[i]->Init(m_pyramid);
+    // initinialization of descriptors
+    m_tracker->UpdateDescriptors(m_pyramid);
 
-         // initinialization of descriptors
-         m_trackers[i]->UpdateDescriptors(m_pyramid);
+    // draw
+    m_tracker->Draw(img);
 
-         // draw
-         m_trackers[i]->Draw(img);
-
-    }
 
     show_image(img);
 
@@ -112,6 +111,11 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_stepButton_clicked()
 {
+
+    if(!m_cap.isOpened()) {
+        m_timer.stop();
+        return;
+    }
 
     Mat img, img_gray;
     vector<Mat> pyramid;
@@ -133,28 +137,24 @@ void MainWindow::on_stepButton_clicked()
     cvtColor(img, img_gray, CV_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
-    for(size_t i = 0; i<m_trackers.size(); i++) {
+    // update motion estimates
+    m_tracker->Update(pyramid,m_pyramid);
 
-        // update motion estimates
-        m_trackers[i]->Update(pyramid,m_pyramid);
+    // add new tracks
+    size_t noactive = m_tracker->GetNumberOfActiveTracks();
+    if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
+         m_tracker->AddTracklets(m_pyramid);
 
-        // add new tracks
-        size_t noactive = m_trackers[i]->GetNumberOfActiveTracks();
-        if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
-            m_trackers[i]->AddTracklets(m_pyramid);
+    // update descriptors
+    m_tracker->UpdateDescriptors(m_pyramid);
 
-        // update descriptors
-        m_trackers[i]->UpdateDescriptors(m_pyramid);
+    // check validity of tracks
+    m_tracker->Clean(pyramid,m_pyramid);
+    //trackers[i]->DeleteInvalidTracks();
 
-        // check validity of tracks
-        m_trackers[i]->Clean(pyramid,m_pyramid);
-        //trackers[i]->DeleteInvalidTracks();
-
-        // draw
-        m_trackers[i]->Draw(img);
-        m_trackers[i]->DrawTails(img,20);
-
-    }
+    // draw
+    m_tracker->Draw(img);
+    m_tracker->DrawTails(img,20);
 
     show_image(img);
 
@@ -181,23 +181,65 @@ void MainWindow::on_actionSave_Tracks_triggered()
 
     QString dirname = QFileDialog::getExistingDirectory(this,tr("Choose folder..."), ".");
 
-    for(size_t i = 0; i<m_trackers.size(); i++) {
+    string dir = dirname.toStdString() + string("/");
+    string prefix = string("track");
 
-        stringstream ss;
-        ss << i;
-
-        string dir = dirname.toStdString() + string("/");
-        string prefix = string("tracker") + ss.str() + string("_");
-
-        //m_trackers[i]->SaveToFile(dir.c_str(),prefix.c_str());
-        m_trackers[i]->SaveToFileBlockwise(dir.c_str(),61*61,1);
-
-    }
-
+    m_tracker->SaveToFile(dir.c_str(),prefix.c_str());
 
 }
 
-void MainWindow::on_actionPreferemces_triggered()
+void MainWindow::on_actionPreferences_triggered()
 {
+    m_timer.stop();
     m_preferences->show();
+}
+
+void MainWindow::on_actionSave_Descriptors_triggered()
+{
+
+    m_timer.stop();
+
+    bool ok;
+    QString comment = QInputDialog::getText(this,
+                                            "Save Descriptors",
+                                            "Comment:", QLineEdit::Normal,
+                                            "",
+                                            &ok);
+
+    if (!ok)
+        return;
+
+    QStringList items;
+    items << tr("Identity") << tr("Gradient");
+
+    QString item = QInputDialog::getItem(this, tr("Save Descriptors"),
+                                          tr("Descriptor:"), items, 0, false, &ok);
+
+
+    if(!ok)
+        return;
+
+
+    string name;
+
+    if(item=="Identity")
+        name = string("ID");
+    else if(item=="Gradient")
+        name = string("GRAD");
+
+    QString filename = QFileDialog::getSaveFileName(this,
+                                                    tr("Save File"),
+                                                    "",
+                                                    tr("(*.txt)"));
+
+    m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
+
+}
+
+void MainWindow::on_actionClose_triggered()
+{
+    m_timer.stop();
+    ui->labelImage->clear();
+    m_cap.release();
+
 }

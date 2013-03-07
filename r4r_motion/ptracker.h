@@ -24,7 +24,7 @@ class CPlaneTracker: public CSimpleTracker {
 public:
 
 	//! Constructor.
-	CPlaneTracker(CParameters params, CCam cam, cv::Mat& img0);
+    CPlaneTracker(CParameters* params, CCam cam, cv::Mat& img0);
 
 	/*! \copybrief CTracker::Init(std::vector<cv::Mat>&)
 	 *

@@ -22,6 +22,7 @@ using namespace std;
 namespace R4R {
 
 class CAbstractDescriptor;
+class CDescriptorFileHeader;
 
 /*! \brief feature
  *
@@ -34,6 +35,7 @@ class CAbstractDescriptor;
 class CFeature {
 
     friend class CAbstractDescriptor;
+    friend class CDescriptorFileHeader;
 
 public:
 
@@ -117,16 +119,6 @@ public:
     //! Writes a set of features to file.
     static bool SaveToFile(const char* filename, std::list<CFeature>& features);
 
-    /*! \brief Writes a set of features to file.
-     *
-     * \param[in] filename file name
-     * \param[in] features list of features with float descriptors attached
-     * \param[in] stride length of features
-     * \details This is for fast input/output of massive amounts of data. Only float containers
-     * can be handled.
-    */
-    static bool SaveToFileBlockwise(const char* filename, std::list<CFeature>& features, size_t stride, size_t descn = 0);
-
     /*! \brief Reads a set of features from file.
      * \param[in] filename file name
      * \param[out] featurs list of features
@@ -134,15 +126,26 @@ public:
      */
     static bool OpenFromFile(const char* filename, std::list<CFeature>& features, int type = F4S);
 
+    /*! \brief Writes a set of features to file.
+     *
+     * \param[in] filename file name
+     * \param[in] features list of features with float descriptors attached
+     * \param[in] name name of the descriptor to save
+     * \param[in] comment comment
+     * \param[in] type data type of descriptor
+     * \param[in] t0 creation time if the descriptor came from a tracklet
+     * \details This is for fast input/output of massive amounts of data. Only float containers
+     * can be handled.
+    */
+    static bool SaveDescriptors(const char* filename, std::list<CFeature>& features, const char* name, const char* comment, int type = 0, size_t t0 = 0);
+
     /*! \brief Reads a set of features from file.
      * \param[in] filename file name
-     * \param[out] featurs list of features
-     * \param[in] stride descriptor length
-     * \returns pointer to a contiguous block of memory holding the descriptor data
+     * \param[out] headers list of headers
+     * \param[out] data pointer to a contiguous block of memory holding the descriptor data
+     *
      */
-    static bool OpenFromFileBlockwise(const char* filename, vector<CFeature>& features, vector<string>& names, matf& data, size_t stride);
-
-
+    static bool LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers, float* data);
 
 private:
 

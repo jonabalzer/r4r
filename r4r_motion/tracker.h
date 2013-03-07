@@ -98,7 +98,7 @@ public:
 	CTracker();
 
 	//! Standard constructor.
-	CTracker(CParameters params);
+    CTracker(CParameters* params);
 
 	//! Standard destructor.
 	virtual ~CTracker();
@@ -163,9 +163,8 @@ public:
 	 */
 	virtual bool SaveToFile(const char* dir, const char* prefix);
 
-    //! Save all descriptors in block format.
-    virtual bool SaveToFileBlockwise(const char* dir, size_t stride, size_t descn);
-
+    //! Saves all descriptors from all tracklets into a single file.
+    virtual bool SaveDescriptors(const char* filename, const char* name, const char* comment, int type = 0);
 
 	//! Searches for a tracklet with given initial feature and initial time.
     std::shared_ptr<CTracklet> SearchTracklet(CFeature x0, size_t t0);
@@ -197,7 +196,7 @@ public:
 	CIntegralImage<size_t> ComputeFeatureDensity(size_t width, size_t height, size_t s);
 
 	//! Returns the set of parameters.
-	CParameters GetParameters() { return m_params; };
+    CParameters GetParameters() { return *m_params; };
 
 	//! Draws active tracklets into an image.
 	void DrawTails(cv::Mat& img, size_t length);
@@ -216,7 +215,7 @@ public:
 
 protected:
 
-	CParameters m_params;					//!< container for user-defined parameters
+    CParameters* m_params;					//!< container for user-defined parameters
 	size_t m_global_t;						//!< global time variable
     size_t m_n_active_tracks;               //!< number of active tracks
 

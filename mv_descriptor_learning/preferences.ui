@@ -46,6 +46,9 @@
        <property name="text">
         <string>Raw image</string>
        </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -196,7 +199,7 @@
     <rect>
      <x>20</x>
      <y>20</y>
-     <width>271</width>
+     <width>241</width>
      <height>201</height>
     </rect>
    </property>
@@ -313,8 +316,8 @@
     <rect>
      <x>10</x>
      <y>230</y>
-     <width>311</width>
-     <height>271</height>
+     <width>261</width>
+     <height>251</height>
     </rect>
    </property>
    <property name="title">
@@ -325,7 +328,7 @@
      <rect>
       <x>20</x>
       <y>30</y>
-      <width>189</width>
+      <width>191</width>
       <height>31</height>
      </rect>
     </property>
@@ -377,7 +380,7 @@
      <rect>
       <x>20</x>
       <y>90</y>
-      <width>160</width>
+      <width>141</width>
       <height>31</height>
      </rect>
     </property>
@@ -406,7 +409,7 @@
      <rect>
       <x>20</x>
       <y>120</y>
-      <width>182</width>
+      <width>161</width>
       <height>31</height>
      </rect>
     </property>
@@ -458,7 +461,7 @@
      <rect>
       <x>20</x>
       <y>180</y>
-      <width>160</width>
+      <width>141</width>
       <height>31</height>
      </rect>
     </property>
@@ -484,7 +487,7 @@
      <rect>
       <x>20</x>
       <y>210</y>
-      <width>180</width>
+      <width>181</width>
       <height>31</height>
      </rect>
     </property>

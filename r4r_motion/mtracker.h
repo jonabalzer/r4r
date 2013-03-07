@@ -27,7 +27,7 @@ class CMotionTracker: public CSimpleTracker {
 public:
 
 	//! Constructor.
-	CMotionTracker(CParameters params, CCam cam);
+    CMotionTracker(CParameters* params, CCam cam);
 
 	/*! \copybrief CTracker::Update(cv::Mat&,cv::Mat&)
 	 *
