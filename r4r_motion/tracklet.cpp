@@ -97,7 +97,7 @@ void CTracklet::Draw(Mat& img, size_t length) {
     	a.Scale(s);
     	b.Scale(s);
 
-    	line(img,Point2f(a(0),a(1)),Point2f(b(0),b(1)),CFeature::COLORS[m_scale]);
+        line(img,Point2f(a(0),a(1)),Point2f(b(0),b(1)),CFeature::COLORS[m_scale],1,CV_AA,0);
 
     	ita++;
     	itb++;

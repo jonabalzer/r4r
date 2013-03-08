@@ -23,7 +23,8 @@ SOURCES += \
     basic.cpp \
     tval.cpp \
     tsttrack.cpp \
-    tracklet.cpp
+    tracklet.cpp \
+    dagg.cpp
 
 HEADERS += \
     tval.h \
@@ -37,7 +38,8 @@ HEADERS += \
     descriptor.h \
     basic.h \
     tsttrack.h \
-    tracklet.h
+    tracklet.h \
+    dagg.h
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

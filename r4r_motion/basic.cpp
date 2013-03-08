@@ -260,7 +260,6 @@ CBRIEF::CBRIEF(CRectangle<double> roi):
     CNeighborhoodDescriptor(CDenseVector<bool>(BITSET_LENGTH),roi)
     {}
 
-
 void CBRIEF::GenerateSamplePoints() {
 
     // draw samples on the set [-1,1]x[-1,1]

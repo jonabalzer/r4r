@@ -26,14 +26,10 @@ CTracker::CTracker():
 
 CTracker::CTracker(CParameters* params):
     vector<list<shared_ptr<CTracklet> > >(params->GetIntParameter("SCALE")+1),
-	m_params(params),
+    //vector<list<shared_ptr<CTracklet> > >(6), // hard-coded limit
+    m_params(params),
 	m_global_t(0)
-{
-
-	cout << "Tracking parameters: " << endl;
-    cout << *m_params;
-
-}
+{}
 
 CTracker::~CTracker() {
 

@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef UTILSR4R_H_
+#define UTILSR4R_H_
 
 #include "cam.h"
 #include "types.h"
@@ -172,4 +172,4 @@ public:
 }
 
 
-#endif /* UTILS_H_ */
+#endif /* UTILSR4R_H_ */

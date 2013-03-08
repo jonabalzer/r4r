@@ -10,6 +10,7 @@
 
 #include "params.h"
 #include "stracker.h"
+#include "dagg.h"
 
 using namespace cv;
 using namespace std;
@@ -47,6 +48,12 @@ private slots:
     void on_actionSave_Descriptors_triggered();
 
     void on_actionClose_triggered();
+
+    void on_showMemoryUsage_triggered();
+
+signals:
+
+    void show_memoryUsage();
 
 private:
     Ui::MainWindow* ui;

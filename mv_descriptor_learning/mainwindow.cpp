@@ -6,6 +6,8 @@
 #include <QProgressDialog>
 #include <QMessageBox>
 
+#include <sys/time.h>
+#include <sys/resource.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -24,9 +26,13 @@ MainWindow::MainWindow(QWidget *parent) :
     // connect signals and slots
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     connect(m_preferences,SIGNAL(params_changed(CParameters)),this,SLOT(set_params(CParameters)));
+    connect(this,SIGNAL(show_memoryUsage()),this,SLOT(on_showMemoryUsage_triggered()));
 
     // set parameters
     m_preferences->on_applyButton_clicked();
+
+    // show memory usage
+    emit show_memoryUsage();
 
 }
 
@@ -49,7 +55,12 @@ void MainWindow::on_actionExit_triggered()
 void MainWindow::show_image(const Mat& img) {
 
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    ui->labelImage->setPixmap(QPixmap::fromImage(qimg.rgbSwapped()));
+    QPixmap pixmap = QPixmap::fromImage(qimg.rgbSwapped());
+
+    if(3*qimg.height()>4*qimg.width())
+        ui->labelImage->setPixmap(pixmap.scaledToHeight(ui->labelImage->height()));
+    else
+        ui->labelImage->setPixmap(pixmap.scaledToWidth(ui->labelImage->width()));
 
 }
 
@@ -62,30 +73,57 @@ void MainWindow::on_actionOpen_triggered()
     if(m_cap.isOpened())
         return;
 
-    // open stream
+    // declare variable for first frame
+    Mat img, img_gray;
+
+    // get file name
     QString filename = QFileDialog::getOpenFileName(this,
                                                     "Open video file...",
                                                     ".",
-                                                    "(*.mov);;(*.avi);;(*.mp4)");
+                                                    "(*.mov);;(*.avi);;(*.mp4);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
 
-    m_cap = VideoCapture(filename.toStdString().c_str());
 
-    if(!m_cap.isOpened() && !filename.isEmpty()) {
-        QMessageBox::critical(this,"Error","Could not open file. Check path and whether required codecs are installed.");
+    // check if it is an image or video
+    if(filename.endsWith(".mov")||
+       filename.endsWith(".avi")||
+       filename.endsWith(".mp4")) {
+
+        m_cap = VideoCapture(filename.toStdString().c_str());
+
+        // check if we can properly open the video
+        if(!m_cap.isOpened() && !filename.isEmpty()) {
+            QMessageBox::critical(this,"Error","Could not open video stream. Check path and whether required codecs are installed.");
+            return;
+        }
+
+        // grab the first frame
+        if(!m_cap.grab()) {
+
+            ui->statusBar->showMessage("Failed to get frame.");
+            return;
+
+        }
+
+        m_cap.retrieve(img);
+
+    } else if(filename.endsWith(".png")||
+              filename.endsWith(".jpg")||
+              filename.endsWith(".bmp")||
+              filename.endsWith(".ppm")||
+              filename.endsWith(".pgm")) {
+
+        // open image
+        img = imread(filename.toStdString().c_str());
+
+    }
+
+    // check if we have a valid frame
+    if(img.rows==0 || img.cols==0) {
+        QMessageBox::critical(this,"Error","Could not open image.");
         return;
     }
 
-    // get initial frame
-    Mat img, img_gray;
-
-    if(!m_cap.grab()) {
-
-        ui->statusBar->showMessage("Failed to get frame.");
-        return;
-
-    }
-
-    m_cap.retrieve(img);
+    // convert
     cvtColor(img, img_gray, CV_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
@@ -104,8 +142,9 @@ void MainWindow::on_actionOpen_triggered()
     // draw
     m_tracker->Draw(img);
 
-
+    // display
     show_image(img);
+    emit show_memoryUsage();
 
 }
 
@@ -156,9 +195,23 @@ void MainWindow::on_stepButton_clicked()
     m_tracker->Draw(img);
     m_tracker->DrawTails(img,20);
 
+    // display
     show_image(img);
+    ui->frameLcdNumber->display((int)m_tracker->GetTime());
+    emit show_memoryUsage();
 
 }
+
+
+void MainWindow::on_showMemoryUsage_triggered() {
+
+    rusage usage;
+    getrusage(RUSAGE_SELF,&usage);
+    double mb = (double)usage.ru_maxrss/1024;
+    ui->memlcdNumber->display(mb);
+
+}
+
 
 void MainWindow::on_playButton_clicked()
 {
@@ -225,14 +278,41 @@ void MainWindow::on_actionSave_Descriptors_triggered()
     if(item=="Identity")
         name = string("ID");
     else if(item=="Gradient")
-        name = string("GRAD");
+        name = string("GRAD");          // make sure that
 
+    // now save file
     QString filename = QFileDialog::getSaveFileName(this,
                                                     tr("Save File"),
                                                     "",
+
                                                     tr("(*.txt)"));
 
-    m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
+
+    // create aggregator
+    CDescriptorAggregator<matf>* aggregator;
+
+    switch(m_params.GetIntParameter("AGGREGATOR")) {
+
+    case 1:
+        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
+        break;
+    case 2:
+        aggregator = new CSubsampleAggregator<matf>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
+        break;
+    default:
+
+        m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
+        return;
+
+    }
+
+    // aggregate
+    aggregator->Aggregate();
+    list<CFeature> feats = aggregator->Get();
+    delete aggregator;
+
+    // save
+    CFeature::SaveDescriptors(filename.toStdString().c_str(),feats,name.c_str(),comment.toStdString().c_str());
 
 }
 

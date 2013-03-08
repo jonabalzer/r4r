@@ -31,6 +31,8 @@ private slots:
 
     void on_loadButton_clicked();
 
+    void on_aggComboBox_currentIndexChanged(int index);
+
 public slots:
     void on_applyButton_clicked();
 

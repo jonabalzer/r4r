@@ -213,6 +213,9 @@ public:
 	//! Callback for augmenting the image with OpenGL rendering.
 	static void OnDrawOpenGL(void* params);
 
+    //! Access to the global time.
+    size_t GetTime() { return m_global_t; };
+
 protected:
 
     CParameters* m_params;					//!< container for user-defined parameters
