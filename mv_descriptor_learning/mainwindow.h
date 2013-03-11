@@ -51,6 +51,8 @@ private slots:
 
     void on_showMemoryUsage_triggered();
 
+    void on_actionAbout_triggered();
+
 signals:
 
     void show_memoryUsage();

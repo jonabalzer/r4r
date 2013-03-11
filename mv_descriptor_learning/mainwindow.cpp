@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // set gui
     ui->setupUi(this);
+    this->setFixedSize(this->width(),this->height());
 
     // connect signals and slots
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
@@ -40,9 +41,7 @@ MainWindow::~MainWindow()
 {
 
     delete m_tracker;
-
     m_cap.release();
-
     delete ui;
 
 }
@@ -115,20 +114,17 @@ void MainWindow::on_actionOpen_triggered()
         // open image
         img = imread(filename.toStdString().c_str());
 
-    }
+        if(img.rows==0 || img.cols==0) {
+            QMessageBox::critical(this,"Error","Could not open image.");
+            return;
+        }
 
-    // check if we have a valid frame
-    if(img.rows==0 || img.cols==0) {
-        QMessageBox::critical(this,"Error","Could not open image.");
-        return;
     }
+    else return;
 
     // convert
     cvtColor(img, img_gray, CV_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
-
-    cout << "PARAMS: " << endl;
-    cout << m_params << endl;
 
     // init tracker
     m_tracker = new CSimpleTracker(&m_params);
@@ -318,8 +314,20 @@ void MainWindow::on_actionSave_Descriptors_triggered()
 
 void MainWindow::on_actionClose_triggered()
 {
+
     m_timer.stop();
     ui->labelImage->clear();
+    delete m_tracker;
     m_cap.release();
 
+    emit show_memoryUsage();
+
+    ui->frameLcdNumber->display(0);
+
+
+}
+
+void MainWindow::on_actionAbout_triggered()
+{
+    QMessageBox::information(this,"About","More info: http://vision.ucla.edu");
 }

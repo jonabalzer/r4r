@@ -145,7 +145,7 @@ public:
      * \param[out] data pointer to a contiguous block of memory holding the descriptor data
      *
      */
-    static bool LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers, float* data);
+    static float* LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers);
 
 private:
 

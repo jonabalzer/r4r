@@ -444,7 +444,7 @@ bool CFeature::SaveDescriptors(const char* filename, list<CFeature>& features, c
 
 }
 
-bool CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHeader>& headers, float* data) {
+float* CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHeader>& headers) {
 
     string fndata;
 
@@ -454,7 +454,7 @@ bool CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHeade
     if(!in.is_open()) {
 
         cout << "ERROR: Could not open file." << endl;
-        return 1;
+        return NULL;
 
     }
 
@@ -490,12 +490,12 @@ bool CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHeade
     if(!ind.is_open()) {
 
         cout << "ERROR: Could not open file." << endl;
-        return 1;
+        return NULL;
 
     }
 
     // create buffer or memory map
-    data = new float[nelems];
+    float* data = new float[nelems];
 
     // read into buffer
     ind.read((char*)data,sizeof(float)*nelems);
@@ -504,10 +504,7 @@ bool CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHeade
 
     cout << "Read " << counter << " descriptors." << endl;
 
-    return 0;
-
-
-
+    return data;
 
 }
 
