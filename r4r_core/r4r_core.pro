@@ -64,3 +64,14 @@ unix:!symbian {
     }
     INSTALLS += target
 }
+
+LIBS += -llapack
+
+LIBS += \
+     -lopencv_core\
+     -lopencv_highgui\
+     -lopencv_video\
+     -lopencv_imgproc\
+     -lopencv_features2d\
+     -lopencv_calib3d
+
