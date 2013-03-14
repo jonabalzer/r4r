@@ -96,6 +96,12 @@ protected:
 
     Array m_container;
 
+private:
+
+    // prevent copying of data
+    CDescriptor(const CDescriptor<Array>& desc);
+    CDescriptor<Array> operator=(const CDescriptor<Array>& desc);
+
 };
 
 
@@ -151,6 +157,12 @@ public:
 
     //! Get the number of elements in the descriptor.
     size_t NElems() { return m_size[0]*m_size[1]; };
+
+    //! Access to comments.
+    std::string GetComment() { return m_comment; };
+
+    //! Access to location.
+    float* GetLocation() { return m_location; };
 
 private:
 

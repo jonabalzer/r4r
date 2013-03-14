@@ -629,7 +629,7 @@ CDenseArray<T> CDenseArray<T>::operator+(const CDenseArray& array) const {
 
 
 template <class T>
-CDenseArray<T> CDenseArray<T>::operator^(const CDenseArray& array) const {
+CDenseArray<T>& CDenseArray<T>::operator^(const CDenseArray& array) const {
 
 	assert(m_nrows==array.m_nrows && m_ncols==array.m_ncols);
 

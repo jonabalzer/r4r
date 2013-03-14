@@ -14,7 +14,6 @@
 
 using namespace std;
 
-
 namespace R4R {
 
 /*! \brief image interpolation
@@ -152,6 +151,44 @@ public:
 
 };
 
+
+
+/*! \brief R4R's own gray value image class
+ *
+ *
+ *
+ */
+class CImage: public CDenseArray<unsigned char> {
+
+public:
+
+    //! Constructor.
+    CImage();
+
+    //! Constructor.
+    CImage(size_t w, size_t h):CDenseArray<unsigned char>(h,w){};
+
+
+};
+
+
+/*! \brief R4R's own gray value image class
+ *
+ *
+ *
+ */
+class CRGBImage: public CDenseArray<rgb> {
+
+public:
+
+    //! Constructor.
+    CRGBImage();
+
+    //! Constructor.
+    //CRGBImage(size_t w, size_t h):CDenseArray<rgb>::CDenseArray(h,w){};
+
+
+};
 
 
 

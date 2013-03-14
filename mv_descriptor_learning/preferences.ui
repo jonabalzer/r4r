@@ -35,7 +35,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>100</y>
+      <y>80</y>
       <width>210</width>
       <height>31</height>
      </rect>
@@ -81,7 +81,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>170</y>
+      <y>130</y>
       <width>281</width>
       <height>31</height>
      </rect>
@@ -145,7 +145,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>200</y>
+      <y>160</y>
       <width>205</width>
       <height>31</height>
      </rect>
@@ -171,8 +171,8 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>230</y>
-      <width>235</width>
+      <y>190</y>
+      <width>171</width>
       <height>31</height>
      </rect>
     </property>
@@ -180,12 +180,90 @@
      <item>
       <widget class="QLabel" name="alphaLabel">
        <property name="text">
-        <string>Normalization parameter</string>
+        <string>Regularization </string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QLineEdit" name="alphaEdit">
+       <property name="text">
+        <string>0.001</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_18">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>240</y>
+      <width>160</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="hogLayout">
+     <item>
+      <widget class="QCheckBox" name="hogOnCheckBox">
+       <property name="text">
+        <string>HOG</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="hogNormComboBox">
+       <item>
+        <property name="text">
+         <string>Off</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>L2</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_19">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>320</y>
+      <width>160</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="fourierModulusLayout">
+     <item>
+      <widget class="QCheckBox" name="fourierModulusOnCheckBox">
+       <property name="text">
+        <string>Fourier Modulus</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_20">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>270</y>
+      <width>161</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="alphaHogLayout">
+     <item>
+      <widget class="QLabel" name="alphaHogLabel">
+       <property name="text">
+        <string>Regularization</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="alphaHogEdit">
        <property name="text">
         <string>0.001</string>
        </property>
@@ -573,6 +651,16 @@
     <item>
      <property name="text">
       <string>Off</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Mean</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Median</string>
      </property>
     </item>
     <item>

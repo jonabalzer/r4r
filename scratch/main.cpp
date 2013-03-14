@@ -6,19 +6,54 @@
 #include "rect.h"
 #include "tracklet.h"
 #include "params.h"
+#include "descspecial.h"
 
 using namespace std;
 using namespace R4R;
-
+using namespace cv;
 
 int main()
 {
 
 
-//    vec u(2);
-//    u(0)=1;
-//    u(1)=3;
-//    CFeature x = CFeature(u,3,0);
+    Mat img = imread("/home/jbalzer/Data/imgs/grador0.png");
+
+
+    float di = 255.0/img.cols;
+
+    for(size_t i=0; i<img.rows; i++ ) {
+
+        for(size_t j=0; j<img.cols; j++) {
+
+
+            img.at<unsigned char>(i,j) = (unsigned char)(j*di);
+
+        }
+
+    }
+
+    vec u(2);
+    u(0)=320;
+    u(1)=240;
+
+    namedWindow("Test",1);
+    imshow("Test",img);
+    waitKey(0);
+
+    CRectangle<double> roi(u(0),u(1),8,8);
+    //CFourierModulusDescriptor desc(roi,25);
+
+    CHistogramOfGradients desc(roi);
+
+    desc.Compute(img);
+
+    vecf& test = desc.Get();
+
+
+    cout << test << endl;
+    //ofstream out("fft.txt");
+    //out << test;
+    //out.close();
 
 //    CRectangle<double> roi = CRectangle<double>(0,0,1,1,0);
 

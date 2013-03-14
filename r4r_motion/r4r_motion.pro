@@ -6,6 +6,9 @@
 
 QMAKE_CXXFLAGS += -std=c++0x
 
+DEFINES += HAVE_FFTW  # add last flag depending on whether FFTW is present
+
+
 TARGET = r4r_motion
 TEMPLATE = lib
 
@@ -24,7 +27,8 @@ SOURCES += \
     tval.cpp \
     tsttrack.cpp \
     tracklet.cpp \
-    dagg.cpp
+    dagg.cpp \
+    descspecial.cpp
 
 HEADERS += \
     tval.h \
@@ -39,7 +43,8 @@ HEADERS += \
     basic.h \
     tsttrack.h \
     tracklet.h \
-    dagg.h
+    dagg.h \
+    descspecial.h
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN
@@ -66,7 +71,8 @@ unix:!symbian {
          -lopencv_video\
          -lopencv_imgproc\
          -lopencv_features2d\
-         -lopencv_calib3d
+         -lopencv_calib3d \
+         -lfftw3
 
 }
 

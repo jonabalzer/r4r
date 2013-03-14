@@ -40,6 +40,7 @@ CNeighborhoodDescriptor<Rect,Array>::CNeighborhoodDescriptor(const Array& contai
     m_roi(roi) {}
 
 template class CNeighborhoodDescriptor<CRectangle<double>,matf>;
+template class CNeighborhoodDescriptor<CRectangle<double>,vecf>;
 template class CNeighborhoodDescriptor<CRectangle<double>,mat>;
 template class CNeighborhoodDescriptor<CRectangle<double>,CDenseVector<bool> >;
 
