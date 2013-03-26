@@ -124,20 +124,29 @@ public:
      * \param[out] featurs list of features
      * \param[in] type precision of the container
      */
-    static bool OpenFromFile(const char* filename, std::list<CFeature>& features, int type = F4S);
+    static bool OpenFromFile(const char* filename, std::list<CFeature>& features);
 
-    /*! \brief Writes a set of features to file.
-     *
+    /*! \brief Reads a set of features from file.
      * \param[in] filename file name
-     * \param[in] features list of features with float descriptors attached
-     * \param[in] name name of the descriptor to save
-     * \param[in] comment comment
-     * \param[in] type data type of descriptor
-     * \param[in] t0 creation time if the descriptor came from a tracklet
-     * \details This is for fast input/output of massive amounts of data. Only float containers
-     * can be handled.
-    */
-    static bool SaveDescriptors(const char* filename, std::list<CFeature>& features, const char* name, const char* comment, int type = 0, size_t t0 = 0);
+     * \param[out] headers list of headers
+     * \param[out] data pointer to a contiguous block of memory holding the descriptor data
+     * \param[out] type data type to cast the void pointer to
+     *
+     */
+    static void* LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers, ETYPE& type);
+
+//    /*! \brief Writes a set of features to file.
+//     *
+//     * \param[in] filename file name
+//     * \param[in] features list of features with float descriptors attached
+//     * \param[in] name name of the descriptor to save
+//     * \param[in] comment comment
+//     * \param[in] type data type of descriptor
+//     * \param[in] t0 creation time if the descriptor came from a tracklet
+//     * \details This is for fast input/output of massive amounts of data. Only float containers
+//     * can be handled.
+//    */
+//    static bool SaveDescriptors(const char* filename, std::list<CFeature>& features, const char* name, const char* comment, ETYPE type = F4S, size_t t0 = 0);
 
     /*! \brief Reads a set of features from file.
      * \param[in] filename file name
@@ -145,7 +154,16 @@ public:
      * \param[out] data pointer to a contiguous block of memory holding the descriptor data
      *
      */
-    static float* LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers);
+    //static float* LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers);
+
+    /*! \brief Reads a set of features from file.
+     * \param[in] filename file name
+     * \param[out] headers list of headers
+     * \param[out] data pointer to a contiguous block of memory holding the descriptor data
+     * \param[out] type data type to cast the void pointer to
+     *
+     */
+    //static bool LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers);//, void* data, ETYPE& type);
 
 private:
 

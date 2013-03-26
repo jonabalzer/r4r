@@ -11,18 +11,19 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-//#include "types.h"
 
 namespace R4R {
 
-static enum {  B1U = 1,
-               C1U = 2, C1S = 3,
-               S2U = 4, S2S = 5,
-               I4S = 6, I4U = 7,
-               F4S = 8,
-               L8S = 9, L8U = 10,
-               D8S = 11 } ETYPE;
 
+
+enum ETYPE {  NA = 0,
+              B1U = 1,
+              C1U = 2, C1S = 3,
+              S2U = 4, S2S = 5,
+              I4S = 6, I4U = 7,
+              F4S = 8,
+              L8S = 9, L8U = 10,
+              D8S = 11 };
 
 template<class T> class CDenseVector;
 
@@ -210,16 +211,25 @@ public:
     //! Computes the Hamming norm of a vector. Only implemented for Boolean type.
     double HammingNorm();
 
-protected:
+    //! Returns the numerical type.
+    ETYPE GetType();
 
+protected:
 
 	size_t m_nrows;				//!< number of rows
 	size_t m_ncols;				//!< number of cols
 	bool m_transpose;			//!< transpose flag
 	T* m_data;					//!< container that holds the array data
-
-
 };
+
+// template specializations for accessing numerical type
+//template<> class CDenseArray<bool> { public: ETYPE GetType(); };
+//template<> class CDenseArray<int> { public: ETYPE GetType(); };
+//template<> class CDenseArray<size_t> { public: ETYPE GetType(); };
+//template<> class CDenseArray<float> { public: ETYPE GetType(); };
+//template<> class CDenseArray<double> { public: ETYPE GetType(); };
+
+
 
 /*! \brief dense vector
  *

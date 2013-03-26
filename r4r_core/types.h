@@ -14,6 +14,7 @@
 
 namespace R4R {
 
+
 typedef CDenseVector<double> vec;
 typedef CDenseVector<std::complex<double> > vecc;
 typedef CDenseVector<float> vecf;

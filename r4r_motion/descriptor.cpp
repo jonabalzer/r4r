@@ -47,33 +47,31 @@ template class CNeighborhoodDescriptor<CRectangle<double>,CDenseVector<bool> >;
 
 CDescriptorFileHeader::CDescriptorFileHeader():
     m_scale(0),
-    m_detection_time(0),
     m_name(),
-    m_type(0),
+    m_type(NA),
     m_comment() {
 
     m_location[0] = 0;
     m_location[1] = 0;
     m_size[0] = 0;
-    m_size[1] = 1;
+    m_size[1] = 0;
 
 }
 
 CDescriptorFileHeader::CDescriptorFileHeader(const CFeature& feature):
     m_scale(feature.m_scale),
-    m_detection_time(0),
     m_name(),
-    m_type(0),
+    m_type(NA),
     m_comment() {
 
     m_location[0] = feature.m_location.Get(0);
     m_location[1] = feature.m_location.Get(1);
     m_size[0] = 0;
-    m_size[1] = 1;
+    m_size[1] = 0;
 
 }
 
-bool CDescriptorFileHeader::SetDescriptor(CFeature& feature, const char* name, int type) {
+bool CDescriptorFileHeader::SetDescriptor(CFeature& feature, const char* name) {
 
     // check if descriptor exists
     if(feature.HasDescriptor(name)) {
@@ -83,7 +81,7 @@ bool CDescriptorFileHeader::SetDescriptor(CFeature& feature, const char* name, i
         m_size[1] = pdesc->NCols();
 
         m_name = string(name);
-        m_type = type;
+        m_type = pdesc->GetType();
 
     }
     else
@@ -97,7 +95,6 @@ ostream& operator<<(std::ostream& os, CDescriptorFileHeader& x) {
 
     os << x.m_location[0] << " " << x.m_location[1] << endl;
     os << x.m_scale << endl;
-    os << x.m_detection_time << endl;
     os << x.m_name << endl;
     os << x.m_size[0] << " " << x.m_size[1] << endl;
     os << x.m_type << endl;
@@ -114,9 +111,6 @@ istream& operator>>(std::istream& is, CDescriptorFileHeader& x) {
     is.get();
 
     is >> x.m_scale;
-    is.get();
-
-    is >> x.m_detection_time;
     is.get();
 
     is >> x.m_name;

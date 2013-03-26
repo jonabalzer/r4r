@@ -297,18 +297,22 @@ void MainWindow::on_actionSave_Descriptors_triggered()
         break;
     default:
 
-        m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
-        return;
-
+        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
+        //m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
+        //return;
+        break;
     }
 
     // aggregate
-    aggregator->Aggregate();
-    list<CFeature> feats = aggregator->Get();
+    //aggregator->Aggregate();
+    //list<CFeature> feats = aggregator->Get();
+
+    aggregator->Aggregate(filename.toStdString().c_str(),comment.toStdString().c_str());
+
     delete aggregator;
 
     // save
-    CFeature::SaveDescriptors(filename.toStdString().c_str(),feats,name.c_str(),comment.toStdString().c_str());
+    //CFeature::SaveDescriptors(filename.toStdString().c_str(),feats,name.c_str(),comment.toStdString().c_str());
 
 }
 

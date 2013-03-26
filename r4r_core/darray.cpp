@@ -178,6 +178,21 @@ ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
     os.write((char*)(x.m_data),sizeof(double)*x.NElems());
 }
 
+template<>
+ETYPE CDenseArray<bool>::GetType() { return B1U; }
+
+template<>
+ETYPE CDenseArray<int>::GetType() { return I4S; }
+
+template<>
+ETYPE CDenseArray<size_t>::GetType() { return L8U; }
+
+template<>
+ETYPE CDenseArray<float>::GetType() { return F4S; }
+
+template<>
+ETYPE CDenseArray<double>::GetType() { return D8S; }
+
 template<class U>
 istream& operator >> (istream& is, CDenseArray<U>& x) {
 
