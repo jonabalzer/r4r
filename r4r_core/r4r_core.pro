@@ -12,7 +12,6 @@ TEMPLATE = lib
 DEFINES += R4R_CORE_LIBRARY
 
 SOURCES += \
-    utils.cpp \
     trafo.cpp \
     sarray.cpp \
     rect.cpp \
@@ -26,10 +25,10 @@ SOURCES += \
     factor.cpp \
     darray.cpp \
     cam.cpp \
-    pegasos.cpp
+    pegasos.cpp \
+    rutils.cpp
 
 HEADERS += \
-    utils.h \
     types.h \
     trafo.h \
     sarray.h \
@@ -44,7 +43,8 @@ HEADERS += \
     factor.h \
     darray.h \
     cam.h \
-    pegasos.h
+    pegasos.h \
+    rutils.h
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

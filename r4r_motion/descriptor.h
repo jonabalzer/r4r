@@ -174,7 +174,7 @@ public:
     std::string GetComment() { return m_comment; };
 
     //! Access to location.
-    float* GetLocation() { return m_location; };
+    void GetLocation(float& u, float& v) { u = m_location[0]; v = m_location[1]; };
 
 private:
 

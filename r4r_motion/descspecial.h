@@ -33,7 +33,7 @@ public:
     //! Constructor.
     CHistogramOfGradients(CRectangle<double> roi);
 
-    //! Paraemtrized constructor.
+    //! Parametrized constructor.
     CHistogramOfGradients(CRectangle<double> roi, size_t no_cells, size_t cell_size, size_t no_bins, bool osigned, double sigma);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
@@ -47,7 +47,7 @@ private:
     size_t m_no_cells;              //! number of cells (per dimension)
     size_t m_cell_size;             //! number of pixels in each cell (per dimension)
     size_t m_no_bins;               //! number of histogram bins
-    bool m_osigned;                  //! flag indicating whether orientations are treated as signed or unsigned
+    bool m_osigned;                 //! flag indicating whether orientations are treated as signed or unsigned
     double m_sigma;                 //! variance of Gaussian windowing function, if zero no windowing is performed
 
 };

@@ -7,7 +7,7 @@
 
 #include "iter.h"
 #include "darray.h"
-#include "utils.h"
+#include "rutils.h"
 
 #include <math.h>
 #include <stdio.h>

@@ -12,7 +12,7 @@
 #include <string>
 
 #include "cam.h"
-#include "utils.h"
+#include "rutils.h"
 #include "factor.h"
 
 using namespace std;

@@ -11,8 +11,6 @@
 #include "cam.h"
 #include "types.h"
 
-#define TOLERANCE_RODRIGUES 10e-20
-
 namespace R4R {
 
 /*! \brief linear algebra utility functions

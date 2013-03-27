@@ -259,7 +259,7 @@ void MainWindow::on_actionSave_Descriptors_triggered()
         return;
 
     QStringList items;
-    items << tr("Identity") << tr("Gradient");
+    items << tr("Identity") << tr("Gradient") << tr("HoG");
 
     QString item = QInputDialog::getItem(this, tr("Save Descriptors"),
                                           tr("Descriptor:"), items, 0, false, &ok);
@@ -268,44 +268,50 @@ void MainWindow::on_actionSave_Descriptors_triggered()
     if(!ok)
         return;
 
-
     string name;
 
     if(item=="Identity")
         name = string("ID");
     else if(item=="Gradient")
-        name = string("GRAD");          // make sure that
+        name = string("GRAD");
+    else if(item=="HoG")
+        name = string("HOG");
+
 
     // now save file
     QString filename = QFileDialog::getSaveFileName(this,
                                                     tr("Save File"),
                                                     "",
-
                                                     tr("(*.txt)"));
 
 
+    if(filename.isEmpty())
+        return;
+
     // create aggregator
-    CDescriptorAggregator<matf>* aggregator;
+    CDescriptorAggregator<vecf>* aggregator;
 
-    switch(m_params.GetIntParameter("AGGREGATOR")) {
+//    switch(m_params.GetIntParameter("AGGREGATOR")) {
 
-    case 1:
-        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
-        break;
-    case 2:
-        aggregator = new CSubsampleAggregator<matf>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
-        break;
-    default:
+//    case 1:
+//        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
+//        break;
+//    case 2:
+//        aggregator = new CSubsampleAggregator<matf>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
+//        break;
+//    default:
 
-        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
-        //m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
-        //return;
-        break;
-    }
+//        aggregator = new CDescriptorAggregator<matf>(m_tracker,name.c_str());
+//        //m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
+//        //return;
+//        break;
+//    }
 
     // aggregate
     //aggregator->Aggregate();
     //list<CFeature> feats = aggregator->Get();
+
+    aggregator = new CDescriptorAggregator<vecf>(m_tracker,name.c_str());
 
     aggregator->Aggregate(filename.toStdString().c_str(),comment.toStdString().c_str());
 

@@ -8,7 +8,7 @@
 
 #include "lm.h"
 #include <math.h>
-#include "utils.h"
+#include "rutils.h"
 
 using namespace std;
 

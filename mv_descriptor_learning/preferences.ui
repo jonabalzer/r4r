@@ -47,7 +47,7 @@
         <string>Raw image</string>
        </property>
        <property name="checked">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -198,7 +198,7 @@
      <rect>
       <x>10</x>
       <y>240</y>
-      <width>160</width>
+      <width>91</width>
       <height>31</height>
      </rect>
     </property>
@@ -208,64 +208,8 @@
        <property name="text">
         <string>HOG</string>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="hogNormComboBox">
-       <item>
-        <property name="text">
-         <string>Off</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>L2</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_19">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>320</y>
-      <width>160</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="fourierModulusLayout">
-     <item>
-      <widget class="QCheckBox" name="fourierModulusOnCheckBox">
-       <property name="text">
-        <string>Fourier Modulus</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_20">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>270</y>
-      <width>161</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="alphaHogLayout">
-     <item>
-      <widget class="QLabel" name="alphaHogLabel">
-       <property name="text">
-        <string>Regularization</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="alphaHogEdit">
-       <property name="text">
-        <string>0.001</string>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

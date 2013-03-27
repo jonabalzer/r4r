@@ -237,5 +237,8 @@ void CSubsampleAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
 template class CDescriptorAggregator<matf>;
 template class CSubsampleAggregator<matf>;
 template class CInitFrameAggregator<matf>;
+template class CDescriptorAggregator<vecf>;
+template class CSubsampleAggregator<vecf>;
+template class CInitFrameAggregator<vecf>;
 
 }
