@@ -166,10 +166,10 @@ std::string CTracklet::GetHash() {
 	stringstream x0, y0;
 	x0.fill('0');
 	x0.width(4);
-	x0 << pt.Get(0);
+    x0 << (size_t)(pt.Get(0)+0.5);
 	y0.fill('0');
 	y0.width(4);
-	y0 << pt.Get(1);
+    y0 << (size_t)(pt.Get(1)+0.5);
 
 	stringstream hash;
 	hash << t0.str() << x0.str() << y0.str();

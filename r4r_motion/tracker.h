@@ -210,24 +210,26 @@ public:
     //! Access to the global time.
     size_t GetTime() { return m_global_t; };
 
+    /*!
+     * \brief Adds a new tracklet.
+     *
+     * \details Creates a new tracklet on the heap and adds a pointer to the tracker and returns
+     * this pointer. Opposed to CTracklet, here, dynamic memory allocation happens within the
+     * class. The destructor CTracker::~CTracker() de-allocates all tracklets that have been
+     * associated with the tracker.
+     *
+     * \param[in] x pointer to a dynamically allocated CFeatureDescriptor object
+     *
+     */
+    std::shared_ptr<CTracklet> AddTracklet(CFeature x);
+
 protected:
 
     CParameters* m_params;					//!< container for user-defined parameters
 	size_t m_global_t;						//!< global time variable
     size_t m_n_active_tracks;               //!< number of active tracks
 
-	/*!
-	 * \brief Adds a new tracklet.
-	 *
-	 * \details Creates a new tracklet on the heap and adds a pointer to the tracker and returns
-	 * this pointer. Opposed to CTracklet, here, dynamic memory allocation happens within the
-	 * class. The destructor CTracker::~CTracker() de-allocates all tracklets that have been
-	 * associated with the tracker.
-	 *
-	 * \param[in] x pointer to a dynamically allocated CFeatureDescriptor object
-	 *
-	 */
-    std::shared_ptr<CTracklet> AddTracklet(CFeature x);
+
 
 	//! Adds a new tracklet to the pool.
 	void AddTracklet(std::shared_ptr<CTracklet> tracklet);

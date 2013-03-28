@@ -591,7 +591,7 @@ bool CFeature::OpenFromFile(const char* filename, std::list<CFeature>& features)
 //}
 
 
-void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers, ETYPE& type) {
+void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers, ETYPE& type, bool preview) {
 
     string fndata;
 
@@ -655,6 +655,9 @@ void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFil
     }
 
     in.close();
+
+    if(preview)
+        return nullptr;
 
     ifstream ind(fndata.c_str());
 

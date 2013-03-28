@@ -170,11 +170,20 @@ public:
     //! Get the number of elements in the descriptor.
     size_t NElems() { return m_size[0]*m_size[1]; };
 
+    //! Get the number of rows.
+    size_t NRows() { return m_size[0]; };
+
+    //! Get the number of rows.
+    size_t NCols() { return m_size[1]; };
+
     //! Access to comments.
     std::string GetComment() { return m_comment; };
 
     //! Access to location.
     void GetLocation(float& u, float& v) { u = m_location[0]; v = m_location[1]; };
+
+    //! Access to scale.
+    size_t GetScale() { return m_scale; };
 
 private:
 

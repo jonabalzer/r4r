@@ -133,7 +133,7 @@ public:
      * \param[out] type data type to cast the void pointer to
      *
      */
-    static void* LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers, ETYPE& type);
+    static void* LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers, ETYPE& type, bool preview = false);
 
 //    /*! \brief Writes a set of features to file.
 //     *

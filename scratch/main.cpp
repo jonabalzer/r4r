@@ -1,13 +1,13 @@
 #include <iostream>
 #include <fstream>
-#include "darray.h"
+//#include "darray.h"
 #include "descriptor.h"
 #include "feature.h"
-#include "basic.h"
-#include "rect.h"
-#include "tracklet.h"
-#include "params.h"
-#include "descspecial.h"
+//#include "basic.h"
+//#include "rect.h"
+//#include "tracklet.h"
+//#include "params.h"
+//#include "descspecial.h"
 
 using namespace std;
 using namespace R4R;
@@ -15,20 +15,37 @@ using namespace cv;
 
 int main()
 {
-
-
    std::vector<CDescriptorFileHeader> headers;
 
    ETYPE type;
    cout << type << endl;
 
-   float* data = (float*)CFeature::LoadDescriptors("/home/jbalzer/ficken.txt",headers,type);
+   void* data;
+
+   data = CFeature::LoadDescriptors("/home/jbalzer/edkfsk;f.txt",headers,type);
+  // size_t stride = headers[0].NElems();
 
 
-   cout << type << endl;
-   matf img(61,61,data+500*61*61);
+//   for(size_t k=0; k<headers.size(); k++) {
 
-   cout << img << endl;
+//        Mat img(headers[k].NCols(),headers[k].NRows(),CV_8UC1);
+
+//        float* pdata = data+k*stride;
+
+//        for(size_t i=0;i<headers[k].NRows();i++) {
+
+//            for(size_t j=0;j<headers[k].NCols();j++) {
+
+//                img.at<unsigned char>(j,i) = pdata[i*headers[k].NCols()+j];
+
+//            }
+
+//        }
+
+//        imshow("Test",img);
+//        waitKey();
+
+//   }
 
    //ofstream mout("img.txt");
    //mout << img << endl;

@@ -1,13 +1,17 @@
 #ifndef DESCSPECIAL_H
 #define DESCSPECIAL_H
 
+#ifdef HAVE_FFTW
+#include <fftw3.h>
+#endif // HAVE_FFTW
+
 #include "descriptor.h"
 #include "rect.h"
 
-#ifdef HAVE_FFTW
-#include <fftw3.h>
 
 namespace R4R {
+
+#ifdef HAVE_FFTW
 
 class CFourierModulusDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,mat> {
 
@@ -19,12 +23,9 @@ public:
     //! \copydoc CDescriptor::Compute(cv::Mat&)
     bool Compute(cv::Mat& img);
 
-
 };
 
 #endif // HAVE_FFTW
-
-
 
 class CHistogramOfGradients:public CNeighborhoodDescriptor<CRectangle<double>,vecf> {
 
