@@ -111,8 +111,6 @@ bool CHistogramOfGradients::Compute(cv::Mat& img) {
             Ix = CImageInterpolation::Gradient(img,pt(0),pt(1),0);
             Iy = CImageInterpolation::Gradient(img,pt(0),pt(1),1);
 
-            //cout << Ix << " " << Iy << endl;
-
             // compute signed/unsigned orientation
             double ograd = 0;
 
@@ -124,14 +122,13 @@ bool CHistogramOfGradients::Compute(cv::Mat& img) {
             // compute the bin
             size_t bin = (size_t)ograd/ho;
 
-
             // get the cell index
             size_t I, J;
             I = (size_t)(i/m_cell_size);
             J = (size_t)(j/m_cell_size);
             size_t cindex = (J*m_no_cells + I)*(m_no_bins);   // row-major
 
-            // increment bin weightedi with gradient norm
+            // increment bin weighted with gradient norm
             m_container(cindex+bin) += sqrt(Ix*Ix+Iy*Iy);
 
         }

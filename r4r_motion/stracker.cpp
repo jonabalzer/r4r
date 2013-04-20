@@ -7,6 +7,7 @@
 
 #include "stracker.h"
 #include "basic.h"
+#include "descspecial.h"
 #include "feature.h"
 #include "lk.h"
 #include <fstream>
@@ -249,8 +250,6 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
                 if(m_params->GetIntParameter("COMPUTE_ID")) {
 
-
-
 					// compute identity descriptor
 					CIdentityDescriptor* tempid = new CIdentityDescriptor(droi,
                                                                           (size_t)m_params->GetIntParameter("NORMALIZE_ID"),
@@ -265,30 +264,29 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
                 if(m_params->GetIntParameter("COMPUTE_GRAD")) {
 
-					// compute normalized gradient field
-					CIdentityGradientDescriptor* temp = new CIdentityGradientDescriptor(droi,
+                    // compute normalized gradient field
+                    CIdentityGradientDescriptor* temp = new CIdentityGradientDescriptor(droi,
                                                                                         m_params->GetDoubleParameter("ALPHA_GRAD_NORM"),
                                                                                         (size_t)m_params->GetIntParameter("NORMALIZE_GRAD"),
                                                                                         (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
-
-					temp->Compute(imsmooth);
+                    temp->Compute(imsmooth);
 
                     shared_ptr<CAbstractDescriptor> idg(temp);
                     x.AttachDescriptor("GRAD",idg);
 
-				}
+                }
 
-#if COMPUTE_CURVE == 1
-				// compute curvature of isocontours
-				CCurvatureDescriptor* tempcurve = new CCurvatureDescriptor(droi,
-                                                                           m_params->GetDoubleParameter("ALPHA_GRAD_NORM"),
-                                                                           m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
+                if(m_params->GetIntParameter("COMPUTE_HOG")) {
 
-				tempcurve->Compute(imsmooth);
+                    // compute HoG
+                    CHistogramOfGradients* temp = new CHistogramOfGradients(droi);
 
-				shared_ptr<CDescriptor> curve(tempcurve);
-				x->AttachDescriptor("CURVE",curve);
-#endif
+                    temp->Compute(imsmooth);
+
+                    shared_ptr<CAbstractDescriptor> pdesc(temp);
+                    x.AttachDescriptor("HOG",pdesc);
+
+                }
 
 			}
 

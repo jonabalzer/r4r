@@ -60,7 +60,7 @@ public:
 	 * overload this with implementation of e.g. techniques such as the Donoho-Stahel or Minimum Covariance Determinant
 	 * (MCD) estimator.
 	 */
-	virtual vec ComputeDispersion(const vec& r);
+    virtual vec ComputeDispersion(vec &r);
 
 protected:
 
@@ -104,10 +104,10 @@ protected:
 	static const double m_params[5];								//!< parameters \f$\rho_1,\rho_2,\beta,\frac{1}{\gamma},\tau,p\f$, cf. [Nielsen1999]
 
 	//! Computes weights based on bi-square function.
-	vec BiSquareWeightFunction(const vec& r, vec& w);
+    vec BiSquareWeightFunction(vec &r, vec& w);
 
 	//! Computes weights based on Huber function.
-	vec HuberWeightFunction(const vec& r, vec& w);
+    vec HuberWeightFunction(vec &r, vec& w);
 
 };
 

@@ -267,28 +267,6 @@ bool CTracker::SaveToFile(const char* dir, const char* prefix) {
 
 }
 
-bool CTracker::SaveDescriptors(const char* filename, const char* name, const char* comment, int type) {
-
-    cout << "Writing tracks to file..." << endl;
-
-    list<shared_ptr<CTracklet> >::iterator it;
-
-
-    for(size_t s=0; s<size(); s++) {
-
-        for(it=at(s).begin(); it!=at(s).end(); it++) {
-
-            CFeature::SaveDescriptors(filename,*(*it),name,comment,type,(*it)->GetCreationTime());
-
-        }
-
-    }
-
-    return 0;
-
-
-}
-
 shared_ptr<CTracklet> CTracker::SearchTracklet(CFeature x0, size_t t0) {
 
 	list<shared_ptr<CTracklet> >::iterator it;
@@ -512,58 +490,6 @@ Rect CTracker::GetManualBoundingBox(Mat& img) {
 
 }
 
-void CTracker::OnDrawOpenGL(void* params) {
-
-/*	int* t = (int*)params;
-
-	// select projection matrix
-    glMatrixMode(GL_PROJECTION);
-
-	// reset extrinsics to identity
-    glLoadIdentity();
-
-	// set up a perspective projection matrix (K)
-	gluPerspective(45,(GLfloat)(640/480),1,500);
-
-	// turn on generic light source
-	glEnable(GL_LIGHT0);
-
-	// enable coloring of objects
-	glEnable(GL_COLOR_MATERIAL);
-
-	// enable depth testing
-	glEnable(GL_DEPTH_TEST);
-
-	// enable lighting support
-	glEnable(GL_LIGHTING);
-
-	// compute normals automatically
-	glEnable(GL_AUTO_NORMAL);
-
-	// set reflection coefficients
-	GLfloat mat_diffuse[] = {0.6, 0.6, 0.6, 1.0};
-	GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
-	GLfloat mat_shininess[] = {70.0};
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
-
-	// now switch back to model view
-	glMatrixMode(GL_MODELVIEW);
-
-	// make sure that it is the identity
-	glLoadIdentity();
-
-	// move away
-	glTranslatef(0,0,-t[0]);
-
-	// set color
-	glColor3f(1,0,0);
-
-	// draw the teapot
-	glutSolidTeapot(1);*/
-
-}
 
 
 CTracker::iterator::iterator(CTracker* tracker):

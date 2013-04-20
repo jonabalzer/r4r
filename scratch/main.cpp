@@ -1,12 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include "darray.h"
+#include "descriptor.h"
 #include "feature.h"
-#include "basic.h"
-#include "rect.h"
-#include "tracklet.h"
-#include "params.h"
-#include "descspecial.h"
+#include <omp.h>
+#include <stdio.h>
 
 using namespace std;
 using namespace R4R;
@@ -15,103 +13,123 @@ using namespace cv;
 int main()
 {
 
+    mat x(3,3);
 
-    Mat img = imread("/home/jbalzer/Data/imgs/grador0.png");
+    cout << x.NCols() << endl;
 
+    cout << x.NRows() << endl;
+    x.RandN(0,1);
+    cout << x << endl;
 
-    float di = 255.0/img.cols;
+    mat y(3,3);
 
-    for(size_t i=0; i<img.rows; i++ ) {
+    y.Eye();
+    cout << y << endl;
 
-        for(size_t j=0; j<img.cols; j++) {
+    mat z = y*x;
 
-
-            img.at<unsigned char>(i,j) = (unsigned char)(j*di);
-
-        }
-
-    }
-
-    vec u(2);
-    u(0)=320;
-    u(1)=240;
-
-    namedWindow("Test",1);
-    imshow("Test",img);
-    waitKey(0);
-
-    CRectangle<double> roi(u(0),u(1),8,8);
-    //CFourierModulusDescriptor desc(roi,25);
-
-    CHistogramOfGradients desc(roi);
-
-    desc.Compute(img);
-
-    vecf& test = desc.Get();
+    cout << z << endl;
+    //double n = z.Norm2();
+    //cout << z << endl;
 
 
-    cout << test << endl;
-    //ofstream out("fft.txt");
-    //out << test;
-    //out.close();
+    //}
+//   std::vector<CDescriptorFileHeader> headers;
+
+//   ETYPE type;
+//   cout << type << endl;
+
+//   void* data;
+
+//   data = CFeature::LoadDescriptors("/home/jbalzer/edkfsk;f.txt",headers,type);
+//  // size_t stride = headers[0].NElems();
+
+
+//   for(size_t k=0; k<headers.size(); k++) {
+
+//        Mat img(headers[k].NCols(),headers[k].NRows(),CV_8UC1);
+
+//        float* pdata = data+k*stride;
+
+//        for(size_t i=0;i<headers[k].NRows();i++) {
+
+//            for(size_t j=0;j<headers[k].NCols();j++) {
+
+//                img.at<unsigned char>(j,i) = pdata[i*headers[k].NCols()+j];
+
+//            }
+
+//        }
+
+//        imshow("Test",img);
+//        waitKey();
+
+//   }
+
+   //ofstream mout("img.txt");
+   //mout << img << endl;
+   //mout.close();
+
 
 //    CRectangle<double> roi = CRectangle<double>(0,0,1,1,0);
+//    mat B(3,3);
+//    B.Rand();
+//    CDescriptor<mat>* desc = new CDescriptor<mat>(B);
 
-//    CIdentityDescriptor* desc = new CIdentityDescriptor(roi,0,7);
+//    cout << B << endl;
 
-//    matf& B = desc->Get();
-
-//    B(1,1)=20;
-
-
-
+//    CFeature x(0,0,0,0);
 
 
-//    //cout << test << endl;
-
-//    shared_ptr<CIdentityDescriptor> ptr = shared_ptr<CIdentityDescriptor>(desc);
-
+//    shared_ptr<CDescriptor<mat> > ptr = shared_ptr<CDescriptor<mat> >(desc);
 //    x.AttachDescriptor("ID",ptr);
-
-//    //x.AttachDescriptor("BRIEF",ptr);
-//    //x.AttachDescriptor("ID",ptr);
-
-//    list<CFeature> l;
-
-//    CFeature y(2,3,0,0);
-//    y.AttachDescriptor("ID",ptr);
-
-//    l.push_back(x);
-//    l.push_back(y);
-
-//    CFeature::SaveDescriptors("bw.txt",l,"ID","Comment2");
-//    vector<CDescriptorFileHeader> featin;
-
-//    float* buffer = new float[10000000];
-
-//    CFeature::LoadDescriptors("bw.txt",featin,buffer);
-
-//    for(size_t i=0;i<featin.size(); i++)
-//        cout << featin[i] << endl;
+//    x.AttachDescriptor("ID2",ptr);
 
 
-//    cout << buffer[0] << endl;
+//    list<CFeature> out, in;
+//    out.push_back(x);
+//    //out.push_back(x);
 
-//    matf A(15,15,buffer);
-//    cout << A << endl;
+//    CFeature::SaveToFile("newtest.txt",out);
+
+//    CFeature::OpenFromFile("newtest.txt",in);
+
+//    list<CFeature>::iterator it;
+
+//    for(it=in.begin(); it!=in.end(); it++) {
+
+//        cout << *it << endl;
+
+//        if(it->HasDescriptor("ID")) {
+
+//            shared_ptr<CAbstractDescriptor> pdesc = it->GetDescriptor("ID");
+
+//            cout << pdesc->GetType() << endl;
+//            CDescriptor<mat>* desc = (CDescriptor<mat>*)pdesc.get();
+
+//            mat& container = desc->Get();
+//            cout << container << endl;
 
 
-    //    CFeature::OpenFromFileBlockwise("bw.txt",featin,names,data,(15*15));
+//        }
 
-//    for(size_t i=0; i<names.size(); i++) {
-//        cout << featin[i] << endl;
-//        cout << names[i] << endl;
+//        if(it->HasDescriptor("ID2")) {
+
+//            shared_ptr<CAbstractDescriptor> pdesc = it->GetDescriptor("ID2");
+
+//            cout << pdesc->GetType() << endl;
+//            CDescriptor<mat>* desc = (CDescriptor<mat>*)pdesc.get();
+
+//            mat& container = desc->Get();
+//            cout << container << endl;
+
+
+//        }
+
 
 //    }
 
-    //cout << data << endl;
 
-    return 0;
 
 
 }

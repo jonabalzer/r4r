@@ -46,6 +46,7 @@ void Preferences::on_applyButton_clicked()
     params.Set("NORMALIZE_GRAD",ui->gradNormComboBox->currentIndex());
     params.Set("AGGREGATOR",ui->aggComboBox->currentIndex());
     params.Set("AGG_DS",ui->downSampleEdit->text().toInt());
+    params.Set("COMPUTE_HOG",(int)ui->hogOnCheckBox->isChecked());
 
     // send this to main window
     emit params_changed(params);
@@ -81,6 +82,7 @@ void Preferences::on_saveButton_clicked()
     params.Set("NORMALIZE_GRAD",ui->gradNormComboBox->currentIndex());
     params.Set("AGGREGATOR",ui->aggComboBox->currentIndex());
     params.Set("AGG_DS",ui->downSampleEdit->text().toInt());
+    params.Set("COMPUTE_HOG",(int)ui->hogOnCheckBox->isChecked());
 
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",

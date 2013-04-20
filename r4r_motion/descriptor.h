@@ -52,6 +52,12 @@ public:
     //! Number of elements in the container.
     virtual size_t NElems() { return 0; };
 
+    //! Returns the data type.
+    virtual ETYPE GetType() { return NA; };
+
+    //! Return pointer to the descriptor data.
+    virtual void* GetData() { return nullptr; };
+
 protected:
 
 };
@@ -91,6 +97,13 @@ public:
 
     //! \copydoc CAbstractDescriptor::NElems()
     virtual size_t NElems() { return m_container.NElems(); };
+
+    //! \copydoc CAbstractDescriptor::GetType()
+    virtual ETYPE GetType() { return m_container.GetType(); };
+
+    //! \copydoc CAbstractDescriptor::GetData()
+    virtual void* GetData() { return m_container.Data().get(); };
+
 
 protected:
 
@@ -132,6 +145,8 @@ protected:
 
 class CDescriptorFileHeader {
 
+    friend class CFeature;
+
 public:
 
     //! Constructor.
@@ -143,11 +158,8 @@ public:
     //! Sets the comment.
     void SetComment(const char* comment) { m_comment = std::string(comment); };
 
-    //! Sets detection time.
-    void SetTime(size_t t) { m_detection_time = t; };
-
     //! Sets the descriptor name, size, and type.
-    bool SetDescriptor(CFeature& feature, const char* name, int type);
+    bool SetDescriptor(CFeature& feature, const char* name);
 
     //! Writes header to a file stream.
     friend std::ostream& operator<<(std::ostream& os, CDescriptorFileHeader& x);
@@ -158,17 +170,25 @@ public:
     //! Get the number of elements in the descriptor.
     size_t NElems() { return m_size[0]*m_size[1]; };
 
+    //! Get the number of rows.
+    size_t NRows() { return m_size[0]; };
+
+    //! Get the number of rows.
+    size_t NCols() { return m_size[1]; };
+
     //! Access to comments.
     std::string GetComment() { return m_comment; };
 
     //! Access to location.
-    float* GetLocation() { return m_location; };
+    void GetLocation(float& u, float& v) { u = m_location[0]; v = m_location[1]; };
+
+    //! Access to scale.
+    size_t GetScale() { return m_scale; };
 
 private:
 
     float m_location[2];                        //! location of the feature where the descriptor was computed
     size_t m_scale;                             //! scale of the mother feature
-    size_t m_detection_time;                    //! detection time if the feature came from a video
     std::string m_name;                         //! name of the descriptor
     size_t m_size[2];                           //! size of the container
     int m_type;                                 //! data type

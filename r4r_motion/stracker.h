@@ -8,8 +8,6 @@
 #ifndef STRACKER_H_
 #define STRACKER_H_
 
-#define COMPUTE_CURVE 0
-
 #include "tracker.h"
 #include <opencv2/opencv.hpp>
 

@@ -7,7 +7,7 @@
 
 #include "iter.h"
 #include "darray.h"
-#include "utils.h"
+#include "rutils.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -41,7 +41,7 @@ Scalar CIterativeSolver<Matrix,Vector,Scalar>::CG(Matrix& A, Vector& b, Vector& 
 	// init
 	size_t k = 0;
 
-	Vector r = b - A*x;
+    Vector r = b - A*x;
 
 	Scalar normr = r.Norm2();
 

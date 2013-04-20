@@ -163,9 +163,6 @@ public:
 	 */
 	virtual bool SaveToFile(const char* dir, const char* prefix);
 
-    //! Saves all descriptors from all tracklets into a single file.
-    virtual bool SaveDescriptors(const char* filename, const char* name, const char* comment, int type = 0);
-
 	//! Searches for a tracklet with given initial feature and initial time.
     std::shared_ptr<CTracklet> SearchTracklet(CFeature x0, size_t t0);
 
@@ -210,11 +207,21 @@ public:
 	//! Callback routine for selecting a bounding box.
 	static void OnMouseSelectBoundingBox(int event, int x, int y, int flags, void* params);
 
-	//! Callback for augmenting the image with OpenGL rendering.
-	static void OnDrawOpenGL(void* params);
-
     //! Access to the global time.
     size_t GetTime() { return m_global_t; };
+
+    /*!
+     * \brief Adds a new tracklet.
+     *
+     * \details Creates a new tracklet on the heap and adds a pointer to the tracker and returns
+     * this pointer. Opposed to CTracklet, here, dynamic memory allocation happens within the
+     * class. The destructor CTracker::~CTracker() de-allocates all tracklets that have been
+     * associated with the tracker.
+     *
+     * \param[in] x pointer to a dynamically allocated CFeatureDescriptor object
+     *
+     */
+    std::shared_ptr<CTracklet> AddTracklet(CFeature x);
 
 protected:
 
@@ -222,18 +229,7 @@ protected:
 	size_t m_global_t;						//!< global time variable
     size_t m_n_active_tracks;               //!< number of active tracks
 
-	/*!
-	 * \brief Adds a new tracklet.
-	 *
-	 * \details Creates a new tracklet on the heap and adds a pointer to the tracker and returns
-	 * this pointer. Opposed to CTracklet, here, dynamic memory allocation happens within the
-	 * class. The destructor CTracker::~CTracker() de-allocates all tracklets that have been
-	 * associated with the tracker.
-	 *
-	 * \param[in] x pointer to a dynamically allocated CFeatureDescriptor object
-	 *
-	 */
-    std::shared_ptr<CTracklet> AddTracklet(CFeature x);
+
 
 	//! Adds a new tracklet to the pool.
 	void AddTracklet(std::shared_ptr<CTracklet> tracklet);

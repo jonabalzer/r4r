@@ -6,10 +6,12 @@
  */
 
 
-#include "utils.h"
+#include "rutils.h"
 #include "factor.h"
+
 #include <math.h>
 #include <assert.h>
+#include <limits>
 
 using namespace std;
 
@@ -180,7 +182,7 @@ mat CLinearAlgebra::Rodrigues(vec omega) {
 
 	mat R(3,3);
 
-	if(theta<TOLERANCE_RODRIGUES) {
+    if(theta<std::numeric_limits<double>::epsilon()) {
 
 		R(0,0) = 1;
 		R(1,1) = 1;
@@ -231,7 +233,7 @@ void CLinearAlgebra::Rodrigues(vec omega, mat& R, mat& DRx, mat& DRy, mat& DRz) 
 
 	double theta = omega.Norm2();
 
-	if(theta<TOLERANCE_RODRIGUES) {
+    if(theta<std::numeric_limits<double>::epsilon()) {
 
 	    R(0,0) = 1.0; 	R(0,1) = 0.0; 	R(0,2) = 0.0;
 	    R(1,0) = 0.0; 	R(1,1) = 1.0; 	R(1,2) = 0.0;
@@ -386,7 +388,7 @@ vec CLinearAlgebra::GetTranslationVector(mat& F) {
 }
 
 
-double CLinearAlgebra::MedianAbsoluteDeviation(const vec& x) {
+double CLinearAlgebra::MedianAbsoluteDeviation(vec& x) {
 
 	double median = x.Median();
 

@@ -11,7 +11,7 @@
 #include "mtracker.h"
 #include "lm.h"
 #include "basic.h"
-#include "utils.h"
+#include "rutils.h"
 #include "trafo.h"
 #include "interp.h"
 
@@ -793,13 +793,13 @@ vec CMagicSfM::ComputeDispersion(const vec& r) {
 	size_t n = m_corrs2i.size();
 
 	// get pointer to the data
-	double* rdata = r.Data();
+    double* rdata = r.Data().get();
 
 	// copy into subarrays (one for each dimension and part of the functional)
-	vec ri2iu(m,&rdata[0]);
-	vec ri2iv(m,&rdata[m]);
-	vec rs2iu(n,&rdata[2*m]);
-	vec rs2iv(n,&rdata[2*m+n]);
+    vec ri2iu(m,shared_ptr<double>(&rdata[0]));
+    vec ri2iv(m,shared_ptr<double>(&rdata[m]));
+    vec rs2iu(n,shared_ptr<double>(&rdata[2*m]));
+    vec rs2iv(n,shared_ptr<double>(&rdata[2*m+n]));
 
 	// get a robust estimate of the mean
 /*

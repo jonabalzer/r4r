@@ -12,7 +12,7 @@
 #include <string>
 
 #include "cam.h"
-#include "utils.h"
+#include "rutils.h"
 #include "factor.h"
 
 using namespace std;
@@ -74,7 +74,20 @@ ostream& operator<< (ostream& os, const CCam& x) {
 	os << "# skew coefficient" << endl;
 	os << x.m_alpha << endl;
 	os << "# frame world -> cam" << endl;
-	os << x.m_F;
+
+    for(size_t i=0; i<4; i++) {
+
+        for(size_t j=0; j<4; j++) {
+            os << x.m_F.Get(i,j);
+
+            if(j<3)
+                os << " ";
+            else
+                os << endl;
+
+        }
+
+    }
 
 	return os;
 
@@ -148,7 +161,14 @@ bool CCam::OpenFromFile(const char* filename) {
 
 	getline(in,linebuffer);
 
-	in >> m_F;
+    for(size_t i=0; i<3; i++) {
+
+        for(size_t j=0; j<4; j++)
+            in >> m_F(i,j);
+
+        in.get();
+
+    }
 
 	in.close();
 

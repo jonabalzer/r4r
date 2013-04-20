@@ -112,7 +112,7 @@ ostream& operator<<(ostream& os, CTracklet& x) {
     list<CFeature>::iterator it;
 
 	for(it=x.begin(); it!=x.end(); it++)
-        os << (*it);
+        os << (*it) << endl;
 
 	return os;
 
@@ -120,35 +120,38 @@ ostream& operator<<(ostream& os, CTracklet& x) {
 
 bool CTracklet::SaveToFile(const char* filename) {
 
-    CFeature::SaveToFile(filename,*this);
 
-//	if(size()==0)
-//		return 1;
+    if(size()==0)
+        return 1;
 
-//	ofstream out(filename,ofstream::binary);
+    ofstream out(filename,ofstream::binary);
 
-//	if(!out) {
+    if(!out) {
 
-//		cout << "ERROR: Could not open file " << filename << "." << endl;
-//		return 1;
+        cout << "ERROR: Could not open file " << filename << "." << endl;
+        return 1;
 
-//	 }
+     }
 
-//	out << "# Creation time:" << endl << m_t0 << endl;
-//	out << "# Life time:" << endl << size() << endl;
-//	out << "# Scale:" << endl << m_scale << endl;
-//	out << "# x-coordinate y-coordinate" << endl;
-//	out << "# quality" << endl;
-//	out << "# number of descriptor" << endl;
-//	out <<	"# descriptor 1" << endl;
-//	out <<	"# ..." << endl;
-//	out <<	"# descriptor n" << endl;
+    out << "# Creation time:" << endl << m_t0 << endl;
+    out << "# Life time:" << endl << size() << endl;
+    out << "# Scale:" << endl << m_scale << endl;
+    out << "# x-coordinate y-coordinate" << endl;
+    out << "# quality" << endl;
+    out << "# number of descriptor" << endl;
+    out <<	"# descriptor 1" << endl;
+    out <<	"# ..." << endl;
+    out <<	"# descriptor n" << endl;
 
-//	out << *this;
+    list<CFeature>::iterator it;
 
-//	out.close();
+    for(it=begin(); it!=end(); it++)
+        out << (*it);
 
-	return 0;
+    out.close();
+
+    return 0;
+
 }
 
 std::string CTracklet::GetHash() {
@@ -163,10 +166,10 @@ std::string CTracklet::GetHash() {
 	stringstream x0, y0;
 	x0.fill('0');
 	x0.width(4);
-	x0 << pt.Get(0);
+    x0 << (size_t)(pt.Get(0)+0.5);
 	y0.fill('0');
 	y0.width(4);
-	y0 << pt.Get(1);
+    y0 << (size_t)(pt.Get(1)+0.5);
 
 	stringstream hash;
 	hash << t0.str() << x0.str() << y0.str();

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++0x -fopenmp -msse4
 
 TARGET = r4r_core
 TEMPLATE = lib
@@ -12,7 +12,6 @@ TEMPLATE = lib
 DEFINES += R4R_CORE_LIBRARY
 
 SOURCES += \
-    utils.cpp \
     trafo.cpp \
     sarray.cpp \
     rect.cpp \
@@ -26,10 +25,11 @@ SOURCES += \
     factor.cpp \
     darray.cpp \
     cam.cpp \
-    pegasos.cpp
+    pegasos.cpp \
+    rutils.cpp \
+    kernels.cpp
 
 HEADERS += \
-    utils.h \
     types.h \
     trafo.h \
     sarray.h \
@@ -44,34 +44,16 @@ HEADERS += \
     factor.h \
     darray.h \
     cam.h \
-    pegasos.h
-
-symbian {
-    MMP_RULES += EXPORTUNFROZEN
-    TARGET.UID3 = 0xEDCFE493
-    TARGET.CAPABILITY = 
-    TARGET.EPOCALLOWDLLDATA = 1
-    addFiles.sources = r4r_core.dll
-    addFiles.path = !:/sys/bin
-    DEPLOYMENT += addFiles
-}
-
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib
-    }
-    INSTALLS += target
-}
-
-LIBS += -llapack
+    pegasos.h \
+    rutils.h \
+    kernels.h
 
 LIBS += -L/usr/local/lib \
-     -lopencv_core\
-     -lopencv_highgui\
-     -lopencv_video\
-     -lopencv_imgproc\
-     -lopencv_features2d\
-     -lopencv_calib3d
-
+     -lopencv_core \
+     -lopencv_highgui \
+     -lopencv_video \
+     -lopencv_imgproc \
+     -lopencv_features2d \
+     -lopencv_calib3d \
+     -llapack \
+     -lgomp

@@ -49,6 +49,17 @@ void CParameters::Set(const char* name, double val) {
 
 }
 
+void CParameters::Set(const char* name, const vector<int>& val) {
+
+    map<string,vector<int> >::iterator it = m_ints_params.find(name);
+
+    if(it!=m_ints_params.end())
+        m_ints_params.erase(it);
+
+    m_ints_params.insert(pair<string,vector<int> >(name,val));
+
+}
+
 string CParameters::GetStringParameter(const char* name) {
 
 	string param;
@@ -130,6 +141,43 @@ double CParameters::GetDoubleParameter(const char* name) {
 
 }
 
+vector<int> CParameters::GetIntsParameter(const char* name) {
+
+    vector<int> param;
+
+    try {
+
+        if(m_ints_params.find(name)==m_ints_params.end())
+            throw name;
+        else
+            param = m_ints_params[name];
+
+    }
+    catch(const char* str) {
+
+        cout << "ERROR: Parameter " << str << " was not loaded.";
+        cout << "Enter list of integers. Stop input by entering -1:" << endl;
+
+        int input;
+
+        while(true) {
+
+            cin >> input;
+
+            if(input==-1)
+              break;
+            else
+              param.push_back(input);
+
+        }
+
+        Set(name,param);
+
+    }
+
+    return param;
+
+}
 
 bool CParameters::SaveToFile(const char* filename) {
 
@@ -152,77 +200,97 @@ bool CParameters::SaveToFile(const char* filename) {
 
 bool  CParameters::OpenFromFile(const char* filename) {
 
-	ifstream in(filename);
+    ifstream in(filename);
 
-	if(!in) {
+    if(!in) {
 
-		cout << "ERROR: Could not open " << filename << "." << endl;
-		return 1;
+        cout << "ERROR: Could not open " << filename << "." << endl;
+        return 1;
 
-	 }
+    }
 
-	 while (in.good()) {
+    while (in.good()) {
 
-		 string name;
-		 int type;
+        string name;
+        int type;
 
-		 in >> name;
-		 in >> type;
+        in >> name;
+        in >> type;
 
-		 switch (type) {
+        switch (type) {
 
-		 case 1:
+        case 1:
 
-		 	 {
+        {
 
-		 	 string val;
-		 	 in >> val;
+            string val;
+            in >> val;
 
-		 	 m_string_params.insert(pair<string,string>(name,val));
+            m_string_params.insert(pair<string,string>(name,val));
 
-			}
+            break;
 
-		 	 break;
+        }
 
-		 case 2:
+        case 2:
 
-		 	 {
+        {
 
-		 	 int val;
-		 	 in >> val;
+            int val;
+            in >> val;
 
-		 	 m_int_params.insert(pair<string,int>(name,val));
+            m_int_params.insert(pair<string,int>(name,val));
 
-		 	 }
+            break;
 
-		 	 break;
+        }
 
-		 case 3:
+        case 3:
 
-		 	 {
+        {
 
-			 double val;
-		 	 in >> val;
+            double val;
+            in >> val;
 
-		 	 m_double_params.insert(pair<string,double>(name,val));
+            m_double_params.insert(pair<string,double>(name,val));
 
-		 	 }
+            break;
 
-		 	 break;
+        }
 
-		 default:
+        case 4:
 
-			 break;
+        {
 
-		 }
+            // read size
+            size_t n;
+            in >> n;
 
-	 }
+            vector<int> ints;
 
-	in.close();
+            for(size_t i=0; i<n; i++) {
 
-	//cout << (*this);
+                int val;
+                in >> val;
+                ints.push_back(val);
 
-	return 0;
+            }
+
+            m_ints_params.insert(pair<string,vector<int> >(name,ints));
+
+        }
+
+        default:
+
+            break;
+
+        }
+
+    }
+
+    in.close();
+
+    return 0;
 
 }
 
@@ -242,6 +310,19 @@ ostream& operator<< (ostream& os, CParameters& x) {
 
 	for(it3=x.m_double_params.begin(); it3!=x.m_double_params.end(); it3++)
 		os << it3->first << " " << 3 << " " << it3->second << endl;
+
+    map<string,vector<int> >::iterator it4;
+
+    for(it4=x.m_ints_params.begin(); it4!=x.m_ints_params.end(); it4++) {
+
+        os << it4->first << " " << 4 << " " << it4->second.size();
+
+        for(size_t i=0; i<it4->second.size(); i++)
+            os << " " << it4->second.at(i);
+
+        os << endl;
+
+    }
 
 	return os;
 

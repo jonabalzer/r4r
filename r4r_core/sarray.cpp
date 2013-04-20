@@ -142,7 +142,7 @@ T CSparseArray<T>::Get(size_t i, size_t j) {
 	if(m_transpose)
 		Transpose(i,j);
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 
@@ -165,7 +165,7 @@ T CSparseArray<T>::Get(size_t i, size_t j) {
 template <class T>
 std::map<size_t,T> CSparseArray<T>::GetRow(size_t i) {
 
-	assert(i>=0 && i<m_nrows);
+    assert(i<m_nrows);
 
 	map<size_t,T> row;
 

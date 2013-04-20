@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string>
 #include <map>
+#include <vector>
 
 namespace R4R {
 
@@ -24,17 +25,13 @@ class CParameters {
 
 public:
 
-	std::map<std::string,int> m_int_params;					//!< container for integer parameters
-	std::map<std::string,double> m_double_params;			//!< container for real parameters
-	std::map<std::string,std::string> m_string_params;		//!< container for string parameters
-
-	//! Read parameters from file.
+    //! Read parameters from file.
 	bool OpenFromFile(const char* filename);
 
 	//! Write parameters to file.
 	bool SaveToFile(const char* filename);
 
-	// ! Writes all parameters to an output stream.
+    //! Writes all parameters to an output stream.
 	friend std::ostream& operator << (std::ostream& os, CParameters& x);
 
 	//! Sets a string parameter.
@@ -44,7 +41,10 @@ public:
 	void Set(const char* name, int val);
 
 	//! Sets a float parameter.
-	void Set(const char* name, double val);
+    void Set(const char* name, double val);
+
+    //! Sets an integer vector parameter.
+    void Set(const char* name, const std::vector<int>& val);
 
 	//! Gets a string parameter.
 	std::string GetStringParameter(const char* name);
@@ -54,6 +54,16 @@ public:
 
 	//! Gets a float parameter.
 	double GetDoubleParameter(const char* name);
+
+    //! Gets an integer vector parameter.
+    std::vector<int> GetIntsParameter(const char* name);
+
+private:
+
+    std::map<std::string,int> m_int_params;					//!< container for integer parameters
+    std::map<std::string,double> m_double_params;			//!< container for real parameters
+    std::map<std::string,std::string> m_string_params;		//!< container for string parameters
+    std::map<std::string,std::vector<int> > m_ints_params;  //!< container for series of integers
 
 };
 

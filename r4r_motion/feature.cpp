@@ -57,7 +57,7 @@ ostream& operator<<(ostream& os, CFeature& x) {
     os << "Quality: " << x.m_quality << endl;
 
     // number of descriptors that follow
-    os << "Number of descriptors: " << x.NoDescriptors() << endl;
+    os << "Number of descriptors: " << x.NoDescriptors();
 
     return os;
 
@@ -86,8 +86,36 @@ ofstream& operator<<(ofstream& os, CFeature& x) {
     for(it = x.m_descriptors.begin(); it!=x.m_descriptors.end(); it++) {
 
 		os << it->first.c_str() << endl;
-		it->second->Write(os);
-		os << endl;
+
+        // write size
+        os << it->second->NRows() << " ";
+        os << it->second->NCols() << endl;
+
+        if(it->second->NRows()==0 || it->second->NCols()==0) {
+            os << 0 << endl;
+        }
+        else {
+
+            // write type
+            ETYPE type = it->second->GetType();
+            os << type << endl;
+
+            // access to data
+            void* data = it->second->GetData();
+
+            // write data depending on number of bytes
+            if(type==B1U || type == C1U || type == C1S)
+                os.write((char*)(data),sizeof(char)*it->second->NElems());
+            else if(type==S2U || type == S2S)
+                os.write((char*)(data),sizeof(short)*it->second->NElems());
+            else if(type==I4S || type==I4U || type==F4S)
+                os.write((char*)(data),sizeof(int)*it->second->NElems());
+            else if(type==L8S || type== L8U || type==D8S)
+                os.write((char*)(data),sizeof(double)*it->second->NElems());
+
+            os << endl;
+
+        }
 
 	}
 
@@ -121,10 +149,98 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
         string name;
         getline(is,name);
 
-        // read all as floats
-        CDescriptor<vecf>* pdesc = new CDescriptor<vecf>();
-        pdesc->Read(is);
-        x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+        // get size of descriptor
+        size_t nrows, ncols;
+        is >> nrows;
+        is >> ncols;
+        is.get();
+
+        // read type, TODO: map type name to type
+        int type;
+        is >> type;
+        is.get();
+
+        if(type) {
+
+            // treat different data types separately
+            switch(type) {
+
+            case B1U:
+            {
+
+                CDenseArray<bool> container(nrows,ncols);
+                is.read((char*)container.Data().get(),sizeof(bool)*container.NElems());
+
+                CDescriptor<CDenseArray<bool> >* pdesc = new CDescriptor<CDenseArray<bool> >(container);
+                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+                break;
+
+            }
+
+            case I4S:
+            {
+
+                CDenseArray<int> container(nrows,ncols);
+                is.read((char*)container.Data().get(),sizeof(int)*container.NElems());
+
+                CDescriptor<CDenseArray<int> >* pdesc = new CDescriptor<CDenseArray<int> >(container);
+                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+                break;
+
+            }
+
+            case F4S:
+            {
+
+                CDenseArray<float> container(nrows,ncols);
+                is.read((char*)container.Data().get(),sizeof(float)*container.NElems());
+
+                CDescriptor<CDenseArray<float> >* pdesc = new CDescriptor<CDenseArray<float> >(container);
+                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+                break;
+
+            }
+
+            case L8U:
+            {
+
+                CDenseArray<size_t> container(nrows,ncols);
+                is.read((char*)container.Data().get(),sizeof(size_t)*container.NElems());
+
+                CDescriptor<CDenseArray<size_t> >* pdesc = new CDescriptor<CDenseArray<size_t> >(container);
+                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+                break;
+
+            }
+
+            case D8S:
+            {
+
+                CDenseArray<double> container(nrows,ncols);
+                is.read((char*)container.Data().get(),sizeof(double)*container.NElems());
+
+                CDescriptor<CDenseArray<double> >* pdesc = new CDescriptor<CDenseArray<double> >(container);
+                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+                break;
+
+            }
+
+
+            default:
+                break;
+
+
+            }
+
+            is.get();
+
+
+        }
 
 	}
 
@@ -277,7 +393,7 @@ bool CFeature::SaveToFile(const char* filename, list<CFeature>& features) {
 
 }
 
-bool CFeature::OpenFromFile(const char* filename, std::list<CFeature>& features, int type) {
+bool CFeature::OpenFromFile(const char* filename, std::list<CFeature>& features) {
 
     ifstream in(filename);
 
@@ -301,46 +417,7 @@ bool CFeature::OpenFromFile(const char* filename, std::list<CFeature>& features,
 
         CFeature x;
 
-        // read location
-        in >> x.m_location(0);
-        in >> x.m_location(1);
-        in.get();
-
-        // scale
-        in >> x.m_scale;
-        in.get();
-
-        // read quality
-        in >> x.m_quality;
-        in.get();
-
-        // read number of descriptors
-        size_t nod;
-        in >> nod;
-        in.get();
-
-        for(size_t j=0; j<nod; j++) {
-
-            // name
-            string name;
-            getline(in,name);
-
-            // read all as floats, FIXME: add other formats
-            switch(type) {
-
-            case F4S:
-            {
-
-                CDescriptor<vecf>* pdesc = new CDescriptor<vecf>();
-                pdesc->Read(in);
-                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
-
-                break;
-
-            }
-            }
-
-        }
+        in >> x;
 
         features.push_back(x);
 
@@ -348,103 +425,173 @@ bool CFeature::OpenFromFile(const char* filename, std::list<CFeature>& features,
 
     in.close();
 
-}
-
-bool CFeature::SaveDescriptors(const char* filename, list<CFeature>& features, const char* name, const char* comment, int type, size_t t0) {
-
-    string fndata;
-
-    // check if file exists
-    ifstream in(filename);
-    bool exists = in.good();
-
-    if(exists) {
-
-        string comment;
-        getline(in,comment);
-        getline(in,fndata);
-
-    }
-
-    in.close();
-
-    // open header file
-    ofstream headers(filename,ios_base::app);
-
-    if(!headers.is_open()) {
-
-        cout << "ERROR: Could not open file." << endl;
-        return 1;
-
-    }
-
-    // if the file is empty, create header
-    if(!exists) {
-
-        headers << "# created by r4r_motion" << endl;
-
-        stringstream ss;
-        ss << filename << ".dat";
-        fndata = ss.str();
-        headers << fndata;
-
-    }
-
-    list<CFeature>::iterator it;
-
-    for(it = features.begin(); it!=features.end(); it++) {
-
-        // check if descriptor exists
-        if(it->HasDescriptor(name)) {
-
-            // break line first
-            headers << endl;
-
-            // create header and write it
-            CDescriptorFileHeader header(*it);
-            header.SetDescriptor(*it,name,type);
-            header.SetTime(t0);
-            header.SetComment(comment);
-
-            headers << header;
-        }
-
-
-    }
-
-    headers.close();
-
-    // now write data
-    ofstream data(fndata,ios_base::app);
-
-    if(!data.is_open()) {
-
-        cout << "ERROR: Could not open file." << endl;
-        return 1;
-
-    }
-
-    for(it = features.begin(); it!=features.end(); it++) {
-
-
-        if(it->HasDescriptor(name)) {
-
-            CAbstractDescriptor* padesc = it->GetDescriptor(name).get();
-            CDescriptor<vecf>* pdesc = static_cast<CDescriptor<vecf>*>(padesc);              // make distinction between data types
-            vecf& container = pdesc->Get();
-            data.write((char*)(container.Data()),sizeof(float)*container.NElems());
-
-        }
-
-    }
-
-    data.close();
-
     return 0;
 
 }
 
-float* CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHeader>& headers) {
+//bool CFeature::SaveDescriptors(const char* filename, list<CFeature>& features, const char* name, const char* comment, ETYPE type, size_t t0) {
+
+//    string fndata;
+
+//    // check if file exists
+//    ifstream in(filename);
+//    bool exists = in.good();
+
+//    if(exists) {
+
+//        string usercomment;
+//        getline(in,usercomment);
+//        getline(in,fndata);
+
+//    }
+
+//    in.close();
+
+//    // open header file
+//    ofstream headers(filename,ios_base::app);
+
+//    if(!headers.is_open()) {
+
+//        cout << "ERROR: Could not open file." << endl;
+//        return 1;
+
+//    }
+
+//    // if the file is empty, create header
+//    if(!exists) {
+
+//        headers << "# created by r4r_motion" << endl;
+
+//        stringstream ss;
+//        ss << filename << ".dat";
+//        fndata = ss.str();
+//        headers << fndata;
+
+//    }
+
+//    list<CFeature>::iterator it;
+
+//    for(it = features.begin(); it!=features.end(); it++) {
+
+//        // check if descriptor exists
+//        if(it->HasDescriptor(name)) {
+
+//            // break line first
+//            headers << endl;
+
+//            // create header and write it
+//            CDescriptorFileHeader header(*it);      // sets feature properties
+//            header.SetDescriptor(*it,name);         // sets descriptor props: size, name, and type
+//            header.SetComment(comment);             // set comments, combines object description and tracklet hash
+
+//            headers << header;
+
+//        }
+
+//    }
+
+//    headers.close();
+
+//    // now write data
+//    ofstream data(fndata,ios_base::app);
+
+//    if(!data.is_open()) {
+
+//        cout << "ERROR: Could not open file." << endl;
+//        return 1;
+
+//    }
+
+//    for(it = features.begin(); it!=features.end(); it++) {
+
+//        if(it->HasDescriptor(name)) {
+
+//            CAbstractDescriptor* padesc = it->GetDescriptor(name).get();
+//            CDescriptor<vecf>* pdesc = static_cast<CDescriptor<vecf>*>(padesc);              // make distinction between data types
+//            vecf& container = pdesc->Get();
+//            data.write((char*)(container.Data()),sizeof(float)*container.NElems());
+
+//        }
+
+//    }
+
+//    data.close();
+
+//    return 0;
+
+//}
+
+//float* CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHeader>& headers) {
+
+//    string fndata;
+
+//    // check if file exists
+//    ifstream in(filename);
+
+//    if(!in.is_open()) {
+
+//        cout << "ERROR: Could not open file." << endl;
+//        return NULL;
+
+//    }
+
+//    if(in.good()) {
+
+//        string comment;
+//        getline(in,comment);
+//        getline(in,fndata);
+
+//    }
+
+//    // read headers
+//    size_t nelems, counter;
+//    counter = 0;
+//    nelems = 0;
+
+//    while(in.good()) {
+
+//        CDescriptorFileHeader header;
+//        in >> header;
+//        in.get();
+//        headers.push_back(header);
+
+//        nelems += header.NElems();                      // we assume that the containers are floats
+//        counter ++;
+
+//    }
+
+//    in.close();
+
+//    ifstream ind(fndata.c_str());
+
+//    if(!ind.is_open()) {
+
+//        cout << "ERROR: Could not open file." << endl;
+//        return NULL;
+
+//    }
+
+//    // create buffer or memory map
+//    float* data = new float[nelems];
+
+//    // read into buffer
+//    ind.read((char*)data,sizeof(float)*nelems);
+
+//    ind.close();
+
+//    cout << "Read " << counter << " descriptors." << endl;
+
+//    return data;
+
+//}
+
+//bool CFeature::LoadDescriptors(const char *filename, std::vector<CDescriptorFileHeader>& headers) { //, void *data, ETYPE &type) {
+
+//    return 0;
+//}
+
+
+void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFileHeader>& headers, ETYPE& type, bool preview) {
 
     string fndata;
 
@@ -454,7 +601,7 @@ float* CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHea
     if(!in.is_open()) {
 
         cout << "ERROR: Could not open file." << endl;
-        return NULL;
+        return nullptr;
 
     }
 
@@ -466,39 +613,138 @@ float* CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHea
 
     }
 
-    // read headers
-    size_t nelems, counter;
+    // read first header
+    size_t nelems0, nelems, counter;
+    int type0;
+
     counter = 0;
     nelems = 0;
 
-    while(in.good()) {
+    if(in.good()) {
 
         CDescriptorFileHeader header;
         in >> header;
         in.get();
         headers.push_back(header);
 
-        nelems += header.NElems();                      // we assume that the containers are floats
+        nelems = header.NElems();
+        nelems0 = nelems;
+        type0 = header.m_type;
+
+        counter ++;
+
+    }
+
+    while(in.good()) {
+
+        CDescriptorFileHeader header;
+        in >> header;
+        in.get();
+
+        if(header.NElems()!=nelems0 || header.m_type != type0) {
+
+            cout << "ERROR: Inconsitent size or type." << endl;
+            return nullptr;
+
+        }
+
+        headers.push_back(header);
+        nelems += header.NElems();
         counter ++;
 
     }
 
     in.close();
 
+    if(preview)
+        return nullptr;
+
     ifstream ind(fndata.c_str());
 
     if(!ind.is_open()) {
 
         cout << "ERROR: Could not open file." << endl;
-        return NULL;
+        return nullptr;
 
     }
 
     // create buffer or memory map
-    float* data = new float[nelems];
+    void* data;
 
-    // read into buffer
-    ind.read((char*)data,sizeof(float)*nelems);
+    switch(type0) {
+
+    case B1U:
+    {
+
+        type = B1U;
+
+        data = new bool[nelems];
+
+        // read into buffer
+        ind.read((char*)data,sizeof(bool)*nelems);
+
+        break;
+
+    }
+
+    case I4S:
+    {
+
+        type = I4S;
+
+        data = new int[nelems];
+
+        ind.read((char*)data,sizeof(int)*nelems);
+
+        break;
+
+    }
+
+
+    case F4S:
+    {
+
+        type = F4S;
+
+        data = new float[nelems];
+
+        ind.read((char*)data,sizeof(float)*nelems);
+
+        break;
+
+    }
+
+    case L8U:
+    {
+
+        type = L8U;
+
+        data = new size_t[nelems];
+
+        ind.read((char*)data,sizeof(size_t)*nelems);
+
+        break;
+
+    }
+
+    case D8S:
+    {
+
+        type = D8S;
+
+        data = new double[nelems];
+
+        ind.read((char*)data,sizeof(double)*nelems);
+
+        break;
+
+    }
+
+    default:
+        break;
+
+
+    }
 
     ind.close();
 
@@ -507,7 +753,6 @@ float* CFeature::LoadDescriptors(const char* filename, vector<CDescriptorFileHea
     return data;
 
 }
-
 
 }
 
