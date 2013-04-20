@@ -15,6 +15,8 @@
 #include <xmmintrin.h>
 #include <malloc.h>
 
+#include "kernels.h"
+
 namespace R4R {
 
 template<class T>
@@ -84,13 +86,16 @@ public:
 	void Transpose();
 
     //! Computes \f$l_2\f$-norm.
-	T Norm2() const;
+    double Norm2() const;
 
 	//! Computes \f$l_1\f$-norm.
-	T Norm1() const;
+    double Norm1() const;
 
 	//! Computes \f$l_p\f$-norm.
-	T Norm(size_t p) const;
+    double Norm(size_t p) const;
+
+    //! Computes the Hamming norm of a vector. Only implemented for Boolean type.
+    double HammingNorm();
 
 	//! Non-destructive element access.
 	T Get(size_t i, size_t j) const;
@@ -99,7 +104,7 @@ public:
     void Set(std::shared_ptr<T> data);
 
 	//! Returns a column.
-    CDenseVector<T>& GetColumn(size_t j) const;
+    CDenseVector<T> GetColumn(size_t j) const;
 
 	//! Returns a column.
 	void SetColumn(size_t j, const CDenseVector<T>& col);
@@ -138,7 +143,10 @@ public:
     CDenseVector<T> operator*(const CDenseVector<T>& vector) const;
 
 	//! Computes the standard inner product.
-    static T InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
+    static double InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
+
+    //! Computes the inner product w.r.t. to a kernel.
+    static double InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y, CMercerKernel<T>& kernel);
 
 	//! Computes tensor product of two matrices.
     static CDenseArray<T> KroneckerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
@@ -224,9 +232,6 @@ public:
 	//! Returns the number of bytes of the data type.
 	size_t SizeOf() { return sizeof(T); };
 
-    //! Computes the Hamming norm of a vector. Only implemented for Boolean type.
-    double HammingNorm();
-
     //! Returns the numerical type.
     ETYPE GetType();
 
@@ -251,17 +256,20 @@ public:
 	//! Standard constructor.
 	CDenseVector();
 
-	//! Inherited constructor.
+    /*! \brief Inherited constructor.
+     *
+     * \details Use this constructor to explicitly create row vectors.
+     */
     CDenseVector(size_t nrows, size_t ncols);
 
-	//! Parametized constructor.
+    //! Constructs a column vector length \f$n\f$.
 	CDenseVector(size_t n);
 
 	//! Copy constructor.
 	CDenseVector(const CDenseVector& vector);
 
-	//! Copy constructor.
-    CDenseVector(size_t n, std::shared_ptr<T> data, bool row = false);
+    //! Constructs a column vector length \f$n\f$ from the given data.
+    CDenseVector(size_t n, std::shared_ptr<T> data);
 
     //! Assignment operator.
     CDenseVector<T> operator=(const CDenseVector<T>& array);

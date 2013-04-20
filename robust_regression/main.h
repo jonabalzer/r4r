@@ -1,17 +1,14 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-
 #include <iostream>
 #include <fstream>
 #include <math.h>
-
 
 using namespace std;
 
 #include "lm.h"
 using namespace R4R;
-
 
 class CRosenbrockFunction:public CLeastSquaresProblem<mat> {
 

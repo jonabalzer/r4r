@@ -27,7 +27,8 @@ SOURCES += \
     cam.cpp \
     pegasos.cpp \
     rutils.cpp \
-    kernels.cpp
+    kernels.cpp \
+    splinecurve.cpp
 
 HEADERS += \
     types.h \
@@ -46,7 +47,8 @@ HEADERS += \
     cam.h \
     pegasos.h \
     rutils.h \
-    kernels.h
+    kernels.h \
+    splinecurve.h
 
 LIBS += -L/usr/local/lib \
      -lopencv_core \

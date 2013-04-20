@@ -26,6 +26,9 @@ template class CDescriptor<mat>;
 template class CDescriptor<matf>;
 template class CDescriptor<vec>;
 template class CDescriptor<vecf>;
+template class CDescriptor<CDenseArray<int> >;
+template class CDescriptor<CDenseArray<bool> >;
+template class CDescriptor<CDenseArray<size_t> >;
 template class CDescriptor<CDenseVector<bool> >;
 
 

@@ -14,23 +14,22 @@ int main()
 {
 
     mat x(3,3);
+    x.Eye();
+    x(0,1)=2;
+    x(1,0)=3;
+    cout << x << endl << endl;
 
-    cout << x.NCols() << endl;
 
-    cout << x.NRows() << endl;
-    x.RandN(0,1);
-    cout << x << endl;
+    vec row = x.GetRow(0);
+cout << row << endl;
 
-    mat y(3,3);
+    vec z(3000);
+    z.Ones();
 
-    y.Eye();
-    cout << y << endl;
+    cout << z.Sum() << endl;
 
-    mat z = y*x;
+    //cout << col << endl;
 
-    cout << z << endl;
-    //double n = z.Norm2();
-    //cout << z << endl;
 
 
     //}

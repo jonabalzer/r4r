@@ -258,7 +258,6 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
     cout << "Time: " << t1-t0 << endl;
 #endif
 
-
     cout << comparison << endl;
 
     _mm_free(y);
@@ -269,6 +268,10 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 }
 
 template class CMercerKernel<float>;
+template class CMercerKernel<double>;
+template class CMercerKernel<bool>;
+template class CMercerKernel<int>;
+template class CMercerKernel<size_t>;
 
 template<class T>
 double CChiSquaredKernel<T>::Evaluate(T* x, T* y) {
@@ -342,6 +345,10 @@ double CChiSquaredKernel<float>::Evaluate(float* x, float* y) {
 }
 
 template class CChiSquaredKernel<float>;
+template class CChiSquaredKernel<double>;
+template class CChiSquaredKernel<int>;
+template class CChiSquaredKernel<size_t>;
+template class CChiSquaredKernel<bool>;
 
 
 template <class T>
@@ -388,6 +395,10 @@ double CIntersectionKernel<float>::Evaluate(float* x, float* y) {
 }
 
 template class CIntersectionKernel<float>;
+template class CIntersectionKernel<double>;
+template class CIntersectionKernel<bool>;
+template class CIntersectionKernel<int>;
+template class CIntersectionKernel<size_t>;
 
 template <class T>
 double CHellingerKernel<T>::Evaluate(T* x, T* y) {
@@ -417,9 +428,7 @@ double CHellingerKernel<float>::Evaluate(float* x, float* y) {
     float zero = 0;
     __m128 sum = _mm_load1_ps(&zero);
 
-    const int mask = 255;
-
-    for(size_t i=0; i<m_offset/4; i++) {
+    for(int i=0; i<m_offset/4; i++) {
 
         __m128 temp = _mm_mul_ps(px[i],py[i]);
         temp = _mm_sqrt_ps(temp);
@@ -441,6 +450,10 @@ double CHellingerKernel<float>::Evaluate(float* x, float* y) {
 }
 
 template class CHellingerKernel<float>;
+template class CHellingerKernel<double>;
+template class CHellingerKernel<int>;
+template class CHellingerKernel<bool>;
+template class CHellingerKernel<size_t>;
 
 template <class T>
 unsigned int CBitwiseHammingKernel<T>::m_lut[256] = {   0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3,
@@ -457,7 +470,7 @@ unsigned int CBitwiseHammingKernel<T>::m_lut[256] = {   0, 1, 1, 2, 1, 2, 2, 3, 
                                                         5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8, };
 
 template class CBitwiseHammingKernel<unsigned char>;
-template class CBitwiseHammingKernel<float>;
+//template class CBitwiseHammingKernel<float>;
 template class CHammingKernel<int>;
 
 template <class T>
@@ -472,6 +485,10 @@ double CRBFKernel<T>::Evaluate(T *x, T *y) {
 }
 
 template class CRBFKernel<float>;
+template class CRBFKernel<double>;
+template class CRBFKernel<bool>;
+template class CRBFKernel<size_t>;
+template class CRBFKernel<int>;
 
 template <class T>
 double CPolynomialKernel<T>::Evaluate(T*x , T*y) {
@@ -483,6 +500,10 @@ double CPolynomialKernel<T>::Evaluate(T*x , T*y) {
 }
 
 template class CPolynomialKernel<float>;
+template class CPolynomialKernel<double>;
+template class CPolynomialKernel<int>;
+template class CPolynomialKernel<bool>;
+template class CPolynomialKernel<size_t>;
 
 template <class T>
 double COneSidedSparseKernel<T>::Evaluate(T *x, int* indices, T* y) {

@@ -53,7 +53,7 @@ CDenseArray<T>::CDenseArray(const CDenseArray& array):
 	m_nrows(array.m_nrows),
 	m_ncols(array.m_ncols),
     m_transpose(array.m_transpose),
-    m_data(array.m_data){
+    m_data(array.m_data) {
 
 }
 
@@ -157,8 +157,6 @@ void CDenseArray<double>::Rand(double min, double max) {
     }
 
 }
-
-
 
 template <>
 void CDenseArray<int>::Rand(int min, int max) {
@@ -555,16 +553,13 @@ void CDenseArray<T>::Transpose() {
 }
 
 template <class T>
-T CDenseArray<T>::Norm2() const {
+double CDenseArray<T>::Norm2() const {
 
-	double sum = 0;
+    CMercerKernel<T> kernel(m_nrows*m_ncols);
 
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
-        sum += pdata[i]*pdata[i];
-
-	return sqrt(sum);
+    return kernel.ComputeKernelNorm(pdata);
 
 }
 
@@ -583,27 +578,25 @@ double CDenseArray<bool>::HammingNorm() {
 }
 
 template <class T>
-T CDenseArray<T>::Norm1() const {
+double CDenseArray<T>::Norm1() const {
 
-	double sum = 0;
+    CHellingerKernel<T> kernel(m_nrows*m_ncols);
 
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
-        sum += fabs(pdata[i]);
+    return kernel.ComputeKernelNorm(pdata);
 
-	return sum;
 }
 
 template <class T>
-T CDenseArray<T>::Norm(size_t p) const {
+double CDenseArray<T>::Norm(size_t p) const {
 
 	double sum = 0;
 
     T* pdata = m_data.get();
 
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
-        sum += pow(fabs(pdata[i]),p);
+        sum += pow(fabs((double)pdata[i]),p);
 
 	return sum;
 
@@ -650,12 +643,17 @@ T CDenseArray<T>::Get(size_t i, size_t j) const {
 }
 
 template <class T>
-CDenseVector<T>& CDenseArray<T>::GetColumn(size_t j) const {
+CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {
 
-	CDenseVector<T> col(m_nrows);
+    if(m_transpose)
+        return GetRow(j);
 
-	for(size_t i=0; i<m_nrows; i++)
-		col(i) = Get(i,j);
+    // create shared pointer to col data
+    T* pdata = m_data.get() + j*m_nrows;
+    shared_ptr<T> colptr(m_data,m_data.get()  + j*m_nrows);
+
+    // create column view
+    CDenseVector<T> col(m_nrows,colptr);
 
 	return col;
 
@@ -674,7 +672,12 @@ void CDenseArray<T>::SetColumn(size_t j, const CDenseVector<T>& col) {
 template <class T>
 CDenseVector<T> CDenseArray<T>::GetRow(size_t i) const {
 
-	CDenseVector<T> row(m_ncols,true);
+    if(m_transpose)
+        return GetColumn(i);
+
+    // since matrix is stored in col-major order, we have to make a hard-copy
+    CDenseVector<T> row(m_ncols);
+    row.Transpose();
 
 	for(size_t j=0; j<m_ncols; j++)
 		row(j) = Get(i,j);
@@ -696,8 +699,6 @@ T& CDenseArray<T>::operator()(size_t i, size_t j) {
         return pdata[m_nrows*i + j];				// m_nrows is replaced by m_ncols in transpose method
 
 }
-
-
 
 template <class T>
 CDenseArray<T> CDenseArray<T>::operator+(const T& scalar) const {
@@ -770,20 +771,29 @@ CDenseArray<T> CDenseArray<T>::operator^(const CDenseArray& array) const {
 
 }
 
-
 template <class T>
-T CDenseArray<T>::InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y) {
+double CDenseArray<T>::InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y) {
 
 	assert(x.m_nrows==y.m_nrows && x.m_ncols==y.m_ncols);
 
-	T sum = 0;
     T* px = x.m_data.get();
     T* py = y.m_data.get();
 
-	for(size_t i=0; i<x.m_nrows*x.m_ncols; i++)
-        sum += px[i]*py[i];
+    CMercerKernel<T> kernel(x.m_nrows*x.m_ncols);
 
-	return sum;
+    return kernel.Evaluate(px,py);
+
+}
+
+template <class T>
+double CDenseArray<T>::InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y, CMercerKernel<T>& kernel) {
+
+    assert(x.m_nrows==y.m_nrows && x.m_ncols==y.m_ncols);
+
+    T* px = x.m_data.get();
+    T* py = y.m_data.get();
+
+    return kernel.Evaluate(px,py);
 
 }
 
@@ -1017,8 +1027,8 @@ T CDenseArray<T>::Max() const {
 template class CDenseArray<float>;
 template class CDenseArray<double>;
 template class CDenseArray<int>;
-//template class CDenseArray<size_t>;
-//template class CDenseArray<bool>;
+template class CDenseArray<size_t>;
+template class CDenseArray<bool>;
 
 template ostream& operator<< (ostream& os, const CDenseArray<double>& x);
 template istream& operator>> (istream& is, CDenseArray<double>& x);
@@ -1055,14 +1065,24 @@ CDenseVector<T>::CDenseVector(size_t nrows, size_t ncols):
 
 template <class T>
 CDenseVector<T>::CDenseVector(const CDenseVector& vector):
-	CDenseArray<T>::CDenseArray(vector) {}
+    CDenseArray<T>::CDenseArray(vector) {}
 
 template <class T>
-CDenseVector<T>::CDenseVector(size_t n, shared_ptr<T> data, bool row):
-	CDenseArray<T>::CDenseArray(n,1,data){
+CDenseVector<T>::CDenseVector(size_t n, shared_ptr<T> data):
+	CDenseArray<T>::CDenseArray(n,1,data){}
 
-	if(row)
-		this->Transpose();
+template <class T>
+CDenseVector<T> CDenseVector<T>::operator=(const CDenseVector<T>& vector) {
+
+    if(this==&vector)
+        return *this;
+
+    m_nrows = vector.m_nrows;
+    m_ncols = vector.m_ncols;
+    m_transpose = vector.m_transpose;
+    m_data = vector.m_data;
+
+    return *this;
 
 }
 
@@ -1114,9 +1134,6 @@ CDenseVector<T> CDenseVector<T>::operator+(const T& scalar) const {
 	return result;
 
 }
-
-
-
 
 template <class T>
 CDenseVector<T> CDenseVector<T>::operator+(const CDenseVector<T>& vector) const {
@@ -1200,8 +1217,8 @@ void CDenseVector<T>::Sort() {
 template class CDenseVector<double>;
 template class CDenseVector<float>;
 template class CDenseVector<int>;
-//template class CDenseVector<size_t>;
-//template class CDenseVector<bool>;
+template class CDenseVector<size_t>;
+template class CDenseVector<bool>;
 
 
 template <class T>
