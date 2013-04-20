@@ -25,6 +25,7 @@ template class CPreconditioner<CSparseBandedArray<double>,CDenseArray<double>,do
 template class CPreconditioner<CSparseArray<double>,CDenseArray<double>,double>;
 template class CPreconditioner<CDenseArray<double>,CDenseArray<double>,double>;
 template class CPreconditioner<CDenseArray<double>,CDenseVector<double>,double>;
+template class CPreconditioner<CDenseArray<float>,CDenseVector<float>,float>;
 template class CPreconditioner<CSparseArray<double>,CDenseVector<double>,double>;
 
 template<class Matrix,class Vector,class Scalar>

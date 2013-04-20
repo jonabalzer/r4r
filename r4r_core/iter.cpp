@@ -391,6 +391,7 @@ Scalar CIterativeSolver<Matrix,Vector,Scalar>::LSQR(Matrix& A, Vector& b, Vector
 
 template class  CIterativeSolver<CDenseArray<double>,CDenseArray<double>,double>;
 template class  CIterativeSolver<CDenseArray<double>,CDenseVector<double>,double>;
+template class  CIterativeSolver<CDenseArray<float>,CDenseVector<float>,float>;
 template class  CIterativeSolver<CSparseBandedArray<double>,CDenseArray<double>,double>;
 template class  CIterativeSolver<CSparseArray<double>,CDenseArray<double>,double>;
 template class  CIterativeSolver<CSparseArray<double>,CDenseVector<double>,double>;
