@@ -1,7 +1,7 @@
 TEMPLATE = app
 CONFIG += console
 CONFIG -= qt
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++0x -fopenmp -msse -msse2 -msse4
 
 SOURCES += main.cpp
 
@@ -23,5 +23,6 @@ LIBS += -L/usr/local/lib \
      -lopencv_video\
      -lopencv_imgproc\
      -lopencv_features2d\
-     -lopencv_calib3d
+     -lopencv_calib3d \
+     -lgomp
 }

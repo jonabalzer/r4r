@@ -11,10 +11,20 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <memory>
+#include <xmmintrin.h>
+#include <malloc.h>
 
 namespace R4R {
 
+template<class T>
+class  CDenseMatrixDeallocator {
 
+public:
+
+    void operator()(T* p) const { _mm_free(p); }
+
+};
 
 enum ETYPE {  NA = 0,
               B1U = 1,
@@ -219,7 +229,8 @@ protected:
 	size_t m_nrows;				//!< number of rows
 	size_t m_ncols;				//!< number of cols
 	bool m_transpose;			//!< transpose flag
-	T* m_data;					//!< container that holds the array data
+    shared_ptr<T> m_data;   	//!< container that holds the array data
+
 };
 
 // template specializations for accessing numerical type
@@ -228,8 +239,6 @@ protected:
 //template<> class CDenseArray<size_t> { public: ETYPE GetType(); };
 //template<> class CDenseArray<float> { public: ETYPE GetType(); };
 //template<> class CDenseArray<double> { public: ETYPE GetType(); };
-
-
 
 /*! \brief dense vector
  *

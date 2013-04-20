@@ -29,7 +29,7 @@ CDenseArray<T>::CDenseArray():
 	m_nrows(0),
 	m_ncols(0),
 	m_transpose(false),
-	m_data(0) {
+    m_data() {
 
 }
 
@@ -37,11 +37,10 @@ template <class T>
 CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, T val):
 	m_nrows(nrows),
 	m_ncols(ncols),
-	m_transpose(false) {
+    m_transpose(false),
+    m_data(_mm_malloc(nrows*ncols*sizeof(T),16),CDenseMatrixDeallocator()){
 
-	m_data = new T[nrows*ncols];
-
-	fill_n(m_data,nrows*ncols,val);
+    fill_n(m_data.get(),nrows*ncols,val);
 
 }
 
@@ -51,9 +50,9 @@ CDenseArray<T>::CDenseArray(const CDenseArray& array):
 	m_ncols(array.m_ncols),
 	m_transpose(array.m_transpose) {
 
-	m_data = new T[array.m_nrows*array.m_ncols];
+    m_data = new T[array.m_nrows*array.m_ncols];
 
-	memcpy(m_data,array.m_data,array.m_nrows*array.m_ncols*sizeof(T));
+    memcpy(m_data,array.m_data,array.m_nrows*array.m_ncols*sizeof(T));
 
 }
 

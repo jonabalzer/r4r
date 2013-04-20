@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++0x -fopenmp -msse2
 
 TARGET = r4r_core
 TEMPLATE = lib
@@ -46,32 +46,24 @@ HEADERS += \
     pegasos.h \
     rutils.h
 
-symbian {
-    MMP_RULES += EXPORTUNFROZEN
-    TARGET.UID3 = 0xEDCFE493
-    TARGET.CAPABILITY = 
-    TARGET.EPOCALLOWDLLDATA = 1
-    addFiles.sources = r4r_core.dll
-    addFiles.path = !:/sys/bin
-    DEPLOYMENT += addFiles
-}
-
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib
-    }
-    INSTALLS += target
-}
-
-LIBS += -llapack
-
 LIBS += -L/usr/local/lib \
-     -lopencv_core\
-     -lopencv_highgui\
-     -lopencv_video\
-     -lopencv_imgproc\
-     -lopencv_features2d\
-     -lopencv_calib3d
+     -lopencv_core \
+     -lopencv_highgui \
+     -lopencv_video \
+     -lopencv_imgproc \
+     -lopencv_features2d \
+     -lopencv_calib3d \
+     -llapack \
+     -lgomp
 
+FORTRAN_SOURCES += \
+    spdot.f \
+    intkernel.f \
+    idkernel.f \
+    helkernel.f \
+    chikernel.f
+
+fortran.output = ${QMAKE_FILE_BASE}.o
+fortran.commands = f95 -c ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} -fPIC
+fortran.input = FORTRAN_SOURCES
+QMAKE_EXTRA_COMPILERS += fortran

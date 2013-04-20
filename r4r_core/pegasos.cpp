@@ -70,7 +70,7 @@ int CPegasos<Vector>::SubsampleFeatures(vector<Vector>* features, vector<int>* l
 
 	for(size_t k=0; k<m_k; k++) {
 
-		int rk = (int)(rand())%m_k;
+        int rk = (int)(rand())%m_features->size();
 
 		double margin = m_labels->at(rk)*Kernel(m_w,m_features->at(rk),m_b,1);
 
@@ -118,7 +118,7 @@ bool CPegasos<Vector>::PerformDescentStep() {
 
 	}
 
-	grad.Scale(-1/(double)m_k);
+    grad.Scale(-1/(double)m_k);
 	gradb /= -(double)m_k;
 
 	grad = grad + m_w*m_lambda;
@@ -139,7 +139,7 @@ bool CPegasos<Vector>::PerformDescentStep() {
 	m_b *= s;
 
 	// calc residual
-	m_res.push_back(CalcResidual(m_w,m_b));
+    m_res.push_back(CalcResidual(m_w,m_b));
 
 	return 0;
 

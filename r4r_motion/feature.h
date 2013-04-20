@@ -54,7 +54,7 @@ public:
 	~CFeature();
 
 	//! Orders two image points.
-	bool operator<(CFeature& x);
+    bool operator<(CFeature& x);
 
 	//! Compares two image points.
     bool operator!=(CFeature& x);

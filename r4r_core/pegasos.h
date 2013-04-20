@@ -81,9 +81,11 @@ protected:
 	/*! \brief Evaluates kernel function.
 	 *
 	 * Overload this function to generalize the method to nonlinear kernels.
+     *
+     * \FIXME: No, it is more complicated than that.
 	 *
 	 */
-	virtual double Kernel(Vector x, Vector y, double a, double b) { return Vector::InnerProduct(x,y) + a*b; };
+    virtual double Kernel(Vector x, Vector y, double a, double b) { return Vector::InnerProduct(x,y) + a*b; };
 
 	/*! Gradient of the kernel w.r.t. y in the subspace of #m_w.
 	 *
