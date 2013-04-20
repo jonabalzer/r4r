@@ -102,7 +102,7 @@ public:
     virtual ETYPE GetType() { return m_container.GetType(); };
 
     //! \copydoc CAbstractDescriptor::GetData()
-    virtual void* GetData() { return m_container.Data(); };
+    virtual void* GetData() { return m_container.Data().get(); };
 
 
 protected:

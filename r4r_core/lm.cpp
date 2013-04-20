@@ -37,7 +37,7 @@ CLeastSquaresProblem<Matrix>::CLeastSquaresProblem(size_t nopts, size_t noparams
 }
 
 template <class Matrix>
-vec CLeastSquaresProblem<Matrix>::ComputeDispersion(const vec& r) {
+vec CLeastSquaresProblem<Matrix>::ComputeDispersion(vec& r) {
 
 	double fac = (1.0/1.4826);
 
@@ -257,7 +257,7 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t nouter, size_t ninner, double ep
 
 
 template <class Matrix>
-vec CLevenbergMarquardt<Matrix>::BiSquareWeightFunction(const vec& r, vec& w) {
+vec CLevenbergMarquardt<Matrix>::BiSquareWeightFunction(vec& r, vec& w) {
 
 	// estimate standard deviation for normalization of residuals
 	vec sigma = m_problem.ComputeDispersion(r);
@@ -281,7 +281,7 @@ vec CLevenbergMarquardt<Matrix>::BiSquareWeightFunction(const vec& r, vec& w) {
 }
 
 template <class Matrix>
-vec CLevenbergMarquardt<Matrix>::HuberWeightFunction(const vec& r, vec& w) {
+vec CLevenbergMarquardt<Matrix>::HuberWeightFunction(vec& r, vec& w) {
 
 	// estimate standard deviation for normalization of residuals
 	vec sigma = m_problem.ComputeDispersion(r);

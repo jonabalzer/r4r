@@ -169,7 +169,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
             {
 
                 CDenseArray<bool> container(nrows,ncols);
-                is.read((char*)container.Data(),sizeof(bool)*container.NElems());
+                is.read((char*)container.Data().get(),sizeof(bool)*container.NElems());
 
                 CDescriptor<CDenseArray<bool> >* pdesc = new CDescriptor<CDenseArray<bool> >(container);
                 x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
@@ -182,7 +182,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
             {
 
                 CDenseArray<int> container(nrows,ncols);
-                is.read((char*)container.Data(),sizeof(int)*container.NElems());
+                is.read((char*)container.Data().get(),sizeof(int)*container.NElems());
 
                 CDescriptor<CDenseArray<int> >* pdesc = new CDescriptor<CDenseArray<int> >(container);
                 x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
@@ -195,7 +195,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
             {
 
                 CDenseArray<float> container(nrows,ncols);
-                is.read((char*)container.Data(),sizeof(float)*container.NElems());
+                is.read((char*)container.Data().get(),sizeof(float)*container.NElems());
 
                 CDescriptor<CDenseArray<float> >* pdesc = new CDescriptor<CDenseArray<float> >(container);
                 x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
@@ -208,7 +208,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
             {
 
                 CDenseArray<size_t> container(nrows,ncols);
-                is.read((char*)container.Data(),sizeof(size_t)*container.NElems());
+                is.read((char*)container.Data().get(),sizeof(size_t)*container.NElems());
 
                 CDescriptor<CDenseArray<size_t> >* pdesc = new CDescriptor<CDenseArray<size_t> >(container);
                 x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
@@ -221,7 +221,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
             {
 
                 CDenseArray<double> container(nrows,ncols);
-                is.read((char*)container.Data(),sizeof(double)*container.NElems());
+                is.read((char*)container.Data().get(),sizeof(double)*container.NElems());
 
                 CDescriptor<CDenseArray<double> >* pdesc = new CDescriptor<CDenseArray<double> >(container);
                 x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));

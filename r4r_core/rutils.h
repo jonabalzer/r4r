@@ -113,7 +113,7 @@ public:
 	static vec GetTranslationVector(mat& F);
 
 	//! Computes the median absolute deviation of vector entries.
-	static double MedianAbsoluteDeviation(const vec& x);
+    static double MedianAbsoluteDeviation(vec& x);
 
 	//! Projects a matrix onto SO(3) by Procrustes analysis.
 	static mat ProjectToSO3(mat& R);

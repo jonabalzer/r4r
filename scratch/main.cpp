@@ -1,65 +1,36 @@
 #include <iostream>
 #include <fstream>
-//#include "darray.h"
+#include "darray.h"
 #include "descriptor.h"
 #include "feature.h"
-//#include "basic.h"
-//#include "rect.h"
-//#include "tracklet.h"
-#include "params.h"
-//#include "descspecial.h"
-#include "kernels.h"
 #include <omp.h>
 #include <stdio.h>
+
 using namespace std;
 using namespace R4R;
 using namespace cv;
 
-#include <xmmintrin.h>
-#include <math.h>
-
 int main()
 {
 
-    vector<int> result;
-    int input;
-   // while(true) {
+    mat x(3,3);
 
-        cin >> input;
+    cout << x.NCols() << endl;
 
-       // if(input==-1)
-       //   break;
-      //  else
-     //     result.push_back(input);
+    cout << x.NRows() << endl;
+    x.RandN(0,1);
+    cout << x << endl;
 
-        cout << input << endl;
-   // }
+    mat y(3,3);
 
-    for(size_t i=0; i<result.size(); i++)
-        cout << result[i] << endl;
+    y.Eye();
+    cout << y << endl;
 
- /*   vector<int> test;
-    test.push_back(1);
-    test.push_back(2);
-    test.push_back(3);
-    test.push_back(4);
+    mat z = y*x;
 
-    CParameters params;
-
-    params.Set("FICK",(int)4);
-    params.Set("FICK2",(double)4);
-    params.Set("FICK3","what the fuck");
-    params.Set("FICK4",test);
-
-    cout << params << endl;
-
-    params.SaveToFile("params.txt");
-*/
-    CParameters params2;
-    params2.OpenFromFile("params.txt");
-
-    cout << params2 << endl;
-
+    cout << z << endl;
+    //double n = z.Norm2();
+    //cout << z << endl;
 
 
     //}

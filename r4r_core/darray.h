@@ -56,8 +56,14 @@ public:
 	//! Copy constructor.
 	CDenseArray(const CDenseArray& array);
 
-	//! Copy constructor.
-	CDenseArray(size_t nrows, size_t ncols, T* data);
+    //! Assignment operator.
+    CDenseArray<T> operator=(const CDenseArray<T>& array);
+
+    //! Copy constructor.
+    CDenseArray(size_t nrows, size_t ncols, std::shared_ptr<T> data);
+
+    //! Hardcopy.
+    CDenseArray<T> Clone();
 
 	//! Destructor.
 	virtual ~CDenseArray();
@@ -69,7 +75,10 @@ public:
 	void Ones();
 
 	//! Files the array with uniformly distributed random numbers between \f$0\f$ and \f$1\f$.
-	void Rand();
+    void Rand(T min, T max);
+
+    //! Files the array with normally distributed random numbers.
+    void RandN(T mu, T sigma);
 
 	//! Transposes the array.
 	void Transpose();
@@ -87,70 +96,67 @@ public:
 	T Get(size_t i, size_t j) const;
 
 	//! Overwrites data.
-	void Set(T* data);
+    void Set(std::shared_ptr<T> data);
 
 	//! Returns a column.
-	CDenseVector<T> GetColumn(size_t j) const;
+    CDenseVector<T>& GetColumn(size_t j) const;
 
 	//! Returns a column.
 	void SetColumn(size_t j, const CDenseVector<T>& col);
 
 	//! Returns a row.
-	CDenseVector<T> GetRow(size_t i) const;
+    CDenseVector<T> GetRow(size_t i) const;
 
 	//! Element access.
 	T& operator()(size_t i, size_t j);
-
-	//! Assignment operator.
-	CDenseArray<T> operator=(const CDenseArray<T>& array);
 
 	//! Sums two arrays.
     CDenseArray<T> operator+(const CDenseArray<T>& array) const;
 
 	//! Multiplies two arrays pointwise.
-    CDenseArray<T>& operator^(const CDenseArray<T>& array) const;
+    CDenseArray<T> operator^(const CDenseArray<T>& array) const;
 
 	//! Adds a scalar to all elements.
-	CDenseArray<T> operator+(const T& scalar) const;
+    CDenseArray<T> operator+(const T& scalar) const;
 
 	//! Subtracts a scalar from all elements.
-	CDenseArray<T> operator-(const T& scalar) const;
+    CDenseArray<T> operator-(const T& scalar) const;
 
 	//! Subtracts two arrays.
-	CDenseArray<T> operator-(const CDenseArray<T>& array) const;
+    CDenseArray<T> operator-(const CDenseArray<T>& array) const;
 
 	//! Multiplies the array with a scalar.
-	CDenseArray<T> operator*(const T& scalar) const;
+    CDenseArray<T> operator*(const T& scalar) const;
 
 	//! Multiplies the array with a scalar.
-	CDenseArray<T> operator/(const T& scalar) const;
+    CDenseArray<T> operator/(const T& scalar) const;
 
 	//! Multiplies the object with an array from the right.
-	CDenseArray<T> operator*(const CDenseArray<T>& array) const;
+    CDenseArray<T> operator*(const CDenseArray<T>& array) const;
 
 	//! Multiplies the object with an array from the right.
-	CDenseVector<T> operator*(const CDenseVector<T>& vector) const;
+    CDenseVector<T> operator*(const CDenseVector<T>& vector) const;
 
 	//! Computes the standard inner product.
-	T static InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
+    static T InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
 
 	//! Computes tensor product of two matrices.
-	CDenseArray<T> static KroneckerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
+    static CDenseArray<T> KroneckerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
 
 	//! Returns the transpose of a matrix.
-	CDenseArray<T> static Transpose(const CDenseArray<T>& x);
+    static CDenseArray<T> Transpose(const CDenseArray<T>& x);
 
 	//! Access number of cols.
-	size_t NRows() const { return m_nrows; };
+    size_t NRows() const { return m_nrows; }
 
 	//! Access number of cols.
-	size_t NCols() const { return m_ncols; };
+    size_t NCols() const { return m_ncols; }
 
 	//! Returns number of elements.
 	size_t NElems() const { return m_nrows*m_ncols; }
 
 	//! Get pointer to the data.
-	T* Data() const { return m_data; };
+    std::shared_ptr<T> Data() const { return m_data; }
 
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
@@ -162,10 +168,10 @@ public:
 	T Mean() const { return Sum()/NElems(); }
 
 	//! Empirical variance of matrix entries.
-	T Variance() const;
+    T Variance();
 
 	//! Median of matrix entries;
-	T Median() const;
+    T Median();
 
 	//! Minimum of matrix entries;
 	T Min() const;
@@ -229,16 +235,9 @@ protected:
 	size_t m_nrows;				//!< number of rows
 	size_t m_ncols;				//!< number of cols
 	bool m_transpose;			//!< transpose flag
-    shared_ptr<T> m_data;   	//!< container that holds the array data
+    std::shared_ptr<T> m_data;  //!< container that holds the array data
 
 };
-
-// template specializations for accessing numerical type
-//template<> class CDenseArray<bool> { public: ETYPE GetType(); };
-//template<> class CDenseArray<int> { public: ETYPE GetType(); };
-//template<> class CDenseArray<size_t> { public: ETYPE GetType(); };
-//template<> class CDenseArray<float> { public: ETYPE GetType(); };
-//template<> class CDenseArray<double> { public: ETYPE GetType(); };
 
 /*! \brief dense vector
  *
@@ -253,41 +252,34 @@ public:
 	CDenseVector();
 
 	//! Inherited constructor.
-	CDenseVector(size_t nrows, size_t ncols);
+    CDenseVector(size_t nrows, size_t ncols);
 
 	//! Parametized constructor.
 	CDenseVector(size_t n);
-
-	/*! \brief Constructor.
-	 *
-	 * \details The constructed vector is a column vector by default. Use CDenseVector::CDenseVector(size_t n, bool row)
-	 * to get a row vector.
-	 *
-	 * \param[in] n number of elements
-	 * \param[in] val initial values
-	 */
-	//CDenseVector(size_t n, T val = 0);
-
-	//! Constructor.
-	//CDenseVector(size_t n, bool row);
 
 	//! Copy constructor.
 	CDenseVector(const CDenseVector& vector);
 
 	//! Copy constructor.
-	CDenseVector(size_t n, T* data, bool row = false);
+    CDenseVector(size_t n, std::shared_ptr<T> data, bool row = false);
+
+    //! Assignment operator.
+    CDenseVector<T> operator=(const CDenseVector<T>& array);
+
+    //! Deep copy.
+    CDenseVector<T> Clone();
 
 	//! Adds a scalar to a vector.
-	CDenseVector<T> operator+(const T& scalar) const;
+    CDenseVector<T> operator+(const T& scalar) const;
 
 	//! Sums two vectors.
-	CDenseVector<T> operator+(const CDenseVector<T>& vector) const;
+    CDenseVector<T> operator+(const CDenseVector<T>& vector) const;
 
 	//! Subtracts two vectors.
-	CDenseVector<T> operator-(const CDenseVector<T>& vector) const;
+    CDenseVector<T> operator-(const CDenseVector<T>& vector) const;
 
 	//! Multiplies the vector with a scalar.
-	CDenseVector<T> operator*(const T& scalar) const;
+    CDenseVector<T> operator*(const T& scalar) const;
 
 	//! Element access.
 	T& operator()(size_t i);
@@ -296,13 +288,13 @@ public:
 	T Get(size_t i) const;
 
 	//! Non-destructive element access.
-	T Get(size_t i, size_t j) const { return CDenseArray<T>::Get(i,j); };
+    T Get(size_t i, size_t j) const { return CDenseArray<T>::Get(i,j); }
 
 	//! Element access.
-	T& operator()(size_t i, size_t j) { return CDenseArray<T>::operator ()(i,j); };
+    T& operator()(size_t i, size_t j) { return CDenseArray<T>::operator ()(i,j); }
 
 	//! Computes cross product of two 3-vectors.
-	CDenseVector<T> static CrossProduct(const CDenseVector<T>& x, const CDenseVector<T>& y);
+    static CDenseVector<T> CrossProduct(const CDenseVector<T>& x, const CDenseVector<T>& y);
 
 	//! Sorts the elements of the vector in ascending order.
 	void Sort();
@@ -335,7 +327,7 @@ public:
 
 /*! \brief convenience class for creating vectors of length \f$3\f$
  *
- * \todo What about operators in base class>
+ * \todo What about operators in base class?
  *
  */
 template<class T>

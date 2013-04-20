@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QMAKE_CXXFLAGS += -std=c++0x -fopenmp -msse2
+QMAKE_CXXFLAGS += -std=c++0x -fopenmp -msse4
 
 TARGET = r4r_core
 TEMPLATE = lib
@@ -26,7 +26,8 @@ SOURCES += \
     darray.cpp \
     cam.cpp \
     pegasos.cpp \
-    rutils.cpp
+    rutils.cpp \
+    kernels.cpp
 
 HEADERS += \
     types.h \
@@ -44,7 +45,8 @@ HEADERS += \
     darray.h \
     cam.h \
     pegasos.h \
-    rutils.h
+    rutils.h \
+    kernels.h
 
 LIBS += -L/usr/local/lib \
      -lopencv_core \
@@ -55,15 +57,3 @@ LIBS += -L/usr/local/lib \
      -lopencv_calib3d \
      -llapack \
      -lgomp
-
-FORTRAN_SOURCES += \
-    spdot.f \
-    intkernel.f \
-    idkernel.f \
-    helkernel.f \
-    chikernel.f
-
-fortran.output = ${QMAKE_FILE_BASE}.o
-fortran.commands = f95 -c ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} -fPIC
-fortran.input = FORTRAN_SOURCES
-QMAKE_EXTRA_COMPILERS += fortran

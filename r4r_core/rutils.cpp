@@ -388,7 +388,7 @@ vec CLinearAlgebra::GetTranslationVector(mat& F) {
 }
 
 
-double CLinearAlgebra::MedianAbsoluteDeviation(const vec& x) {
+double CLinearAlgebra::MedianAbsoluteDeviation(vec& x) {
 
 	double median = x.Median();
 

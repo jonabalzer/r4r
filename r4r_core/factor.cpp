@@ -38,10 +38,10 @@ bool CMatrixFactorization::SVD(const CDenseArray<double>& A, CDenseArray<double>
     double wkopt;
     double* work;
 
-    double* a = A.Data();
-    double* s = S.Data();
-    double* u = U.Data();
-    double* vt = Vt.Data();
+    double* a = A.Data().get();
+    double* s = S.Data().get();
+    double* u = U.Data().get();
+    double* vt = Vt.Data().get();
 
     dgesvd_("A","A",&m,&n,a,&lda,s,u,&ldu,vt,&ldvt,&wkopt,&lwork,&info);
 
@@ -97,7 +97,7 @@ bool CMatrixFactorization::Cholesky(CDenseArray<double>& A) {
    n = lda;
    info = 0;
 
-   double* a = A.Data();
+   double* a = A.Data().get();
 
    dpotrf_("U",&n,a,&lda,&info);
 
@@ -128,7 +128,7 @@ bool CMatrixFactorization::InvertSymmetric(CDenseArray<double>& A) {
    n = lda;
    info = 0;
 
-   double* a = A.Data();
+   double* a = A.Data().get();
 
    dpotri_("U",&n,a,&lda,&info);
 
