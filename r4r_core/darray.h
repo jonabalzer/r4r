@@ -169,6 +169,9 @@ public:
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
 
+    //! In-place addition of a scalar.
+    void Add(const T& scalar);
+
 	//! Sums up all elements.
 	T Sum() const;
 
@@ -282,6 +285,9 @@ public:
 
 	//! Sums two vectors.
     CDenseVector<T> operator+(const CDenseVector<T>& vector) const;
+
+    //! In-place addition of a vector.
+    void Add(const CDenseVector<T>& vector);
 
 	//! Subtracts two vectors.
     CDenseVector<T> operator-(const CDenseVector<T>& vector) const;

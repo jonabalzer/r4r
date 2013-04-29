@@ -7,7 +7,10 @@
 #include <string.h>
 using namespace std;
 
-CSplineCurve::CSplineCurve():
+namespace R4R {
+
+template <class T>
+CSplineCurve<T>::CSplineCurve():
     m_d(0),
     m_p(0),
     m_n(0),
@@ -15,42 +18,51 @@ CSplineCurve::CSplineCurve():
     m_knot(),
     m_cv() {}
 
-CSplineCurve::CSplineCurve(size_t d, size_t p, size_t n):
+template <class T>
+CSplineCurve<T>::CSplineCurve(u_int d, u_int p, u_int n):
     m_d(d),
     m_p(p),
     m_n(n),
-    m_k(n+2*(p-1)),
-    m_knot((float*)_mm_malloc((n+2*(p-1))*sizeof(float),16),CSplineDeallocator()),
-    m_cv((float*)_mm_malloc((n*d)*sizeof(float),16),CSplineDeallocator()) {
+    m_k(n+p-1),
+    m_knot(n+p-1),
+    m_cv(d,n) {         // make sure that the cps are in column-major ordering for fast access!
 
 }
 
-CSplineCurve::~CSplineCurve() {
+template <class T>
+CSplineCurve<T>::CSplineCurve(const CDenseVector<T>& knot, const CDenseArray<T>& cv):
+    m_d(cv.NCols()),
+    m_p((knot.NElems()-cv.NRows()+1)/2),
+    m_n(cv.NRows()),
+    m_k(knot.NElems()),
+    m_knot(knot),
+    m_cv(cv)
+{
 
-    // nothing to do, smart pointer will take of themselves
 
 }
 
-
-void CSplineCurve::MakeClampedUniformKnotVector(float a, float b) {
+template <class T>
+void CSplineCurve<T>::MakeClampedUniformKnotVector(T a, T b) {
 
     assert(m_k);
 
-    float dt = (b - a)/(m_n - 1);
-
+    T dt = (b - a)/(m_k - 2*(m_p-1) - 1);
+    cout <<"L" << m_knot.NElems() << endl;
     for(size_t i=0; i<(m_p - 1); i++) {
 
-        m_knot.get()[i] = a;
-        m_knot.get()[m_k-i-1] = b;
+        m_knot(i) = a;
+        m_knot(m_k-i-1) = b;
 
     }
 
-    for(size_t i=0; i<m_n; i++)
-        m_knot.get()[m_p-1+i] = a + i*dt;
+    for(size_t i=0; i<m_k - 2*(m_p-1); i++)
+        m_knot(m_p-1+i) = a + i*dt;
 
 }
 
-void CSplineCurve::Print() {
+template <class T>
+void CSplineCurve<T>::Print() {
 
     cout << "Degree: " << m_p << endl;
     cout << "Dimension: " << m_d << endl;
@@ -58,35 +70,165 @@ void CSplineCurve::Print() {
     cout << "Knots: " << endl;
 
     for(size_t i=0; i<m_k; i++)
-        cout << m_knot.get()[i] << endl;
+        cout << m_knot.Get(i) << endl;
 
 }
 
 
-int CSplineCurve::GetSpan(float t) {
+template <class T>
+int CSplineCurve<T>::GetSpan(T t) {
+
+
+    if(t<m_knot.Get(0) || t>m_knot.Get(m_knot.NElems()-1))
+        return -1;
 
     // hint
-    float dt = (m_knot.get()[m_k-1] - m_knot.get()[0])/(m_n-1);
+    T dt = (m_knot.Get(m_k-1) - m_knot.Get(0))/(m_n-1);
 
-    int span = (int)(t/dt);  // replace this by the index of knot array?
+    int span = (u_int)(t/dt);  // replace this by the index of knot array, binary search with hint!
 
-    if(t>=m_knot.get()[m_p+span-1] && t<m_knot.get()[m_p+span])
-        return span;
-
-    return -1;
+    return span;
 
 }
 
 
-bool CSplineCurve::EvaluateNurbsBasis(int order, const float* knot, float t, float* N) {
+template <class T>
+CDenseVector<T> CSplineCurve<T>::Evaluate(T t) {
 
-    float a0, a1, x, y;
-    const float* k0;
-    float *t_k, *k_t, *N0;
-    const int d = order-1;
-    int j, r;
+    u_int order = m_p + 1;
 
-    t_k = (float*)alloca(d<<4);
+    CDenseVector<T> result(m_d);
+
+    int span = GetSpan(t);
+    if(span<0)
+        return result;
+
+    T* N = new T[order*order];
+
+    EvaluateNurbsBasis(order,m_knot.Data().get()+span,t,N);
+
+    for(size_t i=0; i<order; i++) {
+
+        // get column
+        CDenseVector<T> col = m_cv.GetColumn(span+i).Clone();
+
+        // in-place scaling by b(span+i)
+        col.Scale(N[i]);
+
+        // in-place add
+        result.Add(col);
+
+    }
+
+    return result;
+
+}
+
+template <class T>
+CDenseArray<T> CSplineCurve<T>::Tangent(T t) {
+
+    assert(m_p>=1);
+
+    u_int order = m_p + 1;
+
+    // allocate result and get column views
+    CDenseArray<T> result(m_d,2);
+    int span = GetSpan(t);
+    if(span<0)
+        return result;
+
+    CDenseVector<T> x = result.GetColumn(0);
+    CDenseVector<T> xt = result.GetColumn(1);
+    T* N = new T[order*order];
+
+    EvaluateNurbsBasis(order,m_knot.Data().get()+span,t,N);
+    EvaluateNurbsBasisDerivatives(order,m_knot.Data().get()+span,1,N);
+
+    for(size_t i=0;i<order; i++) {
+
+        for(size_t j=0; j<order; j++)
+            cout << N[i*order+j] << " ";
+
+        cout << endl;
+
+    }
+
+    for(size_t i=0; i<order; i++) {
+
+        // get copy of cv cols
+        CDenseVector<T> colx = m_cv.GetColumn(span+i).Clone();
+        CDenseVector<T> colxt = m_cv.GetColumn(span+i).Clone();
+
+        // in-place scaling by b(span+i)
+        colx.Scale(N[i]);
+        colxt.Scale(N[order+i]);
+
+        // in-place add
+        x.Add(colx);
+        xt.Add(colxt);
+
+    }
+
+    return result;
+
+}
+
+
+template <class T>
+CDenseArray<T> CSplineCurve<T>::Normal(T t) {
+
+    assert(m_p>=2);
+
+    u_int order = m_p + 1;
+
+    // allocate result and get column views
+    CDenseArray<T> result(m_d,3);
+    int span = GetSpan(t);
+    if(span<0)
+        return result;
+
+    CDenseVector<T> x = result.GetColumn(0);
+    CDenseVector<T> xt = result.GetColumn(1);
+    CDenseVector<T> xtt = result.GetColumn(2);
+    T* N = new T[order*order];
+
+    EvaluateNurbsBasis(order,m_knot.Data().get()+span,t,N);
+    EvaluateNurbsBasisDerivatives(order,m_knot.Data().get()+span,2,N);
+
+    for(size_t i=0; i<order; i++) {
+
+        // get copy of cv cols
+        CDenseVector<T> colx = m_cv.GetColumn(span+i).Clone();
+        CDenseVector<T> colxt = m_cv.GetColumn(span+i).Clone();
+        CDenseVector<T> colxtt = m_cv.GetColumn(span+i).Clone();
+
+        // in-place scaling by b(span+i)
+        colx.Scale(N[i]);
+        colxt.Scale(N[order+i]);
+        colxtt.Scale(N[order*order+i]);
+
+        // in-place add
+        x.Add(colx);
+        xt.Add(colxt);
+        xtt.Add(colxtt);
+
+    }
+
+    return result;
+
+}
+
+
+template <class T>
+bool CSplineCurve<T>::EvaluateNurbsBasis(u_int order, const T* knot, T t, T* N) {
+
+    T a0, a1, x, y;
+    const T* k0;
+    T *t_k, *k_t, *N0;
+    const u_int d = order-1;
+    u_int j, r;
+
+    t_k = (T*)alloca(d<<4);
     k_t = t_k + d;
 
     if (knot[d-1] == knot[d]) {
@@ -129,10 +271,10 @@ bool CSplineCurve::EvaluateNurbsBasis(int order, const float* knot, float t, flo
     //   The problem being that a0*y above can
     //   fail to be one by a bit or two when knot
     //   values are large.
-    x = 1.0-sqrt(std::numeric_limits<float>::epsilon());
+    x = 1.0-sqrt(std::numeric_limits<T>::epsilon());
     if (N[0]>x) {
 
-        if ( N[0] != 1.0 && N[0]<1.0+sqrt(std::numeric_limits<float>::epsilon())) {
+        if (N[0]!=1.0 && N[0]<1.0+sqrt(std::numeric_limits<T>::epsilon())) {
 
             r = 1;
 
@@ -151,7 +293,7 @@ bool CSplineCurve::EvaluateNurbsBasis(int order, const float* knot, float t, flo
     }
     else if (N[d]>x) {
 
-        if ( N[d] != 1.0 && N[d] < 1.0 + sqrt(std::numeric_limits<float>::epsilon())) {
+        if (N[d]!=1.0 && N[d]<1.0+sqrt(std::numeric_limits<T>::epsilon())) {
 
             r = 1;
 
@@ -173,30 +315,31 @@ bool CSplineCurve::EvaluateNurbsBasis(int order, const float* knot, float t, flo
 
 }
 
-bool CSplineCurve::EvaluateNurbsBasisDerivatives(int order, const float *knot, int der_count, float *N) {
+template <class T>
+bool CSplineCurve<T>::EvaluateNurbsBasisDerivatives(u_int order, const T* knot, u_int der_count, T* N) {
 
-    float dN, c;
-    const float *k0, *k1;
-    float *a0, *a1, *ptr, **dk;
-    int i, j, k, jmax;
+    T dN, c;
+    const T *k0, *k1;
+    T *a0, *a1, *ptr, **dk;
+    u_int i, j, k, jmax;
 
-    const int d = order - 1;
+    const u_int d = order - 1;
     const int Nstride = -der_count*order;
 
-    dk = (float**)alloca( (der_count+1) << 3 ); /* << 3 in case pointers are 8 bytes long */
-    a0 = (float*)alloca( (order*(2 + ((d+1)>>1))) << 3 ); /* d for a0, d for a1, d*order/2 for dk[]'s and slop to avoid /2 */
+    dk = (T**)alloca( (der_count+1) << 3 ); /* << 3 in case pointers are 8 bytes long */
+    a0 = (T*)alloca( (order*(2 + ((d+1)>>1))) << 3 ); /* d for a0, d for a1, d*order/2 for dk[]'s and slop to avoid /2 */
     a1 = a0 + order;
 
     /* initialize reciprocal of knot differences */
     dk[0] = a1 + order;
 
-    for (k = 0; k < der_count; k++) {
+    for (k=0; k<der_count; k++) {
 
         j = d-k;
         k0 = knot++;
         k1 = k0 + j;
 
-        for (i = 0; i < j; i++)
+        for (i=0; i<j; i++)
             dk[k][i] = 1.0/(*k1++ - *k0++);
 
         dk[k+1] = dk[k] + j;
@@ -207,16 +350,16 @@ bool CSplineCurve::EvaluateNurbsBasisDerivatives(int order, const float *knot, i
 
     N += order;
 
-    for ( i=0; i<order; i++) {
+    for (i=0; i<order; i++) {
 
         a0[0] = 1.0;
 
-        for (k = 1; k <= der_count; k++) {
+        for (k=1; k<=der_count; k++) {
 
             dN = 0.0;
             j = k-i;
 
-            if (j <= 0) {
+            if (j<=0) {
 
                 dN = (a1[0] = a0[0]*dk[k][i-k])*N[i];
                 j = 1;
@@ -225,9 +368,9 @@ bool CSplineCurve::EvaluateNurbsBasisDerivatives(int order, const float *knot, i
 
             jmax = d-i;
 
-            if (jmax < k) {
+            if (jmax<k) {
 
-                while (j <= jmax) {
+                while (j<=jmax) {
 
                     dN += (a1[j] = (a0[j] - a0[j-1])*dk[k][i+j-k])*N[i+j];
                     j++;
@@ -238,7 +381,7 @@ bool CSplineCurve::EvaluateNurbsBasisDerivatives(int order, const float *knot, i
             else {
 
                 /* sum j all the way to j = k */
-                while (j < k) {
+                while (j<k) {
 
                     dN += (a1[j] = (a0[j] - a0[j-1])*dk[k][i+j-k])*N[i+j];
                     j++;
@@ -265,7 +408,7 @@ bool CSplineCurve::EvaluateNurbsBasisDerivatives(int order, const float *knot, i
     }
 
     /* apply d!/(d-k)! scaling factor */
-    dN = c = (float)d;
+    dN = c = (T)d;
     k = der_count;
 
     while (k--) {
@@ -282,5 +425,9 @@ bool CSplineCurve::EvaluateNurbsBasisDerivatives(int order, const float *knot, i
 
     return 0;
 
+}
+
+template class CSplineCurve<float>;
+template class CSplineCurve<double>;
 
 }

@@ -26,3 +26,5 @@ LIBS += -L/usr/local/lib \
      -lopencv_calib3d \
      -lgomp
 }
+
+unix:!macx: LIBS += -lopenNURBS

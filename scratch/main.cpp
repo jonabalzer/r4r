@@ -5,30 +5,83 @@
 #include "feature.h"
 #include <omp.h>
 #include <stdio.h>
+#include "splinecurve.h"
 
 using namespace std;
 using namespace R4R;
 using namespace cv;
+#include <opennurbs/opennurbs.h>
 
 int main()
 {
 
-    mat x(3,3);
-    x.Eye();
-    x(0,1)=2;
-    x(1,0)=3;
-    cout << x << endl << endl;
 
 
-    vec row = x.GetRow(0);
-cout << row << endl;
+    ON::Begin();
 
-    vec z(3000);
-    z.Ones();
+    ON_TextLog dump;
 
-    cout << z.Sum() << endl;
+    int order =3 ;
+    ON_NurbsCurve curve2 = ON_NurbsCurve(3,0,order,13);
 
-    //cout << col << endl;
+    curve2.MakeClampedUniformKnotVector(0.1);
+
+
+
+    double N[order*order];
+
+    for(size_t i=0; i<curve2.m_cv_count; i++) {
+
+        ON_3dPoint pt;
+        pt.x = i;
+        pt.y = i;
+        pt.z = 0;
+        curve2.SetCV(i,pt);
+
+    }
+    curve2.Dump(dump);
+ON_3dPoint pt = curve2.PointAt(0.05);
+
+ON_3dVector tangent = curve2.TangentAt(0.05);
+
+cout << pt.x << " " << pt.y << " " << pt.z << " " << endl;
+
+cout << tangent.x << " " << tangent.y << " " << tangent.z << " " << endl;
+
+
+
+   ON::End();
+
+
+    CSplineCurve<double> curve = CSplineCurve<double>(2,2,13);
+
+    curve.MakeClampedUniformKnotVector(0,1);
+    mat& cv = curve.GetCVData();
+
+    cv.Ones();
+
+
+    curve.Print();
+
+    for(size_t i=0; i<cv.NCols(); i++) {
+
+        vec col = cv.GetColumn(i);
+        col.Scale(i);
+        //col(1)=0;
+
+    }
+        cout << cv << endl;
+//    cout << cv << endl;
+
+   mat x = curve.Tangent(0.95);
+
+
+    //vec x = curve.Evaluate(0.05);
+    cout << x << endl;
+
+
+
+
 
 
 

@@ -126,7 +126,7 @@ void CSparseArray<T>::Transpose() {
 template <class T>
 T& CSparseArray<T>::operator()(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
 		Transpose(i,j);
@@ -211,7 +211,7 @@ void CSparseArray<T>::Set(size_t i, size_t j, T v) {
 	if(m_transpose)
 		Transpose(i,j);
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	if(v==0){	// if the new value is zero, delete entry
 
@@ -928,7 +928,7 @@ CSparseBandedArray<T> CSparseBandedArray<T>::Transpose(const CSparseBandedArray<
 template <class T>
 void CSparseBandedArray<T>::Delete(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
 		Transpose(i,j);
@@ -948,7 +948,7 @@ void CSparseBandedArray<T>::Delete(size_t i, size_t j) {
 template <class T>
 void CSparseBandedArray<T>::DeleteRow(size_t i) {
 
-	assert(i>=0 && i<m_nrows);
+    assert(i<m_nrows);
 
 	for(size_t j=0; j<m_ncols; j++)
 		Delete(i,j);
@@ -958,7 +958,7 @@ void CSparseBandedArray<T>::DeleteRow(size_t i) {
 template <class T>
 void CSparseBandedArray<T>::DeleteCol(size_t j) {
 
-	assert(j>=0 && j<m_ncols);
+    assert(j<m_ncols);
 
 	for(size_t i=0; i<m_nrows; i++)
 		Delete(i,j);
@@ -1002,7 +1002,7 @@ T CSparseBandedArray<T>::Get(size_t i, size_t j) {
 	if(m_transpose)
 		Transpose(i,j);
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	// convert index
 	int b = Band(i,j);
@@ -1071,7 +1071,7 @@ void CSparseBandedArray<T>::Set(size_t i, size_t j, T v) {
 	if(m_transpose)
 		Transpose(i,j);
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	// convert index
 	int b = Band(i,j);
@@ -1108,7 +1108,7 @@ void CSparseBandedArray<T>::Set(size_t i, size_t j, T v) {
 template <class T>
 T& CSparseBandedArray<T>::operator()(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
 		Transpose(i,j);

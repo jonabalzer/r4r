@@ -103,15 +103,11 @@ protected:
 
 };
 
-
-
-
 /*! \brief PEGASOS stochastic subgradient SVM-MIL solver
  *
  *
  *
  */
-
 template<class Vector>
 class CPegasosMI:public CPegasos<Vector> {
 
