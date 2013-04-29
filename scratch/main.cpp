@@ -5,6 +5,7 @@
 #include "feature.h"
 #include <omp.h>
 #include <stdio.h>
+#include "factor.h"
 
 using namespace std;
 using namespace R4R;
@@ -13,26 +14,24 @@ using namespace cv;
 int main()
 {
 
-    mat x(3,3);
-    x.Eye();
-    x(0,1)=2;
-    x(1,0)=3;
-    cout << x << endl << endl;
+    mat A(3000,300);
+    A.Rand(0,3);
 
 
-    vec row = x.GetRow(0);
-cout << row << endl;
+    mat U(3000,3000);
+    mat S(3000,300);
+    mat Vt(300,300);
 
-    vec z(3000);
-    z.Ones();
+    double t0, t1;
+    t0 = omp_get_wtime(),
+    CMatrixFactorization::SVD(A,U,S,Vt);
+t1 = omp_get_wtime(),
+        //cout << U << endl;
+cout << t1-t0 << endl;
 
-    cout << z.Sum() << endl;
-
-    //cout << col << endl;
 
 
 
-    //}
 //   std::vector<CDescriptorFileHeader> headers;
 
 //   ETYPE type;

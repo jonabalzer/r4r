@@ -8,6 +8,8 @@
 #include <omp.h>
 #endif
 
+namespace R4R {
+
 using namespace std;
 
 template <class T>
@@ -514,5 +516,7 @@ double COneSidedSparseKernel<T>::Evaluate(T *x, int* indices, T* y) {
         result += (double)x[indices[i]]*(double)y[i];
 
     return result;
+
+}
 
 }

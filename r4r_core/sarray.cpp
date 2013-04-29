@@ -126,7 +126,7 @@ void CSparseArray<T>::Transpose() {
 template <class T>
 T& CSparseArray<T>::operator()(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
 		Transpose(i,j);
@@ -211,7 +211,7 @@ void CSparseArray<T>::Set(size_t i, size_t j, T v) {
 	if(m_transpose)
 		Transpose(i,j);
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	if(v==0){	// if the new value is zero, delete entry
 
@@ -1108,7 +1108,7 @@ void CSparseBandedArray<T>::Set(size_t i, size_t j, T v) {
 template <class T>
 T& CSparseBandedArray<T>::operator()(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
 		Transpose(i,j);
