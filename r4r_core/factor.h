@@ -15,6 +15,7 @@ namespace R4R {
 /*! \brief LAPACK wrapper
  *
  */
+template <class T>
 class CMatrixFactorization {
 
 public:
@@ -26,16 +27,16 @@ public:
 	 * \details
 	 *
 	 */
-	static bool SVD(const CDenseArray<double>& A, CDenseArray<double>& U, CDenseArray<double>& S, CDenseArray<double>& Vt);
+    static bool SVD(const CDenseArray<T>& A, CDenseArray<T>& U, CDenseArray<T>& S, CDenseArray<T>& Vt);
 
 	//! In-place Cholesky decomposition of a symmetric matrix.
-	static bool Cholesky(CDenseArray<double>& A);
+    static bool Cholesky(CDenseArray<T>& A);
 
 	//! In-place matrix inversion by Cholesky decomposition.
-	static bool InvertSymmetric(CDenseArray<double>& A);
+    static bool InvertSymmetric(CDenseArray<T>& A);
 
 	//! Rank of matrix.
-	static size_t Rank(const CDenseArray<double>& A, double tol);
+    static size_t Rank(const CDenseArray<T>& A, T tol);
 
 private:
 

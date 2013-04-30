@@ -53,6 +53,9 @@ public:
 	//! Destructor.
 	~CFeature();
 
+    //! Copy constructor.
+    CFeature(const CFeature& x);
+
 	//! Orders two image points.
     bool operator<(CFeature& x);
 

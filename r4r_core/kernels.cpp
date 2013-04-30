@@ -1,12 +1,17 @@
 #include "kernels.h"
 #include <math.h>
 #include <algorithm>
+
+#ifdef __SSE4_1__
 #include <xmmintrin.h>
 #include <smmintrin.h>
+#endif
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+
+namespace R4R {
 
 using namespace std;
 
@@ -25,6 +30,16 @@ double CMercerKernel<T>::Evaluate(T *x, T *y) {
 template<>
 double CMercerKernel<float>::Evaluate(float* x, float* y) {
 
+#ifndef __SSE4_1__
+
+    float result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += x[i]*y[i];
+
+    return (double)result;
+
+#else
     __m128* px = (__m128*)x;
     __m128* py = (__m128*)y;
 
@@ -48,6 +63,7 @@ double CMercerKernel<float>::Evaluate(float* x, float* y) {
         result[0] += x[i]*y[i];
 
     return (double)result[0];
+#endif
 
 }
 
@@ -113,8 +129,13 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     cout << "Size (mxn): " << notests << " " << n << endl;
 
+#ifndef __SSE4_1__
+    float* x = new float[n];
+    float* y = new float[n];
+#else
     float* x = (float*)_mm_malloc(n*sizeof(float),16);
     float* y = (float*)_mm_malloc(n*sizeof(float),16);
+#endif
 
     for(size_t i=0; i<n; i++) {
 
@@ -260,8 +281,14 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     cout << comparison << endl;
 
+#ifndef __SSE4_1__
+    delete [] x;
+    delete [] y;
+#else
     _mm_free(y);
     _mm_free(x);
+#endif
+
     delete kernel;
 
 
@@ -297,6 +324,27 @@ double CChiSquaredKernel<T>::Evaluate(T* x, T* y) {
 
 template <>
 double CChiSquaredKernel<float>::Evaluate(float* x, float* y) {
+
+#ifndef __SSE4_1__
+
+    double result, num;
+    double xi, yi;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        xi = (double)x[i];
+        yi = (double)y[i];
+
+        num = xi*yi;
+
+        if(num>0)               // this implies that x+y!=0 if x,y>0
+            result += num/(xi+yi);
+
+    }
+
+    return result;
+
+#else
 
     __m128* px = (__m128*)x;
     __m128* py = (__m128*)y;
@@ -342,6 +390,8 @@ double CChiSquaredKernel<float>::Evaluate(float* x, float* y) {
 
     return (double)fresult;
 
+#endif
+
 }
 
 template class CChiSquaredKernel<float>;
@@ -365,6 +415,17 @@ double CIntersectionKernel<T>::Evaluate(T* x, T* y) {
 
 template <>
 double CIntersectionKernel<float>::Evaluate(float* x, float* y) {
+
+#ifndef __SSE4_1__
+
+    double result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += (double)min<float>(x[i],y[i]);
+
+    return result;
+
+#else
 
     __m128* px = (__m128*)x;
     __m128* py = (__m128*)y;
@@ -391,6 +452,8 @@ double CIntersectionKernel<float>::Evaluate(float* x, float* y) {
         fresult += min<float>(x[i],y[i]);
 
     return (double)fresult;
+
+#endif
 
 }
 
@@ -422,6 +485,25 @@ double CHellingerKernel<T>::Evaluate(T* x, T* y) {
 template <>
 double CHellingerKernel<float>::Evaluate(float* x, float* y) {
 
+
+#ifndef __SSE4_1__
+
+    double result = 0;
+    double xi, yi;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        xi = (double)x[i];
+        yi = (double)y[i];
+
+        result += sqrt(xi*yi);
+
+    }
+
+    return result;
+
+#else
+
     __m128* px = (__m128*)x;
     __m128* py = (__m128*)y;
 
@@ -446,6 +528,8 @@ double CHellingerKernel<float>::Evaluate(float* x, float* y) {
         fresult += sqrt(x[i]*y[i]);
 
     return (double)fresult;
+
+#endif
 
 }
 
@@ -514,5 +598,7 @@ double COneSidedSparseKernel<T>::Evaluate(T *x, int* indices, T* y) {
         result += (double)x[indices[i]]*(double)y[i];
 
     return result;
+
+}
 
 }

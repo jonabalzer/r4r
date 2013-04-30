@@ -1,6 +1,8 @@
 #include "dagg.h"
 #include "types.h"
 #include "descriptor.h"
+#include "factor.h"
+#include "kernels.h"
 
 namespace R4R {
 
@@ -174,6 +176,8 @@ bool CDescriptorAggregator<Array>::Aggregate(const char* filename, const char* c
 
     data.close();
 
+    return 0;
+
 }
 
 
@@ -181,6 +185,7 @@ bool CDescriptorAggregator<Array>::Aggregate(const char* filename, const char* c
 template <class Array>
 CFeature CDescriptorAggregator<Array>::CopyFeature(CFeature x) {
 
+    // don't copy all the old descriptors
     CFeature result(x.GetLocation(),x.GetScale(),x.GetQuality());
 
     if(x.HasDescriptor(m_name.c_str())) {
@@ -234,7 +239,128 @@ void CSubsampleAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
 
 }
 
+
+template <class Array>
+CSplineInterpolationAggregator<Array>::CSplineInterpolationAggregator(CTracker* tracker, const char* name, size_t n, size_t p):
+    CDescriptorAggregator<Array>::CDescriptorAggregator(tracker,name),
+    m_n(n),
+    m_p(p) {
+
+}
+
+template <class Array>
+void CSplineInterpolationAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
+
+    // access the first descriptor
+    list<CFeature>::iterator it = tracklet->begin();
+
+    shared_ptr<CDescriptor<Array> > pdesc;
+    if(it->HasDescriptor(m_name.c_str()))
+        pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(m_name.c_str()));
+
+    // get dimension of descriptors
+    size_t d = pdesc->NElems();
+
+    // create spline object
+    CSplineCurve<float> curve(d,m_p,m_n);
+    curve.MakeClampedUniformKnotVector(0,1);
+
+    // set up interpolation matrix
+    matf A(tracklet->size(),m_n);
+    float dt = 1.0/((float)tracklet->size()-1.0);
+    size_t order = m_p + 1;
+    float* N = new float[order*order];
+    float* knot = curve.GetKnotVector().Data().get();
+
+    for(size_t i=0; i<tracklet->size(); i++) {
+
+        int span = curve.GetSpan(i*dt);
+
+        CSplineCurve<float>::EvaluateNurbsBasis(order,knot+span,i*dt,N);
+
+        for(size_t j=0; j<order; j++)
+            A(i,j) = N[j];
+
+    }
+
+    // compute Moore-Penrose inverse by svd, TODO: do sparse iterative SVD
+    matf U, S, Vt;
+    CMatrixFactorization<float>::SVD(A,U,S,Vt);
+
+    // compute inverse of S
+    size_t rank = 0;
+
+    for(size_t i=0; i<min(S.NRows(),S.NCols()); i++) {
+
+        if(S.Get(i,i)) {
+            S(i,i) = 1.0/S.Get(i,i);
+            rank++;
+        }
+        else
+            break; // the singular values are order (number should be known)
+
+    }
+
+    // buffer for coefficients
+    vecf tube(tracklet->size());
+
+    // access to cv
+    matf& cv = curve.GetCVData();
+
+    // create kernel for fast inversion
+    CMercerKernel<float> kernel(tracklet->size());
+
+    // go through rows of cv (one element of the descriptor)
+    for(size_t i=0; i<pdesc->NRows(); i++) {
+
+        for(size_t j=0; j<pdesc->NCols(); j++) {
+
+            size_t counter = 0;
+
+            // assemble tube
+            for(it=tracklet->begin(); it!=tracklet->end(); it++) {
+
+                // downcast pointer
+                pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(m_name.c_str()));
+
+                // get access to container, cast to float
+                tube(counter) = (float)pdesc->Get().Get(i,j);
+
+            }
+
+            // access to solution
+            vecf result = cv.GetColumn(i*pdesc->NRows()+j);
+
+            // solve linear least-squares problem
+            for(size_t k=0; k<rank; k++) {
+
+                // project onto range of A and invert
+                vecf colu = U.GetColumn(k);
+                float coeff = S(k,k)*kernel.Evaluate(tube.Data().get(),colu.Data().get());
+
+                // express in basis of range(At)
+                vecf colv = Vt.GetColumn(k).Clone();
+                colv.Scale(coeff);
+                result.Add(colv);
+
+            }
+
+        }
+
+    }
+
+    // create new feature/descriptor pair
+    CFeature x0 = *tracklet->begin();
+    CFeature result(x0.GetLocation(),x0.GetScale(),x0.GetQuality());
+    shared_ptr<CDescriptor<matf> > desc = shared_ptr<CDescriptor<matf> >(new CDescriptor<matf>(cv));
+    result.AttachDescriptor("SPLINE",desc);
+    m_aggregate.push_back(result);
+
+}
+
+
 template class CDescriptorAggregator<matf>;
+template class CSplineInterpolationAggregator<matf>;
 template class CSubsampleAggregator<matf>;
 template class CInitFrameAggregator<matf>;
 template class CDescriptorAggregator<vecf>;

@@ -105,7 +105,7 @@ CRotation<size>::CRotation(const mat& A) {
 	vec s(min(A.NRows(),A.NCols()));
 	mat Vt(A.NCols(),A.NCols());
 
-	CMatrixFactorization::SVD(A,U,s,Vt);
+    CMatrixFactorization<double>::SVD(A,U,s,Vt);
 
 	mat Ut = mat::Transpose(U);
 

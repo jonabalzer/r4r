@@ -13,6 +13,11 @@ namespace R4R {
 
 #ifdef HAVE_FFTW
 
+/*! \brief modulus of the FFT of the patch
+ *
+ *
+ *
+ */
 class CFourierModulusDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,mat> {
 
 public:
@@ -52,6 +57,29 @@ private:
     double m_sigma;                 //! variance of Gaussian windowing function, if zero no windowing is performed
 
 };
+
+
+#ifdef HAVE_FFTW
+
+class CFMHoGDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,vecf> {
+
+public:
+
+    //! Constructor.
+    CFMHoGDescriptor(CRectangle<double> roi, size_t hsize, size_t nbins);
+
+    //! \copydoc CDescriptor::Compute(cv::Mat&)
+    bool Compute(cv::Mat& img);
+
+private:
+
+    size_t m_hsize;                 //! size of the neighboorhood in which the descriptor is computed
+    size_t m_no_bins;               //! number of histogram bins
+
+};
+
+#endif // HAVE_FFTW
+
 
 
 }

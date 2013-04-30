@@ -1,8 +1,32 @@
+//////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+//////////////////////////////////////////////////////////////////////////////////
+
 #ifndef CSPLINECURVE_H
 #define CSPLINECURVE_H
 
 
 #include "darray.h"
+#include "kernels.h"
 
 namespace R4R {
 
@@ -24,10 +48,18 @@ public:
     CSplineCurve();
 
     //! Constructor.
-    CSplineCurve(u_int d, u_int p, u_int n);
+    CSplineCurve(size_t d, size_t p, size_t n);
 
     //! Constructor.
     CSplineCurve(const CDenseVector<T>& knot, const CDenseArray<T>& cv);
+
+    /*! \brief Constructor.
+     *
+     * \details This constructor reconstructs the spline parameters from the set of control
+     * points. It assumes a uniform clamped knot vector supported in \f$[0,1]\f$.
+     *
+     */
+    CSplineCurve(const CDenseArray<T>& cv, size_t p = 2);
 
     /*! \brief Makes uniform clamped knot vector.
      *
@@ -44,6 +76,9 @@ public:
      *
      */
     int GetSpan(T t);
+
+    //! Finds the closest point on the curve to a given point \f$x\f$.
+    CDenseVector<T> FindLocallyClosestPoint(const CDenseVector<T>& y, CMercerKernel<T>& kernel, const T hint, const T eps);
 
     //! Evaluates the spline.
     CDenseVector<T> Evaluate(T t);
@@ -80,12 +115,12 @@ public:
 
 private:
 
-    u_int m_d;                              //!< dimension of the embedding space
-    u_int m_p;                              //!< degree
-    u_int m_n;                              //!< number of control points
-    u_int m_k;                              //!< number of knots
-    CDenseVector<T> m_knot;                 //!< storage for knot vector
-    CDenseArray<T> m_cv;                    //!< storage for control points
+    size_t m_d;                              //!< dimension of the embedding space
+    size_t m_p;                              //!< degree
+    size_t m_n;                              //!< number of control points
+    size_t m_k;                              //!< number of knots
+    CDenseVector<T> m_knot;                  //!< storage for knot vector
+    CDenseArray<T> m_cv;                     //!< storage for control points
 
 
 };

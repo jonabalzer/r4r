@@ -2,6 +2,7 @@
 #define DAGG_H
 
 #include "tracker.h"
+#include "splinecurve.h"
 #include <list>
 
 namespace R4R {
@@ -69,6 +70,28 @@ private:
     virtual void AggregateTracklet(CTracklet* tracklet);
 
     size_t m_n;                          //! downsampling factor
+
+    using CDescriptorAggregator<Array>::m_name;
+    using CDescriptorAggregator<Array>::m_aggregate;
+
+};
+
+
+template<class Array>
+class CSplineInterpolationAggregator:public CDescriptorAggregator<Array> {
+
+public:
+
+    //! Constructor.
+    CSplineInterpolationAggregator(CTracker* tracker, const char* name, size_t n, size_t p);
+
+private:
+
+    //! Subsamples each tracklet.
+    virtual void AggregateTracklet(CTracklet* tracklet);
+
+    size_t m_n;                                          //!< number of control points
+    size_t m_p;                                          //!< polynomial degree
 
     using CDescriptorAggregator<Array>::m_name;
     using CDescriptorAggregator<Array>::m_aggregate;

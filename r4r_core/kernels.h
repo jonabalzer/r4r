@@ -4,6 +4,8 @@
 #include <iostream>
 #include <math.h>
 
+namespace R4R {
+
 enum KERNEL {  IDENTITY, CHISQUARED, INTERSECTION, HELLINGER, SPARSEONESIDED  };
 
 template <class T>
@@ -254,6 +256,6 @@ private:
 
 };
 
-
+}
 
 #endif

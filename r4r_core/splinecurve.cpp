@@ -1,3 +1,26 @@
+//////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+//////////////////////////////////////////////////////////////////////////////////
+
 #include "splinecurve.h"
 
 #include <limits>
@@ -19,7 +42,7 @@ CSplineCurve<T>::CSplineCurve():
     m_cv() {}
 
 template <class T>
-CSplineCurve<T>::CSplineCurve(u_int d, u_int p, u_int n):
+CSplineCurve<T>::CSplineCurve(size_t d, size_t p, size_t n):
     m_d(d),
     m_p(p),
     m_n(n),
@@ -31,16 +54,29 @@ CSplineCurve<T>::CSplineCurve(u_int d, u_int p, u_int n):
 
 template <class T>
 CSplineCurve<T>::CSplineCurve(const CDenseVector<T>& knot, const CDenseArray<T>& cv):
-    m_d(cv.NCols()),
-    m_p((knot.NElems()-cv.NRows()+1)/2),
+    m_d(cv.NRows()),
+    m_p((knot.NElems()+1)/cv.NCols()),
     m_n(cv.NRows()),
     m_k(knot.NElems()),
     m_knot(knot),
     m_cv(cv)
 {
 
+}
+
+template <class T>
+CSplineCurve<T>::CSplineCurve(const CDenseArray<T> &cv, size_t p):
+    m_d(cv.NRows()),
+    m_p(p),
+    m_n(cv.NCols()),
+    m_k(cv.NCols()+p-1),
+    m_knot(),
+    m_cv(cv) {
+
+    MakeClampedUniformKnotVector(0,1);
 
 }
+
 
 template <class T>
 void CSplineCurve<T>::MakeClampedUniformKnotVector(T a, T b) {
@@ -78,7 +114,6 @@ void CSplineCurve<T>::Print() {
 template <class T>
 int CSplineCurve<T>::GetSpan(T t) {
 
-
     if(t<m_knot.Get(0) || t>m_knot.Get(m_knot.NElems()-1))
         return -1;
 
@@ -87,15 +122,55 @@ int CSplineCurve<T>::GetSpan(T t) {
 
     int span = (u_int)(t/dt);  // replace this by the index of knot array, binary search with hint!
 
-    return span;
+    //if(t>=m_knot.Get(span) && t<m_knot.Get(span+1))
+        return span;
+    //else
+    //    return -1;
 
 }
+
+template <class T>
+CDenseVector<T> CSplineCurve<T>::FindLocallyClosestPoint(const CDenseVector<T>& y, CMercerKernel<T>& kernel, const T hint, const T eps) {
+
+    T dt = 1000000;
+    T tk, tkk;
+
+    tk = hint;
+
+    while(dt>eps) {
+
+        // get point, tangent, and normal
+        CDenseArray<T> normal = Normal(tk);
+        CDenseVector<T> x = normal.GetColumn(0);
+        CDenseVector<T> xt = normal.GetColumn(1);
+        CDenseVector<T> xtt = normal.GetColumn(2);
+
+        // do Newton step
+        tkk = tk -
+              (kernel.Evaluate(y.Data().get(),xt.Data().get())
+              -kernel.Evaluate(x.Data().get(),xt.Data().get()))/
+              (kernel.Evaluate(y.Data().get(),xtt.Data().get())
+              -kernel.Evaluate(xt.Data().get(),xtt.Data().get())
+              -kernel.Evaluate(xt.Data().get(),xt.Data().get()));
+
+        cout << "tk: " << tkk << endl;
+
+        // for checking step size
+        dt = fabs(tkk - tk);
+        tk = tkk;
+
+    }
+
+    return Evaluate(tk);
+
+}
+
 
 
 template <class T>
 CDenseVector<T> CSplineCurve<T>::Evaluate(T t) {
 
-    u_int order = m_p + 1;
+    size_t order = m_p + 1;
 
     CDenseVector<T> result(m_d);
 
@@ -120,6 +195,8 @@ CDenseVector<T> CSplineCurve<T>::Evaluate(T t) {
 
     }
 
+    delete [] N;
+
     return result;
 
 }
@@ -129,7 +206,7 @@ CDenseArray<T> CSplineCurve<T>::Tangent(T t) {
 
     assert(m_p>=1);
 
-    u_int order = m_p + 1;
+    size_t order = m_p + 1;
 
     // allocate result and get column views
     CDenseArray<T> result(m_d,2);
@@ -141,17 +218,12 @@ CDenseArray<T> CSplineCurve<T>::Tangent(T t) {
     CDenseVector<T> xt = result.GetColumn(1);
     T* N = new T[order*order];
 
-    EvaluateNurbsBasis(order,m_knot.Data().get()+span,t,N);
-    EvaluateNurbsBasisDerivatives(order,m_knot.Data().get()+span,1,N);
+    EvaluateNurbsBasis(order,&m_knot.Data().get()[span],t,N);
+    EvaluateNurbsBasisDerivatives(order,&m_knot.Data().get()[span],1,N);
 
-    for(size_t i=0;i<order; i++) {
 
-        for(size_t j=0; j<order; j++)
-            cout << N[i*order+j] << " ";
+    cout << N[order+0] << " " <<  N[order+1] <<  endl;
 
-        cout << endl;
-
-    }
 
     for(size_t i=0; i<order; i++) {
 
@@ -169,17 +241,18 @@ CDenseArray<T> CSplineCurve<T>::Tangent(T t) {
 
     }
 
+    delete [] N;
+
     return result;
 
 }
-
 
 template <class T>
 CDenseArray<T> CSplineCurve<T>::Normal(T t) {
 
     assert(m_p>=2);
 
-    u_int order = m_p + 1;
+    size_t order = m_p + 1;
 
     // allocate result and get column views
     CDenseArray<T> result(m_d,3);
@@ -214,6 +287,8 @@ CDenseArray<T> CSplineCurve<T>::Normal(T t) {
 
     }
 
+    delete [] N;
+
     return result;
 
 }
@@ -226,7 +301,7 @@ bool CSplineCurve<T>::EvaluateNurbsBasis(u_int order, const T* knot, T t, T* N) 
     const T* k0;
     T *t_k, *k_t, *N0;
     const u_int d = order-1;
-    u_int j, r;
+    int j, r;
 
     t_k = (T*)alloca(d<<4);
     k_t = t_k + d;
@@ -321,7 +396,7 @@ bool CSplineCurve<T>::EvaluateNurbsBasisDerivatives(u_int order, const T* knot, 
     T dN, c;
     const T *k0, *k1;
     T *a0, *a1, *ptr, **dk;
-    u_int i, j, k, jmax;
+    int i, j, k, jmax;
 
     const u_int d = order - 1;
     const int Nstride = -der_count*order;

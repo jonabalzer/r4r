@@ -78,7 +78,7 @@ void CKalmanFilter::Update(vec& y) {
 
 	mat S = m_C*m_P*m_Ct + m_R;
 
-	CMatrixFactorization::InvertSymmetric(S);
+    CMatrixFactorization<double>::InvertSymmetric(S);
 
 	mat K = m_P*m_Ct*S;
 

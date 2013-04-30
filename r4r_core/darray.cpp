@@ -1,9 +1,25 @@
-/*
- * darray.cpp
- *
- *  Created on: Apr 5, 2012
- *      Author: jbalzer
- */
+//////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+//////////////////////////////////////////////////////////////////////////////////
 
 #include "darray.h"
 
@@ -42,7 +58,11 @@ CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, T val):
 	m_nrows(nrows),
 	m_ncols(ncols),
     m_transpose(false),
+#ifndef __SSE4_1__
+    m_data(new T[nrows*ncols]) {
+#else
     m_data((T*)_mm_malloc(nrows*ncols*sizeof(T),16),CDenseMatrixDeallocator<T>()){
+#endif
 
     fill_n(m_data.get(),nrows*ncols,val);
 
@@ -330,7 +350,11 @@ ifstream& operator >> (ifstream& in, CDenseArray<U>& x) {
 
         x.m_data.reset();
 
+#ifndef __SSE4_1__
+        x.m_data.reset(new U[nrows*ncols]);
+#else
         x.m_data.reset((U*)_mm_malloc(nrows*ncols*sizeof(U),16));
+#endif
         x.m_nrows = nrows;
         x.m_ncols = ncols;
         x.m_transpose = false;
@@ -665,6 +689,16 @@ void CDenseArray<T>::SetColumn(size_t j, const CDenseVector<T>& col) {
 
 	for(size_t i=0; i<col.NRows(); i++)
 		this->operator ()(i,j) = col.Get(i);
+
+}
+
+template <class T>
+void CDenseArray<T>::SetRow(size_t i, const CDenseVector<T>& row) {
+
+    assert(row.NRows()==1 && row.NCols() == NCols() && i<=NRows());
+
+    for(size_t j=0; j<row.NCols(); j++)
+        this->operator ()(i,j) = row.Get(j);
 
 }
 

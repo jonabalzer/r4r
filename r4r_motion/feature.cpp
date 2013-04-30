@@ -40,6 +40,17 @@ CFeature::CFeature(double x, double y, size_t scale, double quality):
 
 }
 
+CFeature::CFeature(const CFeature& x):
+    m_location(2),
+    m_scale(x.m_scale),
+    m_quality(x.m_quality),
+    m_descriptors(x.m_descriptors) {
+
+    m_location(0) = x.m_location.Get(0);
+    m_location(1) = x.m_location.Get(1);
+
+}
+
 ostream& operator<<(ostream& os, CFeature& x) {
 
     os << "Location: ";

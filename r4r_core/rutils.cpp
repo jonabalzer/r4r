@@ -407,7 +407,7 @@ mat CLinearAlgebra::ProjectToSO3(mat& R) {
 	vec s(min(R.NRows(),R.NCols()));
 	mat Vt(R.NCols(),R.NCols());
 
-	CMatrixFactorization::SVD(R,U,s,Vt);
+    CMatrixFactorization<double>::SVD(R,U,s,Vt);
 
 	return U*Vt;
 
@@ -450,7 +450,7 @@ mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const C
 	mat Vt(A.NCols(),A.NCols());
 
 	// SVD
-	CMatrixFactorization::SVD(A,U,s,Vt);
+    CMatrixFactorization<double>::SVD(A,U,s,Vt);
 
 	// essential matrix builds from last row of Vt
 	E0(0,0) = Vt(Vt.NRows()-1,0);
@@ -469,7 +469,7 @@ mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const C
 	mat Vtp(3,3);
 
 	// SVD
-	CMatrixFactorization::SVD(E0,Up,sp,Vtp);
+    CMatrixFactorization<double>::SVD(E0,Up,sp,Vtp);
 
 	double sm = 0.5*(sp(0)+sp(1));
 	mat sigma(3,3);
@@ -524,7 +524,7 @@ mat CLinearAlgebra::EstimateHomography(const vector<pair<vec,vec> >& corr) {
 	mat Vt(A.NCols(),A.NCols());
 
 	// SVD
-	CMatrixFactorization::SVD(A,U,s,Vt);
+    CMatrixFactorization<double>::SVD(A,U,s,Vt);
 
 	// assemle homography
 	H(0,0) = Vt(Vt.NRows()-1,0);
@@ -571,7 +571,7 @@ mat CLinearAlgebra::FactorEssentialMatrix(const mat& E) {
 	vec t(3);
 
 	// first try with positive sign, there are two options
-	CMatrixFactorization::SVD(En,U,s,Vt);
+    CMatrixFactorization<double>::SVD(En,U,s,Vt);
 
 	Ut = mat::Transpose(U);
 
@@ -610,7 +610,7 @@ mat CLinearAlgebra::FactorEssentialMatrix(const mat& E) {
 	// try with different sign
 	En.Scale(-1);
 
-	CMatrixFactorization::SVD(En,U,s,Vt);
+    CMatrixFactorization<double>::SVD(En,U,s,Vt);
 
 	Ut = mat::Transpose(U);
 
