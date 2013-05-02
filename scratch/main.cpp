@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include "splinecurve.h"
 #include "factor.h"
+#include "types.h"
+#include "trafo.h"
+
 
 using namespace std;
 using namespace R4R;
@@ -71,32 +74,32 @@ int main()
 //    ON::End();
 
 
-    vec x0(128);
-    x0.Rand(0,10);
-    CSplineCurve<double> curve = CSplineCurve<double>(128,3,13);
-    curve.MakeClampedUniformKnotVector(0,1);
-    mat& cv = curve.GetCVData();
+//    vec x0(128);
+//    x0.Rand(0,10);
+//    CSplineCurve<double> curve = CSplineCurve<double>(128,3,13);
+//    curve.MakeClampedUniformKnotVector(0,1);
+//    mat& cv = curve.GetCVData();
 
-    cv.Ones();
+//    cv.Ones();
 
 
-    curve.Print();
+//    curve.Print();
 
-    for(size_t i=0; i<cv.NCols(); i++) {
+//    for(size_t i=0; i<cv.NCols(); i++) {
 
-        vec col = cv.GetColumn(i);
-        col.Scale(i);
-        //col(1)=0;
+//        vec col = cv.GetColumn(i);
+//        col.Scale(i);
+//        //col(1)=0;
 
-    }
+//    }
 
-    CMercerKernel<double> kernel(2);
-    double t0, t1;
-    t0 = omp_get_wtime();
-    vec xc = curve.FindLocallyClosestPoint(x0,kernel,0.7,1e-6);
-    t1 = omp_get_wtime();
-    cout << t1-t0 << " s" << endl;
-    cout << xc << endl;
+//    CMercerKernel<double> kernel(2);
+//    double t0, t1;
+//    t0 = omp_get_wtime();
+//    vec xc = curve.FindLocallyClosestPoint(x0,kernel,0.7,1e-6);
+//    t1 = omp_get_wtime();
+//    cout << t1-t0 << " s" << endl;
+//    cout << xc << endl;
 
 
 //   std::vector<CDescriptorFileHeader> headers;

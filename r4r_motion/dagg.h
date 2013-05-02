@@ -1,5 +1,5 @@
-#ifndef DAGG_H
-#define DAGG_H
+#ifndef R4RDAGG_H
+#define R4RDAGG_H
 
 #include "tracker.h"
 #include "splinecurve.h"

@@ -21,31 +21,48 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef R4RTYPES_H_
-#define R4RTYPES_H_
+#ifndef R4RIMAGE_H
+#define R4RIMAGE_H
 
-#include "vecn.h"
-#include "darray.h"
-#include "sarray.h"
-#include <complex>
+#include "types.h"
 
 namespace R4R {
 
+/*! \brief R4R's own gray value image class
+ *
+ *
+ *
+ */
+class CImage: public CDenseArray<unsigned char> {
 
-typedef CDenseVector<double> vec;
-typedef CDenseVector<std::complex<double> > vecc;
-typedef CDenseVector<float> vecf;
-typedef CDenseArray<double> mat;
-typedef CDenseArray<float> matf;
-typedef CDenseArray<unsigned char> mmat;
-typedef CSparseArray<double> smat;
-typedef CSparseBandedArray<double> sbmat;
-typedef CVector<double,3> vec3;
-typedef CVector<float,3> vec3f;
-typedef CVector<double,2> vec2;
-typedef CVector<float,2> vec2f;
-typedef CVector<unsigned char,3> rgb;
+public:
+
+    //! Constructor.
+    CImage();
+
+    //! Constructor.
+    CImage(size_t w, size_t h):CDenseArray<unsigned char>(h,w){}
+
+};
+
+
+/*! \brief R4R's own gray value image class
+ *
+ *
+ *
+ */
+class CRGBImage: public CDenseArray<rgb> {
+
+public:
+
+    //! Constructor.
+    CRGBImage();
+
+    //! Constructor.
+    CRGBImage(size_t w, size_t h):CDenseArray<rgb>::CDenseArray(h,w){}
+
+};
 
 }
 
-#endif /* TYPES_H_ */
+#endif // IMAGE_H

@@ -6,8 +6,8 @@
  */
 
 
-#ifndef SARRAY_H_
-#define SARRAY_H_
+#ifndef R4RSARRAY_H_
+#define R4RSARRAY_H_
 
 #include <map>
 #include <vector>

@@ -21,11 +21,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CAM_H_
-#define CAM_H_
+#ifndef R4RCAM_H_
+#define R4RCAM_H_
 
 #include <stdlib.h>
-#include "types.h"
+#include "trafo.h"
+
 
 namespace R4R {
 

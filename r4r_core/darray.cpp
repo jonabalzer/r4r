@@ -22,6 +22,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "darray.h"
+#include "types.h"
 
 #include <string.h>
 #include <math.h>
@@ -500,11 +501,11 @@ ifstream& operator >> (ifstream& in, CDenseArray<U>& x) {
 template <class T>
 bool CDenseArray<T>::Normalize() {
 
-	T norm = Norm2();
+    double norm = Norm2();
 
 	if(norm>0) {
 
-		T s = 1/norm;
+        T s = T(1/norm);
 
 		Scale(s);
 
@@ -613,7 +614,9 @@ double CDenseArray<T>::Norm1() const {
 }
 
 template <class T>
-double CDenseArray<T>::Norm(size_t p) const {
+double CDenseArray<T>::Norm(double p) const {
+
+    assert(p>0);
 
 	double sum = 0;
 
@@ -622,7 +625,7 @@ double CDenseArray<T>::Norm(size_t p) const {
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
         sum += pow(fabs((double)pdata[i]),p);
 
-	return sum;
+    return pow(sum,1/p);
 
 }
 
@@ -1072,6 +1075,7 @@ template class CDenseArray<double>;
 template class CDenseArray<int>;
 template class CDenseArray<size_t>;
 template class CDenseArray<bool>;
+//template class CDenseArray<rgb>;
 
 template ostream& operator<< (ostream& os, const CDenseArray<double>& x);
 template istream& operator>> (istream& is, CDenseArray<double>& x);

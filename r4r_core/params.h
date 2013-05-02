@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef PARAMS_H_
-#define PARAMS_H_
+#ifndef R4RPARAMS_H_
+#define R4RPARAMS_H_
 
 #include <stdlib.h>
 #include <string>

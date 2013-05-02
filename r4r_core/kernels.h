@@ -1,5 +1,5 @@
-#ifndef KERNELS_H
-#define KERNELS_H
+#ifndef R4RKERNELS_H
+#define R4RKERNELS_H
 
 #include <iostream>
 #include <math.h>

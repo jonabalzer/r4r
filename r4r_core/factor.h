@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef FACTOR_H_
-#define FACTOR_H_
+#ifndef R4RFACTOR_H_
+#define R4RFACTOR_H_
 
 #include "darray.h"
 

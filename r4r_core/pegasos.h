@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef PEGASOS_H_
-#define PEGASOS_H_
+#ifndef R4RPEGASOS_H_
+#define R4RPEGASOS_H_
 
 #define ARMIJO_RHO 0.8
 #define ARMIJO_C 0.25

@@ -21,8 +21,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CSPLINECURVE_H
-#define CSPLINECURVE_H
+#ifndef R4RSPLINECURVE_H
+#define R4RSPLINECURVE_H
 
 
 #include "darray.h"

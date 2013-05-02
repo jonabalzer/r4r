@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef IDDESC_H_
-#define IDDESC_H_
+#ifndef R4RIDDESC_H_
+#define R4RIDDESC_H_
 
 #include "descriptor.h"
 #include "rect.h"

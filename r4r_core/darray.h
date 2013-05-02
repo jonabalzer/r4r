@@ -21,8 +21,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef DARRAY_H_
-#define DARRAY_H_
+#ifndef R4RDARRAY_H_
+#define R4RDARRAY_H_
 
 #include <stdlib.h>
 #include <iostream>
@@ -77,7 +77,7 @@ public:
 	CDenseArray();
 
 	//! Constructor
-	CDenseArray(size_t nrows, size_t ncols, T val = 0);
+    CDenseArray(size_t nrows, size_t ncols, T val = T(0));
 
 	//! Copy constructor.
 	CDenseArray(const CDenseArray& array);
@@ -116,7 +116,7 @@ public:
     double Norm1() const;
 
 	//! Computes \f$l_p\f$-norm.
-    double Norm(size_t p) const;
+    double Norm(double p) const;
 
     //! Computes the Hamming norm of a vector. Only implemented for Boolean type.
     double HammingNorm();
@@ -160,7 +160,7 @@ public:
 	//! Multiplies the array with a scalar.
     CDenseArray<T> operator*(const T& scalar) const;
 
-	//! Multiplies the array with a scalar.
+    //! Divides the array by a scalar.
     CDenseArray<T> operator/(const T& scalar) const;
 
 	//! Multiplies the object with an array from the right.
@@ -349,40 +349,6 @@ protected:
 
 };
 
-
-/*! \brief convenience class for creating vectors of length \f$n\f$
- *
- *
- *
- */
-template<class T, int n>
-class CNVector: public CDenseVector<T> {
-
-public:
-
-    //! Constructor.
-    CNVector():CDenseVector<T>(n) {};
-
-
-};
-
-/*! \brief convenience class for creating vectors of length \f$3\f$
- *
- * \todo What about operators in base class?
- *
- */
-template<class T>
-class CNVector<T,3>:public CDenseVector<T> {
-
-public:
-
-    // constructor
-    CNVector():CDenseVector<T>(3) {};
-
-    // constructor
-    CNVector(T x, T y, T z):CDenseVector<T>(3) {};
-
-};
 
 /*! \brief dense symmetric 2d matrix/array
  *

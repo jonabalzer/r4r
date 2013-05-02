@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef PRECOND_H_
-#define PRECOND_H_
+#ifndef R4RPRECOND_H_
+#define R4RPRECOND_H_
 
 
 #include "sarray.h"

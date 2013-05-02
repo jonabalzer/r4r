@@ -44,7 +44,8 @@ HEADERS += \
     tsttrack.h \
     tracklet.h \
     dagg.h \
-    descspecial.h
+    descspecial.h \
+    icp.h
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

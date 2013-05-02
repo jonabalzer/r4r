@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef INTIMG_H_
-#define INTIMG_H_
+#ifndef R4RINTIMG_H_
+#define R4RINTIMG_H_
 
 #include <assert.h>
 #include <cstring>

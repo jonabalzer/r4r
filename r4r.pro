@@ -5,7 +5,9 @@ SUBDIRS += \
     r4r_motion \
     robust_regression \
     mv_descriptor_learning \
-    scratch
+    scratch \
+    r4r_io \
+    r4r_hardware
 
 
 

@@ -21,8 +21,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef ITER_H_
-#define ITER_H_
+#ifndef R4RITER_H_
+#define R4RITER_H_
 
 #include "sarray.h"
 #include  "darray.h"

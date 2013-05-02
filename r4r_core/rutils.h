@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef UTILSR4R_H_
-#define UTILSR4R_H_
+#ifndef R4RUTILS_H_
+#define R4RUTILS_H_
 
 #include "cam.h"
 #include "types.h"

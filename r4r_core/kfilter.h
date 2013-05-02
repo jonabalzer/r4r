@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef KFILTER_H_
-#define KFILTER_H_
+#ifndef R4RKFILTER_H_
+#define R4RKFILTER_H_
 
 
 #include "types.h"

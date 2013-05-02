@@ -5,8 +5,8 @@
  *      Author: jbalzer
  */
 
-#ifndef LM_H_
-#define LM_H_
+#ifndef R4RLM_H_
+#define R4RLM_H_
 
 #include "iter.h"
 #include "types.h"

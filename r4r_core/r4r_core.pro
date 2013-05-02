@@ -28,7 +28,9 @@ SOURCES += \
     pegasos.cpp \
     rutils.cpp \
     kernels.cpp \
-    splinecurve.cpp
+    splinecurve.cpp \
+    vecn.cpp \
+    image.cpp
 
 HEADERS += \
     types.h \
@@ -48,7 +50,9 @@ HEADERS += \
     pegasos.h \
     rutils.h \
     kernels.h \
-    splinecurve.h
+    splinecurve.h \
+    vecn.h \
+    image.h
 
 LIBS += -L/usr/local/lib \
      -lopencv_core \

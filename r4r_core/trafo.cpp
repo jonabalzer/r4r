@@ -6,221 +6,422 @@
  */
 
 
-
-
 #include "trafo.h"
-#include "rutils.h"
 #include "factor.h"
+
 #include <math.h>
 #include <assert.h>
+#include <string.h>
+#include <limits>
 
 using namespace std;
 
 namespace R4R {
 
-template <size_t size>
-CTransformation<size>::CTransformation():
-	m_F(size+1,size+1) {
+template <typename T,u_int n>
+CTransformation<T,n>::CTransformation() {
 
-	m_F.Eye();
+    fill_n(m_F,n*(n+1),0);
 
-}
-
-template <size_t size>
-CTransformation<size>::CTransformation(const mat& F) {
-
-	assert(F.NRows()==size+1 && F.NCols()==size+1);
-
-	m_F = mat(F);
+    for(u_int i=0; i<n; i++)
+        m_F[n*i+i] = 1;
 
 }
 
-template <size_t size>
-mat CTransformation<size>::GetLinearPart() const {
+template <typename T,u_int n>
+T CTransformation<T,n>::Get(u_int i, u_int j) const {
 
-	mat A(size,size);
-
-	for(size_t i=0; i<size; i++) {
-
-		for(size_t j=0; j<size; j++) {
-
-			A(i,j) = m_F.Get(i,j);
-
-		}
-
-	}
-
-	return A;
+    // col major
+    return m_F[n*j + i];
 
 }
 
+template <typename T,u_int n>
+T& CTransformation<T,n>::operator ()(u_int i, u_int j) {
 
-template <size_t size>
-vec CTransformation<size>::GetTranslation() const {
-
-	vec t(size);
-
-	for(size_t i=0; i<size; i++)
-		t(i) = m_F.Get(i,size);
-
-	return t;
+    // col major
+    return m_F[n*j + i];
 
 }
 
-template <size_t size>
-void CTransformation<size>::SetLinearPart(const mat& A) {
+template <typename T,u_int n>
+CTransformation<T,n>::operator CDenseArray<T>() const {
 
-	for(size_t i=0; i<size; i++) {
+    CDenseArray<T> result(n+1,n+1);
+    result(n,n) = 1;
 
-		for(size_t j=0; j<size; j++) {
+    for(u_int i=0; i<n; i++) {
 
-			m_F(i,j) = A.Get(i,j);
+        for(u_int j=0; j<=n; j++)
+            result(i,j) = m_F[n*j + i];
 
-		}
+    }
 
-	}
-
-}
-
-template <size_t size>
-void CTransformation<size>::SetTranslation(const vec& t) {
-
-	for(size_t i=0; i<size; i++)
-		m_F(i,size) = t.Get(i);
+    return result;
 
 }
 
+template <typename T,u_int n>
+CVector<T,n> CTransformation<T,n>::Transform(const CVector<T, n>& x) {
 
+    CVector<T,n> result;
 
-template class CTransformation<2>;
-template class CTransformation<3>;
+    for(u_int i=0; i<n; i++) {
 
+        for(u_int j=0; j<n; j++)
+            result(i) += m_F[n*j+i]*x.Get(j);
 
-template <size_t size>
-CRotation<size>::CRotation(const mat& A) {
+        result(i) += m_F[n*n+i];
 
-	assert(A.NRows()==size && A.NCols()==size);
+    }
 
-	mat U(A.NRows(),A.NRows());
-	vec s(min(A.NRows(),A.NCols()));
-	mat Vt(A.NCols(),A.NCols());
-
-    CMatrixFactorization<double>::SVD(A,U,s,Vt);
-
-	mat Ut = mat::Transpose(U);
-
-	mat R = U*Ut;
+    return result;
 
 }
 
-mat CRotation<2>::Rodrigues(double o) {
+template <class U,u_int m>
+ostream& operator << (ostream& os, const CTransformation<U,m>& x) {
 
-	mat R(2,2);
+    for(u_int i=0; i<m; i++) {
 
-	R(0,0) = cos(o);
-	R(0,1) = -sin(o);
-	R(1,0) = sin(o);
-	R(1,1) = cos(o);
+        for(u_int j=0; j<m; j++)
+            os << x.m_F[m*j+i] << " ";
 
-	return R;
+        if(i<m-1)
+            os << x.m_F[m*m+i] << endl;
+        else
+            os << x.m_F[m*m+i];
+
+    }
+
+    return os;
 
 }
 
 
+template <typename T,u_int n>
+bool CTransformation<T,n>::Invert() {
+
+    T* temp = new T[n*(n+1)];
+    memcpy(temp,m_F,n*(n+1)*sizeof(T));
+
+    if(n==3) {
+
+        // inverse of det
+        T det = temp[0]*(temp[4]*temp[8] - temp[5]*temp[7])
+                - temp[3]*(temp[8]*temp[1] - temp[2]*temp[7])
+                + temp[6]*(temp[1]*temp[5] - temp[2]*temp[4]);
+
+        if(det==0)
+            return 1;
+
+        T deti = 1/det;
+
+        // first linear part
+        m_F[0] = deti*(temp[4]*temp[8] - temp[5]*temp[7]);
+        m_F[1] = -deti*(temp[1]*temp[8] - temp[2]*temp[7]);
+        m_F[2] = deti*(temp[1]*temp[5] - temp[2]*temp[4]);
+        m_F[3] = -deti*(temp[3]*temp[8] - temp[5]*temp[6]);
+        m_F[4] = deti*(temp[0]*temp[8] - temp[2]*temp[6]);
+        m_F[5] = -deti*(temp[0]*temp[5] - temp[2]*temp[3]);
+        m_F[6] = deti*(temp[3]*temp[7] - temp[4]*temp[6]);
+        m_F[7] = -deti*(temp[0]*temp[7] - temp[1]*temp[6]);
+        m_F[8] = deti*(temp[0]*temp[4] - temp[1]*temp[3]);
+
+    }
+    else {
+
+        T det = temp[0]*temp[3]-temp[1]*temp[2];
+
+        if(det==0)
+            return 1;
+
+        T deti = 1/det;
+
+        // first linear part
+        m_F[0] = deti*temp[3];
+        m_F[1] = -deti*temp[1];
+        m_F[2] = -deti*temp[2];
+        m_F[3] = deti*temp[0];
+
+    }
+
+    // then affine part
+    for(u_int i=0; i<n; i++) {
+
+        m_F[n*n+i] = 0;
+
+        for(u_int j=0; j<n; j++)
+            m_F[n*n+i] -= m_F[n*j+i]*temp[n*n+j];
+
+    }
+
+    delete [] temp;
+
+    return 0;
+
+}
 
 
-mat CRotation<3>::Rodrigues(double o1, double o2, double o3) {
+template class CTransformation<double,2>;
+template class CTransformation<float,2>;
+template class CTransformation<double,3>;
+template class CTransformation<float,3>;
+template ostream& operator << (ostream& os, const CTransformation<double,3>& x);
+template ostream& operator << (ostream& os, const CTransformation<double,2>& x);
+template ostream& operator << (ostream& os, const CTransformation<float,3>& x);
+template ostream& operator << (ostream& os, const CTransformation<float,2>& x);
 
-	double theta = sqrt(o1*o1+o2*o2+o3*o3);
 
-	mat R(3,3);
+template<typename T>
+CRotation<T,2>::CRotation(T o) {
 
-	if(theta<1e-20) {
+    Rodrigues(o,m_F);
 
-		R(0,0) = 1;
-		R(1,1) = 1;
-		R(2,2) = 1;
+}
 
-		return R;
+template<typename T>
+void CRotation<T,2>::Rodrigues(const T& o, T* R) {
 
-	}
+    R[0] = cos(o);
+    R[1] = sin(o);
+    R[2] = -sin(o);
+    R[3] = cos(o);
 
-	double ox, oy, oz;
-	ox = o1/theta;
-	oy = o2/theta;
-	oz = o3/theta;
+}
 
-	double oxox, oxoy, oxoz, oyoy, oyoz, ozoz;
-	oxox = ox*ox;
-	oxoy = ox*oy;
-	oxoz = ox*oz;
-	oyoy = oy*oy;
-	oyoz = oy*oz;
-	ozoz = oz*oz;
+template<typename T>
+bool CRotation<T,2>::Invert() {
 
-	double sth, cth, mcth;
+    // transpose R
+    swap(m_F[1],m_F[2]);
+
+    return 0;
+
+}
+
+template class CRotation<double,2>;
+template class CRotation<float,2>;
+
+template<typename T>
+CRotation<T,3>::CRotation(T o1, T o2, T o3) {
+
+     Rodrigues(o1,o2,o3,m_F);
+
+}
+
+template<typename T>
+void CRotation<T,3>::Rodrigues(const  T& o1, const T& o2, const T& o3, T* R) {
+
+    T theta = sqrt(o1*o1+o2*o2+o3*o3);
+
+    if(theta<numeric_limits<T>::epsilon()) {
+
+        fill_n(R,9,0);
+
+        R[0] = 1;
+        R[4] = 1;
+        R[8] = 1;
+
+        return;
+
+    }
+
+    T ox, oy, oz;
+    ox = o1/theta;
+    oy = o2/theta;
+    oz = o3/theta;
+
+    T oxox, oxoy, oxoz, oyoy, oyoz, ozoz;
+    oxox = ox*ox;
+    oxoy = ox*oy;
+    oxoz = ox*oz;
+    oyoy = oy*oy;
+    oyoz = oy*oz;
+    ozoz = oz*oz;
+
+    T sth, cth, mcth;
     sth = sin(theta);
     cth  = cos(theta);
     mcth = 1 - cth;
 
-    R(0,0) = 1 - mcth*(oyoy+ozoz);  R(0,1) = -sth*oz + mcth*oxoy;		R(0,2) = sth*oy + mcth*oxoz;
-    R(1,0) = sth*oz + mcth*oxoy;	R(1,1) = 1 - mcth*(ozoz + oxox);	R(1,2) = -sth*ox + mcth*oyoz;
-    R(2,0) = - sth*oy + mcth*oxoz;	R(2,1) = sth*ox + mcth*oyoz;    	R(2,2) = 1 - mcth*(oxox+oyoy);
-
-    return R;
+    R[0] = 1 - mcth*(oyoy+ozoz);    R[3] = -sth*oz + mcth*oxoy;		R[6] = sth*oy + mcth*oxoz;
+    R[1] = sth*oz + mcth*oxoy;      R[4] = 1 - mcth*(ozoz + oxox);	R[7] = -sth*ox + mcth*oyoz;
+    R[2] = - sth*oy + mcth*oxoz;	R[5] = sth*ox + mcth*oyoz;    	R[8] = 1 - mcth*(oxox+oyoy);
 
 }
 
-CRotation<3>::CRotation(double o1, double o2, double o3) {
+template<typename T>
+void CRotation<T,3>::Rodrigues(const T& o1, const T& o2, const T& o3, T* R, T* DRo1, T* DRo2, T* DRo3) {
 
-	mat R = CRotation<3>::Rodrigues(o1,o2,o3);
+    T theta = sqrt(o1*o1+o2*o2+o3*o3);
 
-	CTransformation<3>::SetLinearPart(R);
+    if(theta<numeric_limits<T>::epsilon()) {
+
+        fill_n(R,9,0);
+        R[0] = 1;
+        R[4] = 1;
+        R[8] = 1;
+
+        fill_n(DRo1,9,0);
+        DRo1[0] = 1;
+        DRo1[4] = 1;
+        DRo1[8] = 1;
+
+        fill_n(DRo2,9,0);
+        DRo2[0] = 1;
+        DRo2[4] = 1;
+        DRo2[8] = 1;
+
+        fill_n(DRo3,9,0);
+        DRo3[0] = 1;
+        DRo3[4] = 1;
+        DRo3[8] = 1;
+
+        return;
+
+    }
+
+    T ox, oy, oz;
+    ox = o1/theta;
+    oy = o2/theta;
+    oz = o3/theta;
+
+    T oxox, oxoy, oxoz, oyoy, oyoz, ozoz;
+    oxox = ox*ox;
+    oxoy = ox*oy;
+    oxoz = ox*oz;
+    oyoy = oy*oy;
+    oyoz = oy*oz;
+    ozoz = oz*oz;
+
+    T sth, cth, mcth;
+    sth = sin(theta);
+    cth  = cos(theta);
+    mcth = 1 - cth;
+
+    R[0] = 1 - mcth*(oyoy+ozoz);    R[3] = -sth*oz + mcth*oxoy;		R[6] = sth*oy + mcth*oxoz;
+    R[1] = sth*oz + mcth*oxoy;      R[4] = 1 - mcth*(ozoz + oxox);	R[7] = -sth*ox + mcth*oyoz;
+    R[2] = - sth*oy + mcth*oxoz;	R[5] = sth*ox + mcth*oyoz;    	R[8] = 1 - mcth*(oxox+oyoy);
+
+    T a, b, c, d;
+    a =  sth/theta;
+    b = mcth/theta;
+    c = cth - a;
+    d = sth - 2*b;
+
+    DRo1[0] = -d*(oyoy + ozoz)*ox;			DRo1[3] = b*oy - c*oxoz + d*oxoy*ox;	DRo1[6] = b*oz + c*oxoy + d*oxoz*ox;
+    DRo1[1] = b*oy + c*oxoz + d*oxoy*ox;	DRo1[4] = -2*b*ox - d*(ozoz + oxox)*ox; DRo1[7] = -a - c*oxox + d*oyoz*ox;
+    DRo1[2] = b*oz - c*oxoy + d*oxoz*ox; 	DRo1[5] = a + c*oxox + d*oyoz*ox;		DRo1[8] = -2*b*ox - d*(oyoy + oxox)*ox;
+
+    DRo2[0] = -2*b*oy - d*(oyoy + ozoz)*oy;	DRo2[3] = b*ox - c*oyoz + d*oxoy*oy;	DRo2[6] = a + c*oyoy + d*oxoz*oy;
+    DRo2[1] = b*ox + c*oyoz + d*oxoy*oy;	DRo2[4] = -d*(ozoz + oxox)*oy;			DRo2[7] =  b*oz - c*oxoy + d*oyoz*oy;
+    DRo2[2] = -a - c*oyoy + d*oxoz*oy;		DRo2[5] =  b*oz + c*oxoy + d*oyoz*oy;	DRo2[8] = -2*b*oy - d*(oyoy + oxox)*oy;
+
+    DRo3[0] = -2*b*oz - d*(oyoy + ozoz)*oz;	DRo3[3] = -a - c*ozoz + d*oxoy*oz;		DRo3[6] = b*ox + c*oyoz + d*oxoz*oz;
+    DRo3[1] = a + c*ozoz + d*oxoy*oz;		DRo3[4] = -2*b*oz - d*(ozoz + oxox)*oz; DRo3[7] = b*oy - c*oxoz + d*oyoz*oz;
+    DRo3[2] =  b*ox - c*oyoz + d*oxoz*oz;	DRo3[5] = b*oy + c*oxoz + d*oyoz*oz;	DRo3[8] = - d*(oyoy + oxox)*oz;
 
 }
 
-CRotation<3>::CRotation(vec omega) {
+template<typename T>
+void CRotation<T,3>::Log(const T* R, T& o1, T& o2, T& o3) {
 
-	assert(omega.NElems()==3);
+    T arg = 0.5*((R[0]+R[4]+R[8])-1.0);
 
-	CRotation(omega.Get(0),omega.Get(1),omega.Get(2));
+    if(fabs(arg)>1-numeric_limits<T>::epsilon())
+        return;
 
-}
+    T theta = acos(arg);
+    T s = theta/(2*sin(theta));
 
-vec CRotation<3>::Log(const mat& R) {
-
-	vec omega(3);
-
-	double arg = 0.5*(R.Trace()-1.0);
-
-	if(fabs(arg)>=1)
-		return omega;
-
-	double theta = acos(arg);
-
-	mat Omega = R - mat::Transpose(R);
-	Omega.Scale(theta/(2*sin(theta)));
-
-	omega(0) = -Omega.Get(1,2);
-	omega(1) = Omega.Get(0,2);
-	omega(2) = -Omega.Get(0,1);
-
-	return omega;
+    o1 = -s*(R[7]-R[5]);
+    o2 = s*(R[6]-R[2]);
+    o3 = -s*(R[3]-R[1]);
 
 }
 
-vec CRotation<3>::Log() {
+template<typename T>
+bool CRotation<T,3>::Invert() {
 
-	mat R = GetLinearPart();
+    // transpose R
+    swap(m_F[1],m_F[3]);
+    swap(m_F[2],m_F[6]);
+    swap(m_F[5],m_F[7]);
 
-	return Log(R);
+    return 0;
+
+}
+
+template class CRotation<double,3>;
+template class CRotation<float,3>;
+
+
+template<typename T>
+CRigidMotion<T,2>::CRigidMotion(T o, T t1, T t2) {
+
+    CRotation<T,2>::Rodrigues(o,m_F);
+    m_F[4] = t1;
+    m_F[5] = t2;
 
 }
 
 
-template class CRotation<2>;
-template class CRotation<3>;
+template<typename T>
+bool CRigidMotion<T,2>::Invert() {
+
+    // transpose R
+    swap(m_F[1],m_F[2]);
+
+    // -R'*t
+    T temp[2];
+    temp[0] = m_F[4];
+    temp[1] = m_F[5];
+
+    m_F[4] = -(m_F[0]*temp[0] + m_F[2]*temp[1]);
+    m_F[5] = -(m_F[1]*temp[0] + m_F[3]*temp[1]);
+
+    return 0;
+
+}
+
+template class CRigidMotion<double,2>;
+template class CRigidMotion<float,2>;
+
+template<typename T>
+CRigidMotion<T,3>::CRigidMotion(T o1, T o2, T o3, T t1, T t2, T t3) {
+
+    CRotation<T,3>::Rodrigues(o1,o2,o3,m_F);
+    m_F[9] = t1;
+    m_F[10] = t2;
+    m_F[11] = t3;
+
+}
+
+template<typename T>
+bool CRigidMotion<T,3>::Invert() {
+
+    // transpose R
+    swap(m_F[1],m_F[3]);
+    swap(m_F[2],m_F[6]);
+    swap(m_F[5],m_F[7]);
+
+    // -R'*t
+    T temp[3];
+    temp[0] = m_F[9];
+    temp[1] = m_F[10];
+    temp[2] = m_F[11];
+
+    m_F[9] = -(m_F[0]*temp[0] + m_F[3]*temp[1] + m_F[6]*temp[2]);
+    m_F[10] = -(m_F[1]*temp[0] + m_F[4]*temp[1] + m_F[7]*temp[2]);
+    m_F[11] = -(m_F[2]*temp[0] + m_F[5]*temp[1] + m_F[8]*temp[2]);
+
+    return 0;
+
+}
 
 
+template class CRigidMotion<double,3>;
+template class CRigidMotion<float,3>;
 
 }

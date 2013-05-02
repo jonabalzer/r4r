@@ -21,31 +21,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef R4RTYPES_H_
-#define R4RTYPES_H_
+#ifndef R4RICP_H
+#define R4RICP_H
 
-#include "vecn.h"
-#include "darray.h"
-#include "sarray.h"
-#include <complex>
-
-namespace R4R {
-
-
-typedef CDenseVector<double> vec;
-typedef CDenseVector<std::complex<double> > vecc;
-typedef CDenseVector<float> vecf;
-typedef CDenseArray<double> mat;
-typedef CDenseArray<float> matf;
-typedef CDenseArray<unsigned char> mmat;
-typedef CSparseArray<double> smat;
-typedef CSparseBandedArray<double> sbmat;
-typedef CVector<double,3> vec3;
-typedef CVector<float,3> vec3f;
-typedef CVector<double,2> vec2;
-typedef CVector<float,2> vec2f;
-typedef CVector<unsigned char,3> rgb;
-
-}
-
-#endif /* TYPES_H_ */
+#endif // ICP_H

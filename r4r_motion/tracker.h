@@ -1,31 +1,38 @@
-//	Copyright (C) 2012  J. Balzer, J. Dong, V. Karasev
+//////////////////////////////////////////////////////////////////////////////////
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+// Copyright (c) 2013, Jonathan Balzer
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
+// All rights reserved.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+//////////////////////////////////////////////////////////////////////////////////
 
 /*! \mainpage
- *  \author    J. Balzer, D. Davis, J. Dong, V. Karasev
+ *  \author    J. Balzer
  *  \version   0.1
- *  \date      2012-08-09
+ *  \date      2013-05-01
  *
  *
  *
  *
  */
 
-#ifndef TRACKER_H_
-#define TRACKER_H_
+#ifndef R4RTRACKER_H_
+#define R4RTRACKER_H_
 
 
 #include <opencv2/opencv.hpp>
