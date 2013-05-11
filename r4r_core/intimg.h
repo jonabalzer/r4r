@@ -1,9 +1,25 @@
-/*
- * intimg.h
- *
- *  Created on: Mar 30, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #ifndef R4RINTIMG_H_
 #define R4RINTIMG_H_
@@ -34,19 +50,19 @@ public:
 	CIntegralImage();
 
 	//! Standard constructor.
-	CIntegralImage(size_t width, size_t height);
+    CIntegralImage(size_t width, size_t height);
 
 	//! Image width.
-	size_t Width() { return m_data.NCols(); };
+    size_t Width() { return m_data.NCols(); }
 
 	//! Image height.
-	size_t Height() { return m_data.NRows(); };
+    size_t Height() { return m_data.NRows(); }
 
 	//! Computes the integral image.
 	void Compute();
 
 	//! Access to the data.
-	CDenseArray<T>& Get() { return m_data; };
+    CDenseArray<T>& Get() { return m_data; }
 
 	//! Erases the image.
 	void Clear();

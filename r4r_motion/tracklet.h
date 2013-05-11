@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
+/*////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2013, Jonathan Balzer
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////*/
 
 #ifndef R4RTRACKLET_H_
 #define R4RTRACKLET_H_
@@ -61,16 +61,16 @@ public:
 	virtual ~CTracklet();
 
 	//! Tests whether two tracklets are equal by looking at their initial position.
-	bool operator!=(CTracklet& tracklet) { return GetHash()!=tracklet.GetHash(); };
+    bool operator!=(CTracklet& tracklet) { return GetHash()!=tracklet.GetHash(); }
 
 	//! Directly updates the state without any filtering.
     void Update(CFeature x);
 
     //! Provides access to the current state.
-    CFeature& GetLatestState() { return back(); };
+    CFeature& GetLatestState() { return back(); }
 
 	//! Provides access to the current feature position.
-    vec GetLatestLocation() { return back().GetLocation(); };
+    vec GetLatestLocation() { return back().GetLocation(); }
 
 	//! Provides access to previous feature position.
 	vec GetPastLocation(size_t steps);
@@ -79,7 +79,7 @@ public:
 	vec GetPastLocationAtNativeScale(size_t steps);
 
 	//! Provides access to the current feature position w.r.t. to the native scale.
-    vec GetLatestLocationAtNativeScale() { return back().GetLocationAtNativeScale(); };
+    vec GetLatestLocationAtNativeScale() { return back().GetLocationAtNativeScale(); }
 
 	//! Extrapolates the current translational speed from the feature.
 	vec GetLatestVelocity();

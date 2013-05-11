@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
+/*////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2013, Jonathan Balzer
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////*/
 
 #ifndef R4RIMAGE_H
 #define R4RIMAGE_H
@@ -57,6 +57,9 @@ public:
 
     //! Constructor.
     CRGBImage();
+
+    //! \copydoc CDenseArray(size_t,size_t,std::shared_ptr<T>)
+    CRGBImage(size_t w, size_t h, std::shared_ptr<rgb> data):CDenseArray<rgb>(w,h,data) {}
 
     //! Constructor.
     CRGBImage(size_t w, size_t h):CDenseArray<rgb>::CDenseArray(h,w){}

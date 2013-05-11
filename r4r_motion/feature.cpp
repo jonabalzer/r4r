@@ -1,9 +1,25 @@
-/*
- * feature.cpp
- *
- *  Created on: Apr 2, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "feature.h"
 #include "descriptor.h"
@@ -109,19 +125,19 @@ ofstream& operator<<(ofstream& os, CFeature& x) {
 
             // write type
             ETYPE type = it->second->GetType();
-            os << type << endl;
+            os << (int)type << endl;
 
             // access to data
             void* data = it->second->GetData();
 
             // write data depending on number of bytes
-            if(type==B1U || type == C1U || type == C1S)
+            if(type==ETYPE::B1U || type == ETYPE::C1U || type == ETYPE::C1S)
                 os.write((char*)(data),sizeof(char)*it->second->NElems());
-            else if(type==S2U || type == S2S)
+            else if(type==ETYPE::S2U || type == ETYPE::S2S)
                 os.write((char*)(data),sizeof(short)*it->second->NElems());
-            else if(type==I4S || type==I4U || type==F4S)
+            else if(type==ETYPE::I4S || type==ETYPE::I4U || type==ETYPE::F4S)
                 os.write((char*)(data),sizeof(int)*it->second->NElems());
-            else if(type==L8S || type== L8U || type==D8S)
+            else if(type==ETYPE::L8S || type==ETYPE::L8U || type==ETYPE::D8S)
                 os.write((char*)(data),sizeof(double)*it->second->NElems());
 
             os << endl;
@@ -167,16 +183,17 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
         is.get();
 
         // read type, TODO: map type name to type
-        int type;
-        is >> type;
+        int temp;
+        is >> temp;
+        ETYPE type = (ETYPE)temp;
         is.get();
 
-        if(type) {
+        if(type!=ETYPE::NA) {
 
             // treat different data types separately
             switch(type) {
 
-            case B1U:
+            case ETYPE::B1U:
             {
 
                 CDenseArray<bool> container(nrows,ncols);
@@ -189,7 +206,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
 
             }
 
-            case I4S:
+            case ETYPE::I4S:
             {
 
                 CDenseArray<int> container(nrows,ncols);
@@ -202,7 +219,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
 
             }
 
-            case F4S:
+            case ETYPE::F4S:
             {
 
                 CDenseArray<float> container(nrows,ncols);
@@ -215,7 +232,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
 
             }
 
-            case L8U:
+            case ETYPE::L8U:
             {
 
                 CDenseArray<size_t> container(nrows,ncols);
@@ -228,7 +245,7 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
 
             }
 
-            case D8S:
+            case ETYPE::D8S:
             {
 
                 CDenseArray<double> container(nrows,ncols);
@@ -626,7 +643,7 @@ void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFil
 
     // read first header
     size_t nelems0, nelems, counter;
-    int type0;
+    ETYPE type0;
 
     counter = 0;
     nelems = 0;
@@ -684,10 +701,10 @@ void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFil
 
     switch(type0) {
 
-    case B1U:
+    case ETYPE::B1U:
     {
 
-        type = B1U;
+        type = ETYPE::B1U;
 
         data = new bool[nelems];
 
@@ -698,10 +715,10 @@ void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFil
 
     }
 
-    case I4S:
+    case ETYPE::I4S:
     {
 
-        type = I4S;
+        type = ETYPE::I4S;
 
         data = new int[nelems];
 
@@ -712,10 +729,10 @@ void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFil
     }
 
 
-    case F4S:
+    case ETYPE::F4S:
     {
 
-        type = F4S;
+        type = ETYPE::F4S;
 
         data = new float[nelems];
 
@@ -725,10 +742,10 @@ void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFil
 
     }
 
-    case L8U:
+    case ETYPE::L8U:
     {
 
-        type = L8U;
+        type = ETYPE::L8U;
 
         data = new size_t[nelems];
 
@@ -738,10 +755,10 @@ void* CFeature::LoadDescriptors(const char* filename, std::vector<CDescriptorFil
 
     }
 
-    case D8S:
+    case ETYPE::D8S:
     {
 
-        type = D8S;
+        type = ETYPE::D8S;
 
         data = new double[nelems];
 

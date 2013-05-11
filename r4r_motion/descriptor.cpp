@@ -1,9 +1,25 @@
-/*
- * descriptor.cpp
- *
- *  Created on: Apr 2, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "descriptor.h"
 #include "rect.h"
@@ -51,7 +67,7 @@ template class CNeighborhoodDescriptor<CRectangle<double>,CDenseVector<bool> >;
 CDescriptorFileHeader::CDescriptorFileHeader():
     m_scale(0),
     m_name(),
-    m_type(NA),
+    m_type(ETYPE::NA),
     m_comment() {
 
     m_location[0] = 0;
@@ -64,7 +80,7 @@ CDescriptorFileHeader::CDescriptorFileHeader():
 CDescriptorFileHeader::CDescriptorFileHeader(const CFeature& feature):
     m_scale(feature.m_scale),
     m_name(),
-    m_type(NA),
+    m_type(ETYPE::NA),
     m_comment() {
 
     m_location[0] = feature.m_location.Get(0);
@@ -100,7 +116,7 @@ ostream& operator<<(std::ostream& os, CDescriptorFileHeader& x) {
     os << x.m_scale << endl;
     os << x.m_name << endl;
     os << x.m_size[0] << " " << x.m_size[1] << endl;
-    os << x.m_type << endl;
+    os << (int)x.m_type << endl;
     os << x.m_comment;
 
     return os;
@@ -122,7 +138,9 @@ istream& operator>>(std::istream& is, CDescriptorFileHeader& x) {
     is >> x.m_size[0];
     is >> x.m_size[1];
 
-    is >> x.m_type;
+    int temp;
+    is >> temp;
+    x.m_type = (ETYPE)temp;
     is.get();
 
     is >> x.m_comment;

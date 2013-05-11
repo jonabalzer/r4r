@@ -1,3 +1,26 @@
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
+
 #include "dagg.h"
 #include "types.h"
 #include "descriptor.h"
@@ -157,13 +180,13 @@ bool CDescriptorAggregator<Array>::Aggregate(const char* filename, const char* c
                     void* pdata = pdesc->GetData();
 
                     // write data depending on number of bytes
-                    if(type==B1U || type == C1U || type == C1S)
+                    if(type==ETYPE::B1U || type == ETYPE::C1U || type == ETYPE::C1S)
                         data.write((char*)(pdata),sizeof(char)*pdesc->NElems());
-                    else if(type==S2U || type == S2S)
+                    else if(type==ETYPE::S2U || type == ETYPE::S2S)
                         data.write((char*)(pdata),sizeof(short)*pdesc->NElems());
-                    else if(type==I4S || type==I4U || type==F4S)
+                    else if(type==ETYPE::I4S || type==ETYPE::I4U || type==ETYPE::F4S)
                         data.write((char*)(pdata),sizeof(int)*pdesc->NElems());
-                    else if(type==L8S || type== L8U || type==D8S)
+                    else if(type==ETYPE::L8S || type==ETYPE::L8U || type==ETYPE::D8S)
                         data.write((char*)(pdata),sizeof(double)*pdesc->NElems());
 
                 }

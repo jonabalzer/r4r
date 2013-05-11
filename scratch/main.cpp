@@ -14,10 +14,21 @@
 using namespace std;
 using namespace R4R;
 using namespace cv;
+
 #include <opennurbs/opennurbs.h>
 
 int main()
 {
+
+
+
+    vec x(3);
+    x.Rand(0,10);
+    cout << x << endl;
+    ofstream out("/home/jbalzer/test.txt");
+    out << x << endl;
+
+    out.close();
 
 //    ON::Begin();
 

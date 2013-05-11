@@ -29,6 +29,7 @@ public:
     ~MainWindow();
 
 private slots:
+
     void on_actionExit_triggered();
 
     void on_actionOpen_triggered();
@@ -43,7 +44,7 @@ private slots:
 
     void on_actionPreferences_triggered();
 
-    void set_params(CParameters params) { m_params = params; };
+    void set_params(CParameters params) { m_params = params; }
 
     void on_actionSave_Descriptors_triggered();
 

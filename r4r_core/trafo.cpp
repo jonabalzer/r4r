@@ -1,10 +1,25 @@
-/*
- * trafo.cpp
- *
- *  Created on: Oct 16, 2012
- *      Author: jbalzer
- */
-
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "trafo.h"
 #include "factor.h"
@@ -25,6 +40,33 @@ CTransformation<T,n>::CTransformation() {
 
     for(u_int i=0; i<n; i++)
         m_F[n*i+i] = 1;
+
+}
+
+
+template <typename T,u_int n>
+CTransformation<T,n> CTransformation<T,n>::operator*(const CTransformation<T,n>& x) const {
+
+    CTransformation<T,n> result;
+
+    // iterate through cols of x
+    for(u_int k=0; k<=n; k++) {
+
+        for(u_int i=0; i<n; i++) {
+
+            result.m_F[k*n+i] = 0;
+
+            for(u_int j=0; j<n; j++)
+                result.m_F[k*n+i] += m_F[n*j+i]*x.m_F[k*n+j];
+
+            if(k==n)
+                result.m_F[k*n+i] += m_F[n*n+i];
+
+        }
+
+    }
+
+    return result;
 
 }
 
@@ -78,6 +120,37 @@ CVector<T,n> CTransformation<T,n>::Transform(const CVector<T, n>& x) {
     return result;
 
 }
+
+template <typename T,u_int n>
+CVector<T,n> CTransformation<T,n>::Transform(const T* x) {
+
+    CVector<T,n> result;
+
+    for(u_int i=0; i<n; i++) {
+
+        for(u_int j=0; j<n; j++)
+            result(i) += m_F[n*j+i]*x[j];
+
+    result(i) += m_F[n*n+i];
+
+    }
+
+    return result;
+
+}
+
+template <typename T,u_int n>
+vector<CVector<T,n> > CTransformation<T,n>::Transform(const vector<CVector<T,n> >& x) {
+
+    vector<CVector<T,n> > result(x.size());
+
+    for(size_t i=0; i<x.size(); i++)
+        result[i] = Transform(x[i]);
+
+    return result;
+
+}
+
 
 template <class U,u_int m>
 ostream& operator << (ostream& os, const CTransformation<U,m>& x) {
@@ -172,21 +245,13 @@ template ostream& operator << (ostream& os, const CTransformation<double,2>& x);
 template ostream& operator << (ostream& os, const CTransformation<float,3>& x);
 template ostream& operator << (ostream& os, const CTransformation<float,2>& x);
 
-
 template<typename T>
 CRotation<T,2>::CRotation(T o) {
 
-    Rodrigues(o,m_F);
-
-}
-
-template<typename T>
-void CRotation<T,2>::Rodrigues(const T& o, T* R) {
-
-    R[0] = cos(o);
-    R[1] = sin(o);
-    R[2] = -sin(o);
-    R[3] = cos(o);
+    m_F[0] = cos(o);
+    m_F[1] = sin(o);
+    m_F[2] = -sin(o);
+    m_F[3] = cos(o);
 
 }
 
@@ -202,6 +267,19 @@ bool CRotation<T,2>::Invert() {
 
 template class CRotation<double,2>;
 template class CRotation<float,2>;
+
+template<typename T>
+CDifferentialRotation<T,2>::CDifferentialRotation(T o) {
+
+    m_F[0] = -sin(o);
+    m_F[1] = cos(o);
+    m_F[2] = -cos(o);
+    m_F[3] = -sin(o);
+
+}
+
+template class CDifferentialRotation<double,2>;
+template class CDifferentialRotation<float,2>;
 
 template<typename T>
 CRotation<T,3>::CRotation(T o1, T o2, T o3) {
@@ -252,79 +330,6 @@ void CRotation<T,3>::Rodrigues(const  T& o1, const T& o2, const T& o3, T* R) {
 }
 
 template<typename T>
-void CRotation<T,3>::Rodrigues(const T& o1, const T& o2, const T& o3, T* R, T* DRo1, T* DRo2, T* DRo3) {
-
-    T theta = sqrt(o1*o1+o2*o2+o3*o3);
-
-    if(theta<numeric_limits<T>::epsilon()) {
-
-        fill_n(R,9,0);
-        R[0] = 1;
-        R[4] = 1;
-        R[8] = 1;
-
-        fill_n(DRo1,9,0);
-        DRo1[0] = 1;
-        DRo1[4] = 1;
-        DRo1[8] = 1;
-
-        fill_n(DRo2,9,0);
-        DRo2[0] = 1;
-        DRo2[4] = 1;
-        DRo2[8] = 1;
-
-        fill_n(DRo3,9,0);
-        DRo3[0] = 1;
-        DRo3[4] = 1;
-        DRo3[8] = 1;
-
-        return;
-
-    }
-
-    T ox, oy, oz;
-    ox = o1/theta;
-    oy = o2/theta;
-    oz = o3/theta;
-
-    T oxox, oxoy, oxoz, oyoy, oyoz, ozoz;
-    oxox = ox*ox;
-    oxoy = ox*oy;
-    oxoz = ox*oz;
-    oyoy = oy*oy;
-    oyoz = oy*oz;
-    ozoz = oz*oz;
-
-    T sth, cth, mcth;
-    sth = sin(theta);
-    cth  = cos(theta);
-    mcth = 1 - cth;
-
-    R[0] = 1 - mcth*(oyoy+ozoz);    R[3] = -sth*oz + mcth*oxoy;		R[6] = sth*oy + mcth*oxoz;
-    R[1] = sth*oz + mcth*oxoy;      R[4] = 1 - mcth*(ozoz + oxox);	R[7] = -sth*ox + mcth*oyoz;
-    R[2] = - sth*oy + mcth*oxoz;	R[5] = sth*ox + mcth*oyoz;    	R[8] = 1 - mcth*(oxox+oyoy);
-
-    T a, b, c, d;
-    a =  sth/theta;
-    b = mcth/theta;
-    c = cth - a;
-    d = sth - 2*b;
-
-    DRo1[0] = -d*(oyoy + ozoz)*ox;			DRo1[3] = b*oy - c*oxoz + d*oxoy*ox;	DRo1[6] = b*oz + c*oxoy + d*oxoz*ox;
-    DRo1[1] = b*oy + c*oxoz + d*oxoy*ox;	DRo1[4] = -2*b*ox - d*(ozoz + oxox)*ox; DRo1[7] = -a - c*oxox + d*oyoz*ox;
-    DRo1[2] = b*oz - c*oxoy + d*oxoz*ox; 	DRo1[5] = a + c*oxox + d*oyoz*ox;		DRo1[8] = -2*b*ox - d*(oyoy + oxox)*ox;
-
-    DRo2[0] = -2*b*oy - d*(oyoy + ozoz)*oy;	DRo2[3] = b*ox - c*oyoz + d*oxoy*oy;	DRo2[6] = a + c*oyoy + d*oxoz*oy;
-    DRo2[1] = b*ox + c*oyoz + d*oxoy*oy;	DRo2[4] = -d*(ozoz + oxox)*oy;			DRo2[7] =  b*oz - c*oxoy + d*oyoz*oy;
-    DRo2[2] = -a - c*oyoy + d*oxoz*oy;		DRo2[5] =  b*oz + c*oxoy + d*oyoz*oy;	DRo2[8] = -2*b*oy - d*(oyoy + oxox)*oy;
-
-    DRo3[0] = -2*b*oz - d*(oyoy + ozoz)*oz;	DRo3[3] = -a - c*ozoz + d*oxoy*oz;		DRo3[6] = b*ox + c*oyoz + d*oxoz*oz;
-    DRo3[1] = a + c*ozoz + d*oxoy*oz;		DRo3[4] = -2*b*oz - d*(ozoz + oxox)*oz; DRo3[7] = b*oy - c*oxoz + d*oyoz*oz;
-    DRo3[2] =  b*ox - c*oyoz + d*oxoz*oz;	DRo3[5] = b*oy + c*oxoz + d*oyoz*oz;	DRo3[8] = - d*(oyoy + oxox)*oz;
-
-}
-
-template<typename T>
 void CRotation<T,3>::Log(const T* R, T& o1, T& o2, T& o3) {
 
     T arg = 0.5*((R[0]+R[4]+R[8])-1.0);
@@ -356,11 +361,137 @@ bool CRotation<T,3>::Invert() {
 template class CRotation<double,3>;
 template class CRotation<float,3>;
 
+template <typename T>
+CDifferentialRotation<T,3>::CDifferentialRotation(T o1, T o2, T o3, u_int dim) {
+
+    switch(dim) {
+
+    case 0:
+        Rodrigues(o1,o2,o3,nullptr,m_F,nullptr,nullptr);
+        break;
+    case 1:
+        Rodrigues(o1,o2,o3,nullptr,nullptr,m_F,nullptr);
+        break;
+    case 2:
+        Rodrigues(o1,o2,o3,nullptr,nullptr,nullptr,m_F);
+        break;
+
+    }
+
+}
+
+template <typename T>
+void CDifferentialRotation<T,3>::Rodrigues(const T& o1, const T& o2, const T& o3, T* R, T* DRo1, T* DRo2, T* DRo3) {
+
+    T theta = sqrt(o1*o1+o2*o2+o3*o3);
+
+    if(theta<numeric_limits<T>::epsilon()) {
+
+        if(R!=nullptr) {
+
+            fill_n(R,9,0);
+            R[0] = 1;
+            R[4] = 1;
+            R[8] = 1;
+
+        }
+
+        if(DRo1!=nullptr) {
+
+            fill_n(DRo1,9,0);
+            DRo1[5] = 1;
+            DRo1[7] = -1;
+
+        }
+
+        if(DRo2!=nullptr) {
+
+            fill_n(DRo2,9,0);
+            DRo2[2] = -1;
+            DRo2[6] = 1;
+
+        }
+
+        if(DRo3!=nullptr) {
+
+            fill_n(DRo3,9,0);
+            DRo3[1] = 1;
+            DRo3[3] = -1;
+
+        }
+
+        return;
+
+    }
+
+    T ox, oy, oz;
+    ox = o1/theta;
+    oy = o2/theta;
+    oz = o3/theta;
+
+    T oxox, oxoy, oxoz, oyoy, oyoz, ozoz;
+    oxox = ox*ox;
+    oxoy = ox*oy;
+    oxoz = ox*oz;
+    oyoy = oy*oy;
+    oyoz = oy*oz;
+    ozoz = oz*oz;
+
+    T sth, cth, mcth;
+    sth = sin(theta);
+    cth  = cos(theta);
+    mcth = 1 - cth;
+
+    if(R!=nullptr) {
+
+        R[0] = 1 - mcth*(oyoy+ozoz);    R[3] = -sth*oz + mcth*oxoy;		R[6] = sth*oy + mcth*oxoz;
+        R[1] = sth*oz + mcth*oxoy;      R[4] = 1 - mcth*(ozoz + oxox);	R[7] = -sth*ox + mcth*oyoz;
+        R[2] = - sth*oy + mcth*oxoz;	R[5] = sth*ox + mcth*oyoz;    	R[8] = 1 - mcth*(oxox+oyoy);
+
+    }
+
+    T a, b, c, d;
+    a =  sth/theta;
+    b = mcth/theta;
+    c = cth - a;
+    d = sth - 2*b;
+
+    if(DRo1!=nullptr) {
+
+        DRo1[0] = -d*(oyoy + ozoz)*ox;			DRo1[3] = b*oy - c*oxoz + d*oxoy*ox;	DRo1[6] = b*oz + c*oxoy + d*oxoz*ox;
+        DRo1[1] = b*oy + c*oxoz + d*oxoy*ox;	DRo1[4] = -2*b*ox - d*(ozoz + oxox)*ox; DRo1[7] = -a - c*oxox + d*oyoz*ox;
+        DRo1[2] = b*oz - c*oxoy + d*oxoz*ox; 	DRo1[5] = a + c*oxox + d*oyoz*ox;		DRo1[8] = -2*b*ox - d*(oyoy + oxox)*ox;
+
+    }
+
+    if(DRo2!=nullptr) {
+
+        DRo2[0] = -2*b*oy - d*(oyoy + ozoz)*oy;	DRo2[3] = b*ox - c*oyoz + d*oxoy*oy;	DRo2[6] = a + c*oyoy + d*oxoz*oy;
+        DRo2[1] = b*ox + c*oyoz + d*oxoy*oy;	DRo2[4] = -d*(ozoz + oxox)*oy;			DRo2[7] =  b*oz - c*oxoy + d*oyoz*oy;
+        DRo2[2] = -a - c*oyoy + d*oxoz*oy;		DRo2[5] =  b*oz + c*oxoy + d*oyoz*oy;	DRo2[8] = -2*b*oy - d*(oyoy + oxox)*oy;
+
+    }
+
+    if(DRo3!=nullptr) {
+
+        DRo3[0] = -2*b*oz - d*(oyoy + ozoz)*oz;	DRo3[3] = -a - c*ozoz + d*oxoy*oz;		DRo3[6] = b*ox + c*oyoz + d*oxoz*oz;
+        DRo3[1] = a + c*ozoz + d*oxoy*oz;		DRo3[4] = -2*b*oz - d*(ozoz + oxox)*oz; DRo3[7] = b*oy - c*oxoz + d*oyoz*oz;
+        DRo3[2] =  b*ox - c*oyoz + d*oxoz*oz;	DRo3[5] = b*oy + c*oxoz + d*oyoz*oz;	DRo3[8] = - d*(oyoy + oxox)*oz;
+
+    }
+
+}
+
+template class CDifferentialRotation<double,3>;
+template class CDifferentialRotation<float,3>;
 
 template<typename T>
 CRigidMotion<T,2>::CRigidMotion(T o, T t1, T t2) {
 
-    CRotation<T,2>::Rodrigues(o,m_F);
+    m_F[0] = cos(o);
+    m_F[1] = sin(o);
+    m_F[2] = -sin(o);
+    m_F[3] = cos(o);
     m_F[4] = t1;
     m_F[5] = t2;
 

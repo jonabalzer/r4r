@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
+/*////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2013, Jonathan Balzer
 //
@@ -19,19 +19,22 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////*/
 
 #ifndef R4RFEATURE_H_
 #define R4RFEATURE_H_
 
-#include <opencv2/opencv.hpp>
-#include "rect.h"
-#include "darray.h"
 #include <stdio.h>
 #include <list>
 #include <iostream>
 #include <fstream>
 #include <memory>
+
+#include <opencv2/opencv.hpp>
+
+#include "rect.h"
+#include "darray.h"
+
 
 using namespace std;
 
@@ -79,7 +82,7 @@ public:
     bool operator!=(CFeature& x);
 
 	//! Compares two image points.
-	bool operator==(CFeature& x) {  return !(*this!=x); };
+    bool operator==(CFeature& x) {  return !(*this!=x); }
 
 	//! Returns the scale.
 	size_t GetScale() { return m_scale; }
@@ -88,7 +91,7 @@ public:
 	double GetQuality() { return m_quality; }
 
 	//! Sets the strength/quality of the feature.
-	void SetQuality(double quality) { m_quality = quality; };
+    void SetQuality(double quality) { m_quality = quality; }
 
     //! Writes a feature to an output stream.
     friend std::ostream& operator<<(std::ostream& os, CFeature& x);
@@ -112,27 +115,27 @@ public:
 	void DeleteDescriptors();
 
 	//! Returns the number of descriptors attached to the feature.
-	size_t NoDescriptors() { return m_descriptors.size(); };
+    size_t NoDescriptors() { return m_descriptors.size(); }
 
 	//! Checks whether a descriptor of a given name exists.
 	bool HasDescriptor(const char* name);
 
 	//! Returns feature location w.r.t. to inherent scale.
-	vec GetLocation() { return m_location; };
+    vec GetLocation() { return m_location; }
 
     //! Returns feature location w.r.t. to native scale.
-	vec GetLocationAtNativeScale();
+    vec GetLocationAtNativeScale();
 
     //! Access to the descriptor container.
-    std::map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; };
+    std::map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; }
 
     //! Looks for descriptor with a specified name.
 	shared_ptr<CAbstractDescriptor> GetDescriptor(const char* name);
 
-	//! Looks for a descriptor a specified position.
+    //! Looks for a descriptor at specified position.
 	shared_ptr<CAbstractDescriptor> GetDescriptor(size_t no);
 
-    //! Looks for a descriptor a specified position.
+    //! Looks for name of descriptor at specified position.
     string GetDescriptorName(size_t no);
 
     //! Writes a set of features to file.
@@ -145,7 +148,7 @@ public:
      */
     static bool OpenFromFile(const char* filename, std::list<CFeature>& features);
 
-    /*! \brief Reads a set of features from file.
+    /*! \brief Reads a set of features from file into a contiguous memory block.
      * \param[in] filename file name
      * \param[out] headers list of headers
      * \param[out] data pointer to a contiguous block of memory holding the descriptor data

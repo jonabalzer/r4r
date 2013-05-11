@@ -6,8 +6,8 @@ SUBDIRS += \
     robust_regression \
     mv_descriptor_learning \
     scratch \
-    r4r_io \
-    r4r_hardware
+    r4r_hardware \
+    iotest
 
 
 

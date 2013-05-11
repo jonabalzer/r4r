@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
+/*////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2013, Jonathan Balzer
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////*/
 
 #ifndef R4RSTTRACK_H_
 #define R4RSTTRACK_H_
@@ -54,13 +54,13 @@ public:
 	virtual bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1);
 
 	//! \copydoc CTracker::Clean()
-    virtual void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) { PruneTree(m_root); };
+    virtual void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) { PruneTree(m_root); }
 
 	//! \copydoc CTracker::AddTracklets(cv::Mat&)
 	virtual bool AddTracklets(std::vector<cv::Mat>& pyramid);
 
 	//! \copydoc CTracker::Draw(cv::Mat&)
-	virtual void Draw(cv::Mat& img) { DrawChildren(img,m_root); };
+    virtual void Draw(cv::Mat& img) { DrawChildren(img,m_root); }
 
 	//! Saves the current tree to a file in the dot format.
 	bool SaveTreeToFile(const char* filename);

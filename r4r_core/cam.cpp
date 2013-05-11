@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
+/*////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2013, Jonathan Balzer
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include <math.h>
 #include <iostream>
@@ -34,7 +34,9 @@ using namespace std;
 
 namespace R4R {
 
-CCam::CCam() {
+CCam::CCam():
+    m_F(4,4),
+    m_Finv(4,4) {
 
 	m_size[0] = 0;
 	m_size[1] = 0;
@@ -48,14 +50,14 @@ CCam::CCam() {
 
 	m_alpha = 0;
 
-	m_F = mat(4,4);
 	m_F.Eye();
-
-	m_Finv = m_F;
+    m_Finv.Eye();
 
 }
 
-CCam::CCam(size_t w, size_t h) {
+CCam::CCam(size_t w, size_t h):
+    m_F(4,4),
+    m_Finv(4,4) {
 
 	m_size[0] = w;
 	m_size[1] = h;
@@ -69,10 +71,8 @@ CCam::CCam(size_t w, size_t h) {
 
 	m_alpha = 0;
 
-	m_F = mat(4,4);
 	m_F.Eye();
-
-	m_Finv = m_F;
+    m_Finv.Eye();
 
 }
 
@@ -187,7 +187,7 @@ bool CCam::OpenFromFile(const char* filename) {
 
 	in.close();
 
-	m_Finv = CLinearAlgebra::InvertTransformation(m_F);
+    m_Finv = CLinearAlgebra::InvertTransformation(m_F);
 
 	return 0;
 

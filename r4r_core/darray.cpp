@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
+/*////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2013, Jonathan Balzer
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "darray.h"
 #include "types.h"
@@ -276,6 +276,9 @@ ofstream& operator<< (ofstream& os, const CDenseArray<bool>& x) {
     os << x.NRows() << " " << x.NCols() << " B1U" << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(bool)*x.NElems());
+
+    return os;
+
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
@@ -283,6 +286,9 @@ ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
     os << x.NRows() << " " << x.NCols() << " I4S" << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(int)*x.NElems());
+
+    return os;
+
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<float>& x) {
@@ -290,6 +296,9 @@ ofstream& operator<< (ofstream& os, const CDenseArray<float>& x) {
     os << x.NRows() << " " << x.NCols() << " F4S" << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(float)*x.NElems());
+
+    return os;
+
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<size_t>& x) {
@@ -297,6 +306,9 @@ ofstream& operator<< (ofstream& os, const CDenseArray<size_t>& x) {
     os << x.NRows() << " " << x.NCols() << " L8U" << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(size_t)*x.NElems());
+
+    return os;
+
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
@@ -304,22 +316,25 @@ ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
     os << x.NRows() << " " << x.NCols() << " D8S" << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(double)*x.NElems());
+
+    return os;
+
 }
 
 template<>
-ETYPE CDenseArray<bool>::GetType() { return B1U; }
+ETYPE CDenseArray<bool>::GetType() { return ETYPE::B1U; }
 
 template<>
-ETYPE CDenseArray<int>::GetType() { return I4S; }
+ETYPE CDenseArray<int>::GetType() { return ETYPE::I4S; }
 
 template<>
-ETYPE CDenseArray<size_t>::GetType() { return L8U; }
+ETYPE CDenseArray<size_t>::GetType() { return ETYPE::L8U; }
 
 template<>
-ETYPE CDenseArray<float>::GetType() { return F4S; }
+ETYPE CDenseArray<float>::GetType() { return ETYPE::F4S; }
 
 template<>
-ETYPE CDenseArray<double>::GetType() { return D8S; }
+ETYPE CDenseArray<double>::GetType() { return ETYPE::D8S; }
 
 template<class U>
 istream& operator >> (istream& is, CDenseArray<U>& x) {
@@ -1032,6 +1047,22 @@ T CDenseArray<T>::Variance() {
 
 }
 
+template <class T>
+T CDenseArray<T>::MAD() {
+
+    T median = Median();
+
+    CDenseArray<T> temp = this->Clone();
+
+    T* pdata = temp.m_data.get();
+    T* pthisdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pdata[i] = fabs(pthisdata[i]-median);
+
+    return temp.Median();
+
+}
 
 template <class T>
 T CDenseArray<T>::Min() const {
@@ -1347,7 +1378,7 @@ T CDenseSymmetricArray<T>::Norm2() const {
 template <class T>
 T& CDenseSymmetricArray<T>::operator()(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_nrows);
+    assert(i<m_nrows && j<m_nrows);
 
 	if(i>j)
 		return operator()(j,i);
@@ -1359,7 +1390,7 @@ T& CDenseSymmetricArray<T>::operator()(size_t i, size_t j) {
 template <class T>
 T CDenseSymmetricArray<T>::Get(size_t i, size_t j) const {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_nrows);
+    assert(i<m_nrows && j<m_nrows);
 
 	if(i>j)
 		return Get(j,i);

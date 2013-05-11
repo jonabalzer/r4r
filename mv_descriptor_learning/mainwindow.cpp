@@ -341,3 +341,4 @@ void MainWindow::on_actionAbout_triggered()
 {
     QMessageBox::information(this,"About","More info: http://vision.ucla.edu");
 }
+

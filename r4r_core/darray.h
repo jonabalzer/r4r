@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
+/*////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2013, Jonathan Balzer
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////*/
 
 #ifndef R4RDARRAY_H_
 #define R4RDARRAY_H_
@@ -51,15 +51,15 @@ public:
 
 };
 
-
-enum ETYPE {  NA = 0,
-              B1U = 1,
-              C1U = 2, C1S = 3,
-              S2U = 4, S2S = 5,
-              I4S = 6, I4U = 7,
-              F4S = 8,
-              L8S = 9, L8U = 10,
-              D8S = 11 };
+// use typesafe enums in C++11
+enum class ETYPE {  NA = 0,
+                    B1U = 1,
+                    C1U = 2, C1S = 3,
+                    S2U = 4, S2S = 5,
+                    I4S = 6, I4U = 7,
+                    F4S = 8,
+                    L8S = 9, L8U = 10,
+                    D8S = 11 };
 
 template<class T> class CDenseVector;
 
@@ -211,6 +211,9 @@ public:
 	//! Median of matrix entries;
     T Median();
 
+    //! Median of absolute deviations.
+    T MAD();
+
 	//! Minimum of matrix entries;
 	T Min() const;
 
@@ -260,7 +263,7 @@ public:
 	T Determinant() const;
 
 	//! Returns the number of bytes of the data type.
-	size_t SizeOf() { return sizeof(T); };
+    size_t SizeOf() { return sizeof(T); }
 
     //! Returns the numerical type.
     ETYPE GetType();
