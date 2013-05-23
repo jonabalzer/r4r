@@ -58,7 +58,7 @@ public:
 	 * avoid memory leaks.
 	 *
 	 */
-	virtual ~CTracklet();
+    //virtual ~CTracklet();
 
 	//! Tests whether two tracklets are equal by looking at their initial position.
     bool operator!=(CTracklet& tracklet) { return GetHash()!=tracklet.GetHash(); }

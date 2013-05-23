@@ -247,6 +247,12 @@ public:
     //! Reads matrix from a file stream.
     template <class U> friend std::ifstream& operator >> (std::ifstream& is, CDenseArray<U>& x);
 
+    //! Writes a matrix to a file.
+    bool WriteToFile(const char* filename);
+
+    //! Reads a matrix from file.
+    bool ReadFromFile(const char* filename);
+
 	//! Normalizes the matrix.
 	bool Normalize();
 

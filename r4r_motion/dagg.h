@@ -45,7 +45,7 @@ public:
     virtual bool Aggregate(const char* filename, const char* comment = nullptr);
 
     //! Access to the aggregates.
-    list<CFeature>& Get() { return m_aggregate; };
+    list<CFeature>& Get() { return m_aggregate; }
 
 protected:
 
@@ -67,7 +67,7 @@ class CInitFrameAggregator: public CDescriptorAggregator<Array> {
 public:
 
     //! Constructor.
-    CInitFrameAggregator(CTracker* tracker, const char* name):CDescriptorAggregator<Array>::CDescriptorAggregator(tracker,name){};
+    CInitFrameAggregator(CTracker* tracker, const char* name):CDescriptorAggregator<Array>::CDescriptorAggregator(tracker,name){}
 
 private:
 
@@ -99,6 +99,23 @@ private:
 
 };
 
+template<class Array>
+class CMeanAggregator:public CDescriptorAggregator<Array> {
+
+public:
+
+    //! Constructor.
+    CMeanAggregator(CTracker* tracker, const char* name):CDescriptorAggregator<Array>::CDescriptorAggregator(tracker,name){}
+
+private:
+
+    //! Subsamples each tracklet.
+    virtual void AggregateTracklet(CTracklet* tracklet);
+
+    using CDescriptorAggregator<Array>::m_name;
+    using CDescriptorAggregator<Array>::m_aggregate;
+
+};
 
 template<class Array>
 class CSplineInterpolationAggregator:public CDescriptorAggregator<Array> {

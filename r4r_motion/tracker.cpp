@@ -267,13 +267,7 @@ bool CTracker::SaveToFile(const char* dir, const char* prefix) {
 			stringstream filename;
 			filename << dir << prefix << no.str() << ".dat";
 
-			if((*it)->SaveToFile(filename.str().c_str())) {
-
-				cout << "ERROR: Could not save tracklet!" << endl;
-
-				return 1;
-
-			}
+            CFeature::SaveToFile(filename.str().c_str(),*(*it));
 
 		}
 

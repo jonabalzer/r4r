@@ -89,7 +89,7 @@ class CFMHoGDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,vecf> {
 public:
 
     //! Constructor.
-    CFMHoGDescriptor(CRectangle<double> roi, size_t hsize, size_t nbins);
+    CFMHoGDescriptor(CRectangle<double> roi, size_t hsize = 30, size_t nbins = 128);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
     bool Compute(cv::Mat& img);

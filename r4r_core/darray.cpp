@@ -273,7 +273,7 @@ ostream& operator<< (ostream& os, const CDenseArray<U>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<bool>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " B1U" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::B1U << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(bool)*x.NElems());
 
@@ -283,7 +283,7 @@ ofstream& operator<< (ofstream& os, const CDenseArray<bool>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " I4S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::I4S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(int)*x.NElems());
 
@@ -293,7 +293,7 @@ ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<float>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " F4S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::F4S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(float)*x.NElems());
 
@@ -303,7 +303,7 @@ ofstream& operator<< (ofstream& os, const CDenseArray<float>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<size_t>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " L8U" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::L8U << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(size_t)*x.NElems());
 
@@ -313,7 +313,7 @@ ofstream& operator<< (ofstream& os, const CDenseArray<size_t>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " D8S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::D8S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(double)*x.NElems());
 
@@ -377,139 +377,239 @@ ifstream& operator >> (ifstream& in, CDenseArray<U>& x) {
 
     }
 
-    char sign, type;
-    size_t nbytes;
-
-    in >> type;
-    in >> nbytes;
-    in >> sign;
+    int temp;
+    in >> temp;
+    ETYPE type = (ETYPE)temp;
     in.get();
-
-    stringstream ss;
-    ss << type << nbytes << sign;
-
-    // create buffer
-    char* buffer = new char[nrows*ncols*nbytes];
-
-    // read data
-    in.read(buffer,nbytes*nrows*ncols);
 
     U* pdata = x.m_data.get();
 
-    if(ss.str()=="B1U") {
+    size_t nelems = nrows*ncols;
 
-        bool* cbuffer = (bool*)buffer;
+    switch(type) {
+
+    case ETYPE::B1U:
+    {
+
+        bool* buffer = new bool[nelems];
+        in.read((char*)buffer,nelems*sizeof(bool));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="S2S") {
+    case ETYPE::C1S:
+    {
 
-        short* cbuffer = (short*)buffer;
+        char* buffer = new char[nelems];
+        in.read((char*)buffer,nelems*sizeof(char));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="S2U") {
+    case ETYPE::C1U:
+    {
 
-        unsigned short* cbuffer = (unsigned short*)buffer;
+        unsigned char* buffer = new unsigned char[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned char));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="C4S") {
+    case ETYPE::S2S:
+    {
 
-        char* cbuffer = (char*)buffer;
+        short* buffer = new short[nelems];
+        in.read((char*)buffer,nelems*sizeof(short));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
+
+    }
+    case ETYPE::S2U:
+    {
+
+        unsigned short* buffer = new unsigned short[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned short));
+
+        // copy data and cast
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="C4U") {
+    case ETYPE::I4S:
+    {
 
-        unsigned char* cbuffer = (unsigned char*)buffer;
+        int* buffer = new int[nelems];
+        in.read((char*)buffer,nelems*sizeof(int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="I4S") {
+    case ETYPE::I4U:
+    {
 
-        int* cbuffer = (int*)buffer;
+        unsigned int* buffer = new unsigned int[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="I4U") {
+    case ETYPE::F4S:
+    {
 
-        unsigned int* cbuffer = (unsigned int*)buffer;
+        float* buffer = new float[nelems];
+        in.read((char*)buffer,nelems*sizeof(float));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="F4S") {
+    case ETYPE::L8S:
+    {
 
-        float* cbuffer = (float*)buffer;
+        long int* buffer = new long int[nelems];
+        in.read((char*)buffer,nelems*sizeof(long int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
+    case ETYPE::L8U:
+    {
 
-    if(ss.str()=="L8S") {
-
-        long* cbuffer = (long*)buffer;
+        size_t* buffer = new size_t[nelems];
+        in.read((char*)buffer,nelems*sizeof(size_t));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="L8U") {
+    case ETYPE::D8S:
+    {
 
-        unsigned long* cbuffer = (unsigned long*)buffer;
+        double* buffer = new double[nelems];
+        in.read((char*)buffer,nelems*sizeof(double));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="D8S") {
+    default:
+        return in;
 
-        double* cbuffer = (double*)buffer;
-
-        // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
 
     }
-
-    delete [] buffer;
 
     return in;
+
+}
+
+template <class T>
+bool CDenseArray<T>::WriteToFile(const char* filename) {
+
+    ofstream out(filename);
+
+    if(!out.is_open()) {
+
+        cerr << "ERROR: Could not open " << filename << "..." << endl;
+        return 1;
+
+    }
+
+    out << *this;
+
+    out.close();
+
+    return 0;
+
+}
+
+template <class T>
+bool CDenseArray<T>::ReadFromFile(const char* filename) {
+
+    ifstream in(filename);
+
+    if(!in.is_open()) {
+
+        cerr << "ERROR: File " << filename << " not found..." << endl;
+        return 1;
+
+    }
+
+    in >> *this;
+
+    in.close();
+
+    return 0;
 
 }
 
@@ -690,13 +790,20 @@ CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {
     if(m_transpose)
         return GetRow(j);
 
-    // create shared pointer to col data
-    shared_ptr<T> colptr(m_data,m_data.get()+j*m_nrows);
+    // create shared pointer to col data, this will not be 16-byte aligned anymore!!!
+   // shared_ptr<T> colptr(m_data,m_data.get()+j*m_nrows);
 
     // create column view
-    CDenseVector<T> col(m_nrows,colptr);
+    //CDenseVector<T> col(m_nrows,colptr);
 
-	return col;
+    //return col;
+
+    CDenseVector<T> col(m_nrows); // this will be 16-byte aligned
+
+    for(size_t i=0; i<m_nrows; i++)
+        col(i) = Get(i,j);
+
+    return col;
 
 }
 
@@ -1138,6 +1245,9 @@ CDenseVector<T>::CDenseVector(size_t nrows, size_t ncols):
     CDenseArray<T>::CDenseArray(nrows,ncols) {
 
     assert(nrows==1 || ncols==1);
+
+    if(nrows==1)
+        m_transpose = true;
 
 }
 

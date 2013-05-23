@@ -295,9 +295,12 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
                 if(m_params->GetIntParameter("COMPUTE_HOG")) {
 
                     // compute HoG
-                    CHistogramOfGradients* temp = new CHistogramOfGradients(droi);
+                    //CHistogramOfGradients* temp = new CHistogramOfGradients(droi);
+                    CFMHoGDescriptor* temp = new CFMHoGDescriptor(droi);
 
-                    temp->Compute(imsmooth);
+                    //temp->Compute(imsmooth);
+                    temp->Compute(pyramid[s]);
+                    //temp->Normalize(2,1e-3);
 
                     shared_ptr<CAbstractDescriptor> pdesc(temp);
                     x.AttachDescriptor("HOG",pdesc);

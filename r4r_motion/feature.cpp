@@ -105,44 +105,23 @@ ofstream& operator<<(ofstream& os, CFeature& x) {
 	os << x.m_quality << endl;
 
 	// number of descriptors that follow
-	os << x.NoDescriptors() << endl;
+    size_t nod = x.NoDescriptors();
+    if(nod>0)
+        os << x.NoDescriptors() << endl;
+    else
+        os << x.NoDescriptors();
 
     map<string,shared_ptr<CAbstractDescriptor> >::iterator it;
 
 	// print all descriptors
-    for(it = x.m_descriptors.begin(); it!=x.m_descriptors.end(); it++) {
+    size_t counter = 0;
+    for(it = x.m_descriptors.begin(); it!=x.m_descriptors.end(); it++, counter++) {
 
 		os << it->first.c_str() << endl;
+        it->second->Write(os);
 
-        // write size
-        os << it->second->NRows() << " ";
-        os << it->second->NCols() << endl;
-
-        if(it->second->NRows()==0 || it->second->NCols()==0) {
-            os << 0 << endl;
-        }
-        else {
-
-            // write type
-            ETYPE type = it->second->GetType();
-            os << (int)type << endl;
-
-            // access to data
-            void* data = it->second->GetData();
-
-            // write data depending on number of bytes
-            if(type==ETYPE::B1U || type == ETYPE::C1U || type == ETYPE::C1S)
-                os.write((char*)(data),sizeof(char)*it->second->NElems());
-            else if(type==ETYPE::S2U || type == ETYPE::S2S)
-                os.write((char*)(data),sizeof(short)*it->second->NElems());
-            else if(type==ETYPE::I4S || type==ETYPE::I4U || type==ETYPE::F4S)
-                os.write((char*)(data),sizeof(int)*it->second->NElems());
-            else if(type==ETYPE::L8S || type==ETYPE::L8U || type==ETYPE::D8S)
-                os.write((char*)(data),sizeof(double)*it->second->NElems());
-
+        if(counter<nod-1)       // only break line between the descriptors
             os << endl;
-
-        }
 
 	}
 
@@ -180,7 +159,6 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
         size_t nrows, ncols;
         is >> nrows;
         is >> ncols;
-        is.get();
 
         // read type, TODO: map type name to type
         int temp;
@@ -188,89 +166,86 @@ ifstream& operator>>(std::ifstream& is, CFeature& x) {
         ETYPE type = (ETYPE)temp;
         is.get();
 
-        if(type!=ETYPE::NA) {
+        // treat different data types separately
+        switch(type) {
 
-            // treat different data types separately
-            switch(type) {
+        case ETYPE::B1U:
+        {
 
-            case ETYPE::B1U:
-            {
+            CDenseArray<bool> container(nrows,ncols);
+            is.read((char*)container.Data().get(),sizeof(bool)*container.NElems());
 
-                CDenseArray<bool> container(nrows,ncols);
-                is.read((char*)container.Data().get(),sizeof(bool)*container.NElems());
+            CDescriptor<CDenseArray<bool> >* pdesc = new CDescriptor<CDenseArray<bool> >(container);
+            x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
 
-                CDescriptor<CDenseArray<bool> >* pdesc = new CDescriptor<CDenseArray<bool> >(container);
-                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
-
-                break;
-
-            }
-
-            case ETYPE::I4S:
-            {
-
-                CDenseArray<int> container(nrows,ncols);
-                is.read((char*)container.Data().get(),sizeof(int)*container.NElems());
-
-                CDescriptor<CDenseArray<int> >* pdesc = new CDescriptor<CDenseArray<int> >(container);
-                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
-
-                break;
-
-            }
-
-            case ETYPE::F4S:
-            {
-
-                CDenseArray<float> container(nrows,ncols);
-                is.read((char*)container.Data().get(),sizeof(float)*container.NElems());
-
-                CDescriptor<CDenseArray<float> >* pdesc = new CDescriptor<CDenseArray<float> >(container);
-                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
-
-                break;
-
-            }
-
-            case ETYPE::L8U:
-            {
-
-                CDenseArray<size_t> container(nrows,ncols);
-                is.read((char*)container.Data().get(),sizeof(size_t)*container.NElems());
-
-                CDescriptor<CDenseArray<size_t> >* pdesc = new CDescriptor<CDenseArray<size_t> >(container);
-                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
-
-                break;
-
-            }
-
-            case ETYPE::D8S:
-            {
-
-                CDenseArray<double> container(nrows,ncols);
-                is.read((char*)container.Data().get(),sizeof(double)*container.NElems());
-
-                CDescriptor<CDenseArray<double> >* pdesc = new CDescriptor<CDenseArray<double> >(container);
-                x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
-
-                break;
-
-            }
-
-
-            default:
-                break;
-
-
-            }
-
-            is.get();
-
+            break;
 
         }
 
-	}
+        case ETYPE::I4S:
+        {
+
+            CDenseArray<int> container(nrows,ncols);
+            is.read((char*)container.Data().get(),sizeof(int)*container.NElems());
+
+            CDescriptor<CDenseArray<int> >* pdesc = new CDescriptor<CDenseArray<int> >(container);
+            x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+            break;
+
+        }
+
+        case ETYPE::F4S:
+        {
+
+            CDenseArray<float> container(nrows,ncols);
+            is.read((char*)container.Data().get(),sizeof(float)*container.NElems());
+
+            CDescriptor<CDenseArray<float> >* pdesc = new CDescriptor<CDenseArray<float> >(container);
+            x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+            break;
+
+        }
+
+        case ETYPE::L8U:
+        {
+
+            CDenseArray<size_t> container(nrows,ncols);
+            is.read((char*)container.Data().get(),sizeof(size_t)*container.NElems());
+
+            CDescriptor<CDenseArray<size_t> >* pdesc = new CDescriptor<CDenseArray<size_t> >(container);
+            x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+            break;
+
+        }
+
+        case ETYPE::D8S:
+        {
+
+            CDenseArray<double> container(nrows,ncols);
+            is.read((char*)container.Data().get(),sizeof(double)*container.NElems());
+
+            CDescriptor<CDenseArray<double> >* pdesc = new CDescriptor<CDenseArray<double> >(container);
+            x.AttachDescriptor(name.c_str(),shared_ptr<CAbstractDescriptor>(pdesc));
+
+            break;
+
+        }
+
+
+        default:
+            return is;
+
+        }
+
+        is.get();
+
+
+    }
+
+
 
 	return is;
 
@@ -299,20 +274,20 @@ bool CFeature::operator!=(CFeature& x) {
 
 }
 
-CFeature::~CFeature() {
+//CFeature::~CFeature() {
 
-	DeleteDescriptors();
+//	DeleteDescriptors();
 
-}
+//}
 
 void CFeature::DeleteDescriptors() {
 
-	map<string,shared_ptr<CAbstractDescriptor> >::iterator it;
+    map<string,shared_ptr<CAbstractDescriptor> >::iterator it;
 
-	for(it=m_descriptors.begin(); it!=m_descriptors.end(); it++)
-		it->second.reset();
+    for(it=m_descriptors.begin(); it!=m_descriptors.end(); it++)
+        it->second.reset();
 
-	m_descriptors.clear();
+    m_descriptors.clear();
 
 
 }
@@ -396,7 +371,7 @@ vec CFeature::GetLocationAtNativeScale() {
 
 }
 
-bool CFeature::SaveToFile(const char* filename, list<CFeature>& features) {
+bool CFeature::SaveToFile(const char* filename, list<CFeature>& features, const char* comment) {
 
     list<CFeature>::iterator it;
 
@@ -409,51 +384,63 @@ bool CFeature::SaveToFile(const char* filename, list<CFeature>& features) {
 
     }
 
-    out << "# created by r4r_motion" << endl;
+    if(comment==nullptr)
+        out << "# created by r4r_motion" << endl;
+    else
+        out << "# " << comment << endl;
 
-    // write number of features
-    out << features.size() << endl;
+    size_t counter = 0;
 
-    for(it=features.begin(); it!=features.end(); it++)
+    for(it=features.begin(); it!=features.end(); it++, counter++) {
         out << *it;
+
+        if(counter<features.size()-1)
+            out << endl;
+
+    }
 
     out.close();
 
+    return 0;
+
 }
 
-bool CFeature::OpenFromFile(const char* filename, std::list<CFeature>& features) {
+int CFeature::OpenFromFile(const char* filename, std::vector<CFeature>& features, string& comment) {
 
     ifstream in(filename);
 
     if(!in.is_open()) {
 
         cout << "ERROR: Could not open file." << endl;
-        return 1;
+        return -1;
 
     }
 
     // read comment line
-    string comment;
+    //string comment;
     getline(in,comment);
+    comment = comment.substr(2,comment.size()-1);
 
-    // read number of features
-    size_t n;
-    in >> n;
-    in.get();
+    int n = 0;
 
-    for(size_t i=0; i<n; i++) {
+    while(true) {
 
-        CFeature x;
+        if(in.good()) {
 
-        in >> x;
+            CFeature x;
+            in >> x;
 
-        features.push_back(x);
+            n++;
+            features.push_back(x);
 
+        }
+        else
+            break;
     }
 
     in.close();
 
-    return 0;
+    return n;
 
 }
 

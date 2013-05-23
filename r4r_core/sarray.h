@@ -65,7 +65,7 @@ public:
 	T Norm2();
 
 	//! Transposes the array in place.
-	virtual void Transpose();
+    void Transpose();
 
 	//! Returns a transposed copy of the array.
 	CSparseArray<T> static Transpose(const CSparseArray<T>& array);
@@ -114,10 +114,10 @@ public:
 	T static InnerProduct(CSparseArray<T>& x, CSparseArray<T>& y);
 
 	//! Access number of cols.
-	size_t NRows() const { return m_nrows; };
+    size_t NRows() const { return m_nrows; }
 
 	//! Access number of cols.
-	size_t NCols() const { return m_ncols; };
+    size_t NCols() const { return m_ncols; }
 
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
@@ -207,10 +207,10 @@ public:
 	virtual T& operator()(size_t i, size_t j);
 
 	//! Access number of cols.
-	size_t NRows() const { return m_nrows; };
+    size_t NRows() const { return m_nrows; }
 
 	//! Access number of cols.
-	size_t NCols() const { return m_ncols; };
+    size_t NCols() const { return m_ncols; }
 
 	//! Computes the standard L2 norm.
 	T Norm2();
@@ -226,7 +226,7 @@ public:
 	 *
 	 * \details No, transpose is an internal state flag only. Remove this routine for security reasons.
 	 */
-	bool IsTransposed() { return m_transpose; };
+    bool IsTransposed() { return m_transpose; }
 
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
@@ -254,7 +254,7 @@ public:
 	CSparseBandedArray<T> operator*(CSparseBandedArray<T>& array);
 
 	//! Solves linear system associated with this matrix.
-	virtual void Solve(CDenseArray<T>& x, const CDenseArray<T>& b) {};
+    virtual void Solve(CDenseArray<T>& x, const CDenseArray<T>& b) {}
 
 	//! Deletes an element.
 	void Delete(size_t i, size_t j);
@@ -269,7 +269,7 @@ public:
 	size_t Nonzeros();
 
 	//! Returns the number of bands.
-	size_t NoBands() { return m_data.size(); };
+    size_t NoBands() { return m_data.size(); }
 
 	//! Saves the matrix in matrix market format.
 	bool SaveToFile(const char* filename);
@@ -282,19 +282,19 @@ protected:
 	std::map<int,std::map<size_t,T> > m_data;							//!< container that holds the array data
 
 	//! Computes the band index.
-	int Band(size_t i, size_t j) { return (int)j - (int)i; };
+    int Band(size_t i, size_t j) { return (int)j - (int)i; }
 
 	//! Computes the location in the band.
-	size_t BandIndex(size_t i, size_t j) { 	return j<=i ? j : i; };
+    size_t BandIndex(size_t i, size_t j) { 	return j<=i ? j : i; }
 
 	//! Computes the row from band/diagonal index representation.
-	size_t Row(int b, size_t d) { return b<=0 ? size_t((int)d-b) : d; };
+    size_t Row(int b, size_t d) { return b<=0 ? size_t((int)d-b) : d; }
 
 	//! Computes the row from band/diagonal index representation.
-	size_t Col(int b, size_t d) { return b<=0 ? d : size_t((int)d+b); };
+    size_t Col(int b, size_t d) { return b<=0 ? d : size_t((int)d+b); }
 
 	//! Swaps the two input indices.
-	void Transpose(size_t& i, size_t& j);
+    void Transpose(size_t& i, size_t& j);
 
 };
 
@@ -323,13 +323,13 @@ public:
 	CSparseDiagonalArray(CSparseArray<T>& array);
 
 	//! Non-destructive element access.
-	T Get(size_t i) { return CSparseBandedArray<T>::Get(i,i); };
+    T Get(size_t i) { return CSparseBandedArray<T>::Get(i,i); }
 
 	//! \copydoc CSparseBandedArray::Set(size_t,size_t,T)
 	void Set(size_t i, size_t j, T v);
 
 	//! Sets a matrix element to a given value.
-	void Set(size_t i, T v) { Set(i,i,v); };
+    void Set(size_t i, T v) { Set(i,i,v); }
 
 	//! \copydoc CSparseBandedArray::operator()(size_t,size_t)
 	T& operator()(size_t i, size_t j);
@@ -338,7 +338,7 @@ public:
 	void Solve(CDenseArray<T>& x, const CDenseArray<T>& b);
 
 	//! Method stump (transposition does nothing to square diagonal matrices).
-	virtual void Transpose() {};
+    virtual void Transpose() {}
 
 	//! Computes the inverse in-place.
 	void Invert();
@@ -388,7 +388,7 @@ public:
 	void Solve(CDenseArray<T>& x, const CDenseArray<T>& b);
 
 	//! Method stump (no transposition allowed for triangular matrices).
-	virtual void Transpose() {};
+    virtual void Transpose() {}
 
 protected:
 
@@ -433,6 +433,9 @@ public:
 
 	//! \copydoc CSparseBandedArray::Solve(CDenseArray<T>&,const CDenseArray<T>&)
 	void Solve(CDenseArray<T>& x, const CDenseArray<T>& b);
+
+    //! Method stump (no transposition allowed for triangular matrices).
+    virtual void Transpose() {}
 
 protected:
 

@@ -76,7 +76,7 @@ public:
 	 * overload this with implementation of e.g. techniques such as the Donoho-Stahel or Minimum Covariance Determinant
 	 * (MCD) estimator.
 	 */
-    virtual vec ComputeDispersion(vec &r);
+    vec ComputeDispersion(vec &r);
 
 protected:
 

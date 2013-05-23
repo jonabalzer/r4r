@@ -39,7 +39,7 @@ template <>
 bool CMatrixFactorization<double>::SVD(const CDenseArray<double>& A, CDenseArray<double>& U, CDenseArray<double>& S, CDenseArray<double>& Vt) {
 
     // check dimensions
-    if(U.NCols()!=A.NRows() || U.NRows()!=A.NRows() || Vt.NCols()!=A.NCols() || Vt.NRows()!=A.NCols()) {
+    if(U.NCols()!=A.NRows() || U.NRows()!=A.NRows() || Vt.NCols()!=A.NCols() || Vt.NRows()!=A.NCols() || S.NElems()!=min(A.NRows(),A.NCols())) {
 
     	cout << "ERROR: Dimension mismatch." << endl;
     	return 1;
@@ -85,7 +85,7 @@ template <>
 bool CMatrixFactorization<float>::SVD(const CDenseArray<float>& A, CDenseArray<float>& U, CDenseArray<float>& S, CDenseArray<float>& Vt) {
 
     // check dimensions
-    if(U.NCols()!=A.NRows() || U.NRows()!=A.NRows() || Vt.NCols()!=A.NCols() || Vt.NRows()!=A.NCols()) {
+    if(U.NCols()!=A.NRows() || U.NRows()!=A.NRows() || Vt.NCols()!=A.NCols() || Vt.NRows()!=A.NCols() || S.NElems()!=min(A.NRows(),A.NCols())) {
 
         cout << "ERROR: Dimension mismatch." << endl;
         return 1;

@@ -73,10 +73,10 @@ public:
 		void Advance(size_t step);
 
 		//! Checks termination condition.
-		bool operator()() { return m_t<=m_tracker->m_global_t; };
+        bool operator()() { return m_t<=m_tracker->m_global_t; }
 
 		//! Dereferencing operator.
-        std::map<shared_ptr<CTracklet>,std::list<CFeature>::iterator > operator*() { return m_data; };
+        std::map<shared_ptr<CTracklet>,std::list<CFeature>::iterator > operator*() { return m_data; }
 
 		//! Access to the internal counter.
 		size_t GetTime() const { return m_t; }
@@ -142,7 +142,7 @@ public:
 	virtual void Draw(cv::Mat& img);
 
 	//! Adds new features to the tracker.
-	virtual bool AddTracklets(std::vector<cv::Mat>& pyramid) { return 0; };
+    virtual bool AddTracklets(std::vector<cv::Mat>& pyramid) { return 0; }
 
 	/*! \brief Updates all descriptors if any.
 	 *
@@ -150,7 +150,7 @@ public:
 	 * \param[in] img1 frame at t+1
 	 *
 	 */
-	virtual bool UpdateDescriptors(std::vector<cv::Mat>& pyramid) { return 0; };
+    virtual bool UpdateDescriptors(std::vector<cv::Mat>& pyramid) { return 0; }
 
 	/*! \brief Marks tracks as invalid.
 	 *

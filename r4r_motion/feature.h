@@ -55,6 +55,8 @@ class CFeature {
 
     friend class CAbstractDescriptor;
     friend class CDescriptorFileHeader;
+    template<class Array> friend class CDescriptorAggregator;
+    template<class Array> friend class CSubsampleAggregator;
 
 public:
 
@@ -70,7 +72,7 @@ public:
 	CFeature(double x, double y, size_t scale, double quality = 0);
 
 	//! Destructor.
-	~CFeature();
+    //~CFeature();
 
     //! Copy constructor.
     CFeature(const CFeature& x);
@@ -139,14 +141,15 @@ public:
     string GetDescriptorName(size_t no);
 
     //! Writes a set of features to file.
-    static bool SaveToFile(const char* filename, std::list<CFeature>& features);
+    static bool SaveToFile(const char* filename, std::list<CFeature>& features, const char* comment = nullptr);
 
     /*! \brief Reads a set of features from file.
      * \param[in] filename file name
      * \param[out] featurs list of features
      * \param[in] type precision of the container
+     * \returns number of features read, \f$-1\f$ on error
      */
-    static bool OpenFromFile(const char* filename, std::list<CFeature>& features);
+    static int OpenFromFile(const char* filename, std::vector<CFeature>& features, string& comment);
 
     /*! \brief Reads a set of features from file into a contiguous memory block.
      * \param[in] filename file name

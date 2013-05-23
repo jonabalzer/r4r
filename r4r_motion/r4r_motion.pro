@@ -55,6 +55,8 @@ symbian {
     DEPLOYMENT += addFiles
 }
 
+unix:!macx:!symbian: LIBS += -L$$OUT_PWD/../r4r_core/ -lr4r_core
+
 unix:!symbian {
     maemo5 {
         target.path = /opt/usr/lib

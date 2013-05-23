@@ -65,12 +65,12 @@ CSplineCurve<T>::CSplineCurve(const CDenseVector<T>& knot, const CDenseArray<T>&
 }
 
 template <class T>
-CSplineCurve<T>::CSplineCurve(const CDenseArray<T> &cv, size_t p):
+CSplineCurve<T>::CSplineCurve(const CDenseArray<T>& cv, size_t p):
     m_d(cv.NRows()),
     m_p(p),
     m_n(cv.NCols()),
     m_k(cv.NCols()+p-1),
-    m_knot(),
+    m_knot(cv.NCols()+p-1),
     m_cv(cv) {
 
     MakeClampedUniformKnotVector(0,1);
@@ -84,7 +84,7 @@ void CSplineCurve<T>::MakeClampedUniformKnotVector(T a, T b) {
     assert(m_k);
 
     T dt = (b - a)/(m_k - 2*(m_p-1) - 1);
-    cout <<"L" << m_knot.NElems() << endl;
+
     for(size_t i=0; i<(m_p - 1); i++) {
 
         m_knot(i) = a;
@@ -114,11 +114,11 @@ void CSplineCurve<T>::Print() {
 template <class T>
 int CSplineCurve<T>::GetSpan(T t) {
 
-    if(t<m_knot.Get(0) || t>m_knot.Get(m_knot.NElems()-1))
-        return -1;
+    if(t==m_knot.Get(m_knot.NElems()-1))
+        return m_n-m_p-1;
 
     // hint
-    T dt = (m_knot.Get(m_k-1) - m_knot.Get(0))/(m_n-1);
+    T dt = m_knot.Get(m_p) - m_knot.Get(m_p-1);
 
     int span = (u_int)(t/dt);  // replace this by the index of knot array, binary search with hint!
 
@@ -132,12 +132,14 @@ int CSplineCurve<T>::GetSpan(T t) {
 template <class T>
 CDenseVector<T> CSplineCurve<T>::FindLocallyClosestPoint(const CDenseVector<T>& y, CMercerKernel<T>& kernel, const T hint, const T eps) {
 
-    T dt = 1000000;
-    T tk, tkk;
+    T tk, dt ,denom, numer;
 
     tk = hint;
+    numer = 10000;
 
-    while(dt>eps) {
+    size_t counter = 0;
+
+    while(counter<10) {
 
         // get point, tangent, and normal
         CDenseArray<T> normal = Normal(tk);
@@ -146,18 +148,41 @@ CDenseVector<T> CSplineCurve<T>::FindLocallyClosestPoint(const CDenseVector<T>& 
         CDenseVector<T> xtt = normal.GetColumn(2);
 
         // do Newton step
-        tkk = tk -
-              (kernel.Evaluate(y.Data().get(),xt.Data().get())
-              -kernel.Evaluate(x.Data().get(),xt.Data().get()))/
-              (kernel.Evaluate(y.Data().get(),xtt.Data().get())
-              -kernel.Evaluate(xt.Data().get(),xtt.Data().get())
-              -kernel.Evaluate(xt.Data().get(),xt.Data().get()));
+        numer = (kernel.Evaluate(y.Data().get(),xt.Data().get())-kernel.Evaluate(x.Data().get(),xt.Data().get()));
 
-        cout << "tk: " << tkk << endl;
+        denom = (kernel.Evaluate(y.Data().get(),xtt.Data().get())
+                -kernel.Evaluate(xt.Data().get(),xtt.Data().get())
+                -kernel.Evaluate(xt.Data().get(),xt.Data().get()));
 
-        // for checking step size
-        dt = fabs(tkk - tk);
-        tk = tkk;
+        //cout << "tk: " << tk << " " << numer << " " << denom << endl;
+
+
+        // can denom be zero?
+        dt = numer/denom;
+
+        //cout << numer << " " << denom << endl;
+        if(fabs(dt)<eps)
+            break;
+
+        tk = tk - 0.9*dt;
+
+
+        // check if we are leaving the domain
+        if(tk>=m_knot.Get(m_knot.NElems()-1)) {
+
+            tk = m_knot.Get(m_knot.NElems()-1);
+            break;
+
+        }
+
+        if(tk<=m_knot.Get(0)) {
+
+            tk = m_knot.Get(0);
+            break;
+
+        }
+
+        counter++;
 
     }
 
@@ -185,7 +210,7 @@ CDenseVector<T> CSplineCurve<T>::Evaluate(T t) {
     for(size_t i=0; i<order; i++) {
 
         // get column
-        CDenseVector<T> col = m_cv.GetColumn(span+i).Clone();
+        CDenseVector<T> col = m_cv.GetColumn(span+i); // FIXME: not necessary
 
         // in-place scaling by b(span+i)
         col.Scale(N[i]);
@@ -208,28 +233,26 @@ CDenseArray<T> CSplineCurve<T>::Tangent(T t) {
 
     size_t order = m_p + 1;
 
-    // allocate result and get column views
+    // allocate result
     CDenseArray<T> result(m_d,2);
+
+    // find span
     int span = GetSpan(t);
     if(span<0)
         return result;
 
-    CDenseVector<T> x = result.GetColumn(0);
-    CDenseVector<T> xt = result.GetColumn(1);
+    CDenseVector<T> x(m_d);
+    CDenseVector<T> xt(m_d);
     T* N = new T[order*order];
 
     EvaluateNurbsBasis(order,&m_knot.Data().get()[span],t,N);
     EvaluateNurbsBasisDerivatives(order,&m_knot.Data().get()[span],1,N);
 
-
-    cout << N[order+0] << " " <<  N[order+1] <<  endl;
-
-
     for(size_t i=0; i<order; i++) {
 
         // get copy of cv cols
-        CDenseVector<T> colx = m_cv.GetColumn(span+i).Clone();
-        CDenseVector<T> colxt = m_cv.GetColumn(span+i).Clone();
+        CDenseVector<T> colx = m_cv.GetColumn(span+i);
+        CDenseVector<T> colxt = m_cv.GetColumn(span+i);
 
         // in-place scaling by b(span+i)
         colx.Scale(N[i]);
@@ -240,6 +263,10 @@ CDenseArray<T> CSplineCurve<T>::Tangent(T t) {
         xt.Add(colxt);
 
     }
+
+
+    result.SetColumn(0,x);
+    result.SetColumn(1,xt);
 
     delete [] N;
 
@@ -254,15 +281,17 @@ CDenseArray<T> CSplineCurve<T>::Normal(T t) {
 
     size_t order = m_p + 1;
 
-    // allocate result and get column views
+    // allocate result
     CDenseArray<T> result(m_d,3);
+
+    // check span
     int span = GetSpan(t);
     if(span<0)
         return result;
 
-    CDenseVector<T> x = result.GetColumn(0);
-    CDenseVector<T> xt = result.GetColumn(1);
-    CDenseVector<T> xtt = result.GetColumn(2);
+    CDenseVector<T> x(m_d);
+    CDenseVector<T> xt(m_d);
+    CDenseVector<T> xtt(m_d);
     T* N = new T[order*order];
 
     EvaluateNurbsBasis(order,m_knot.Data().get()+span,t,N);
@@ -271,9 +300,9 @@ CDenseArray<T> CSplineCurve<T>::Normal(T t) {
     for(size_t i=0; i<order; i++) {
 
         // get copy of cv cols
-        CDenseVector<T> colx = m_cv.GetColumn(span+i).Clone();
-        CDenseVector<T> colxt = m_cv.GetColumn(span+i).Clone();
-        CDenseVector<T> colxtt = m_cv.GetColumn(span+i).Clone();
+        CDenseVector<T> colx = m_cv.GetColumn(span+i);
+        CDenseVector<T> colxt = m_cv.GetColumn(span+i);
+        CDenseVector<T> colxtt = m_cv.GetColumn(span+i);
 
         // in-place scaling by b(span+i)
         colx.Scale(N[i]);
@@ -288,6 +317,10 @@ CDenseArray<T> CSplineCurve<T>::Normal(T t) {
     }
 
     delete [] N;
+
+    result.SetColumn(0,x);
+    result.SetColumn(1,xt);
+    result.SetColumn(2,xtt);
 
     return result;
 

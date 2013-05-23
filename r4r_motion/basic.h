@@ -53,7 +53,7 @@ public:
 	//! Subtracts the mean from the image patch.
 	void Center();
 
-	//! Computes the correlation coefficient between two normalized images (not a distance in the strict sense).
+    //! Computes the correlation coefficient between two normalized images.
     double Distance(CDescriptor<matf>& desc) const;
 
 private:

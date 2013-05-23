@@ -29,7 +29,7 @@
 
 namespace R4R {
 
-enum KERNEL {  IDENTITY, CHISQUARED, INTERSECTION, HELLINGER, SPARSEONESIDED  };
+enum KERNEL {  IDENTITY, CHISQUARED, INTERSECTION, HELLINGER };
 
 template <class T>
 class CMercerKernel {
@@ -46,10 +46,10 @@ public:
     virtual double Evaluate(T* x, T* y);
 
     //! Compute the norm induced by the kernel.
-    virtual double ComputeKernelNorm(T* x) { return sqrt(Evaluate(x,x)); }
+    double ComputeKernelNorm(T* x) { return sqrt(Evaluate(x,x)); }
 
     //! Computes the gradient the kernel w.r.t. \f$x\f$.
-    virtual void Gradient(T* x, T* y, T* nablax);
+    void Gradient(T* x, T* y, T* nablax);
 
     //! Create a kernel by number. Make sure to de-allocate it later.
     static CMercerKernel<T>* Create(int no, int n);
@@ -256,28 +256,6 @@ private:
 
 };
 
-template <class T>
-class COneSidedSparseKernel: public CMercerKernel<T> {
-
-public:
-
-    //! Constructor.
-    COneSidedSparseKernel():CMercerKernel<T>::CMercerKernel() {}
-
-    //! Constructor.
-    COneSidedSparseKernel(int n):CMercerKernel<T>::CMercerKernel(n){}
-
-    //! Evaluate kernel.
-    virtual double Evaluate(T* x, T* y) { return 0; }
-
-    //! Evaluate sparse kernel.
-    virtual double Evaluate(T* x, int* indices, T* y);
-
-private:
-
-    using CMercerKernel<T>::m_n;
-
-};
 
 }
 

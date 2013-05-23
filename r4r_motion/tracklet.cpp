@@ -52,16 +52,11 @@ CTracklet::CTracklet(size_t t0, size_t s, CFeature x0):
 
 }
 
-CTracklet::~CTracklet() {
+//CTracklet::~CTracklet() {
 
-//	list<shared_ptr<CFeature> >::iterator it;
+//    clear();
 
-//	for(it=begin(); it!=end(); it++)
-//		it->reset();
-
-	clear();
-
-}
+//}
 
 
 void CTracklet::Update(CFeature x) {
@@ -135,7 +130,6 @@ ostream& operator<<(ostream& os, CTracklet& x) {
 }
 
 bool CTracklet::SaveToFile(const char* filename) {
-
 
     if(size()==0)
         return 1;

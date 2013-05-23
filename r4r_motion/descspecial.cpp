@@ -24,6 +24,8 @@
 #include "descspecial.h"
 #include "interp.h"
 
+#include <limits>
+
 using namespace cv;
 
 namespace R4R {
@@ -137,12 +139,16 @@ bool CHistogramOfGradients::Compute(cv::Mat& img) {
             double ograd = 0;
 
             if(m_osigned)
-                ograd = atan2(Iy,Ix) + 2*M_PI;
+                ograd = atan2(Iy,Ix) + M_PI;
             else
                 ograd = fabs(atan2(Iy,Ix));
 
             // compute the bin
             size_t bin = (size_t)ograd/ho;
+
+            // 2pi ~ 0, pi ~ -pi
+            if(bin==m_container.NElems())
+                bin = 0;
 
             // get the cell index
             size_t I, J;
@@ -211,7 +217,7 @@ bool CFMHoGDescriptor::Compute(cv::Mat& img) {
     double h = 2.0/(double)(n-1);
 
     // size of each histogram bin
-    double ho = 2*M_PI/m_no_bins;
+    double ho = 2*M_PI/(double)m_no_bins;
 
     // compute actual descriptor
     for(size_t i=0; i<n; i++) {
@@ -227,33 +233,43 @@ bool CFMHoGDescriptor::Compute(cv::Mat& img) {
             Iy = CImageInterpolation::Gradient(img,pt(0),pt(1),1);
 
             // compute signed orientation
-            double ograd = atan2(Iy,Ix) + 2*M_PI;
+            double ograd = atan2(Iy,Ix) + M_PI;
 
             // compute the bin
-            size_t bin = (size_t)ograd/ho;
+            size_t bin = (size_t)(ograd/ho);
+
+            // 2pi ~ 0
+            if(bin==m_container.NElems())
+                bin = 0;
 
             // increment bin weighted with gradient norm
-            fft[bin][0]  += sqrt(Ix*Ix+Iy*Iy);
+            double norm = sqrt(Ix*Ix+Iy*Iy);
+
+
+            if(norm>numeric_limits<double>::epsilon())
+                fft[bin][0]  += sqrt(Ix*Ix+Iy*Iy);
 
         }
 
     }
 
     // compute fft
-    fftw_plan p = fftw_plan_dft_1d(m_container.NElems(),
-                                   fft,
-                                   fft,
-                                   FFTW_FORWARD,
-                                   FFTW_ESTIMATE);
+//    fftw_plan p = fftw_plan_dft_1d(m_container.NElems(),
+//                                   fft,
+//                                   fft,
+//                                   FFTW_FORWARD,
+//                                   FFTW_ESTIMATE);
 
-    fftw_execute(p);
+//    fftw_execute(p);
 
     // compute modulus
     for(size_t i=0; i<m_container.NElems(); i++)
-        m_container(i) = (float)sqrt(fft[i][0]*fft[i][0]+fft[i][1]*fft[i][1]);
+        m_container(i) = fft[i][0]; // (float)sqrt(fft[i][0]*fft[i][0]+fft[i][1]*fft[i][1]);
+
+    m_container.Normalize();
 
     // tidy up
-    fftw_destroy_plan(p);
+    //fftw_destroy_plan(p);
     fftw_free(fft);
 
     return 0;

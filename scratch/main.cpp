@@ -22,13 +22,6 @@ int main()
 
 
 
-    vec x(3);
-    x.Rand(0,10);
-    cout << x << endl;
-    ofstream out("/home/jbalzer/test.txt");
-    out << x << endl;
-
-    out.close();
 
 //    ON::Begin();
 
@@ -76,6 +69,9 @@ int main()
 //    ON_EvaluateNurbsBasisDerivatives(order,curve2.m_knot,1, N);
 //    cout << N[order+0] << " " << N[order+1] << " " << N[order+2] << " " << N[order+3] << endl;
 
+//    int span = ON_NurbsSpanIndex(order,curve2.m_cv_count,curve2.m_knot,0.95,-1,0);
+
+//    cout << "Span: " << span << endl;
 
 //    //cout << pt.x << " " << pt.y << " " << pt.z << " " << endl;
 //    //cout << tangent.x << " " << tangent.y << " " << tangent.z << " " << endl;
@@ -85,32 +81,43 @@ int main()
 //    ON::End();
 
 
-//    vec x0(128);
-//    x0.Rand(0,10);
-//    CSplineCurve<double> curve = CSplineCurve<double>(128,3,13);
-//    curve.MakeClampedUniformKnotVector(0,1);
-//    mat& cv = curve.GetCVData();
 
-//    cv.Ones();
+    CSplineCurve<double> curve = CSplineCurve<double>(2,3,13);
+    curve.MakeClampedUniformKnotVector(0,1);
+    mat& cv = curve.GetCVData();
+
+    cv.Ones();
+
+    //curve.Print();
+
+    for(size_t i=0; i<cv.NCols(); i++) {
+
+        vec col = cv.GetColumn(i);
+        col.Scale(i);
+        cv.SetColumn(i,col);
+        //col(1)=0;
+
+    }
+
+    vec x0 = curve.Evaluate(1);
+
+    x0.Scale(3);
+   // x0(0)=3.4;
+   // x0(1)=1.2;
+
+    cout << "x0 " << x0 << endl;
 
 
-//    curve.Print();
+    CMercerKernel<double> kernel(2);
+    double t0, t1;
+    t0 = omp_get_wtime();
+    vec xc = curve.FindLocallyClosestPoint(x0,kernel,0.9,1e-4);
 
-//    for(size_t i=0; i<cv.NCols(); i++) {
+    cout << xc << endl;
 
-//        vec col = cv.GetColumn(i);
-//        col.Scale(i);
-//        //col(1)=0;
-
-//    }
-
-//    CMercerKernel<double> kernel(2);
-//    double t0, t1;
-//    t0 = omp_get_wtime();
-//    vec xc = curve.FindLocallyClosestPoint(x0,kernel,0.7,1e-6);
-//    t1 = omp_get_wtime();
-//    cout << t1-t0 << " s" << endl;
-//    cout << xc << endl;
+    t1 = omp_get_wtime();
+    cout << t1-t0 << " s" << endl;
+    cout << xc << endl;
 
 
 //   std::vector<CDescriptorFileHeader> headers;
