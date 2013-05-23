@@ -14,22 +14,15 @@ using namespace cv;
 int main()
 {
 
-    mat A(3000,300);
-    A.Rand(0,3);
+    CNVector<float,3> x;
+    CNVector<float,3> y;
 
+    x.Rand(0,10);
 
-    mat U(3000,3000);
-    mat S(3000,300);
-    mat Vt(300,300);
+    //x.Transpose();
+    CNVector<float,3> z = x+y;
 
-    double t0, t1;
-    t0 = omp_get_wtime(),
-    CMatrixFactorization::SVD(A,U,S,Vt);
-t1 = omp_get_wtime(),
-        //cout << U << endl;
-cout << t1-t0 << endl;
-
-
+    cout << x << endl;
 
 
 //   std::vector<CDescriptorFileHeader> headers;

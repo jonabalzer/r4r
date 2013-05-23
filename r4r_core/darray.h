@@ -330,7 +330,6 @@ public:
     //! Constructor.
     CNVector():CDenseVector<T>(n) {};
 
-
 };
 
 /*! \brief convenience class for creating vectors of length \f$3\f$

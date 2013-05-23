@@ -7,8 +7,6 @@ SUBDIRS += \
     mv_descriptor_learning \
     scratch
 
-
-
 QMAKE_CXXFLAGS += -std=c++0x
 
 # doxygen target
