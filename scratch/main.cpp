@@ -82,42 +82,109 @@ int main()
 
 
 
-    CSplineCurve<double> curve = CSplineCurve<double>(2,3,13);
+    CSplineCurve<double> curve = CSplineCurve<double>(2,3,5);
     curve.MakeClampedUniformKnotVector(0,1);
     mat& cv = curve.GetCVData();
 
     cv.Ones();
 
-    //curve.Print();
+    double N[4*4];
 
-    for(size_t i=0; i<cv.NCols(); i++) {
+    size_t n = 100;
+    double dt = 1.0/(double(n-1));
 
-        vec col = cv.GetColumn(i);
-        col.Scale(i);
-        cv.SetColumn(i,col);
-        //col(1)=0;
+    double b0[n];
+    double b1[n];
+    double b2[n];
+    double b3[n];
+    double b4[n];
+
+    vec& knot = curve.GetKnotVector();
+    curve.Print();
+    for(size_t i=0; i<n; i++) {
+
+        int span = curve.GetSpan(i*dt);
+
+
+
+        CSplineCurve<double>::EvaluateNurbsBasis(4,knot.Data().get()+span,i*dt,N);
+
+        cout << N[0] << " " << N[1] << " " << N[2] << " " << N[3] << endl;
+        if(span==0) {
+
+            b0[i]=N[0];
+            b1[i]=N[1];
+            b2[i]=N[2];
+            b3[i]=N[3];
+            b4[i] = 0;
+        }
+        else
+        {
+
+
+
+            b0[i]=0;
+            b1[i]=N[0];
+            b2[i]=N[1];
+            b3[i]=N[2];
+            b4[i]=N[3];
+
+
+
+        }
+
+
 
     }
 
-    vec x0 = curve.Evaluate(1);
 
-    x0.Scale(3);
-   // x0(0)=3.4;
-   // x0(1)=1.2;
+    ofstream ob0("b0.txt");
+    ofstream ob1("b1.txt");
+    ofstream ob2("b2.txt");
+    ofstream ob3("b3.txt");
+    ofstream ob4("b4.txt");
 
-    cout << "x0 " << x0 << endl;
+    for(size_t i=0; i<n; i++) {
+        ob0 << b0[i] << " ";
+        ob1 << b1[i] << " ";
+        ob2 << b2[i] << " ";
+        ob3 << b3[i] << " ";
+        ob4 << b4[i] << " ";
+    }
+
+    ob0.close();
+    ob1.close();
+    ob2.close();
+    ob3.close();
+    ob4.close();
+//    for(size_t i=0; i<cv.NCols(); i++) {
+
+//        vec col = cv.GetColumn(i);
+//        col.Scale(i);
+//        cv.SetColumn(i,col);
+//        //col(1)=0;
+
+//    }
+
+//    vec x0 = curve.Evaluate(1);
+
+//    x0.Scale(3);
+//   // x0(0)=3.4;
+//   // x0(1)=1.2;
+
+//    cout << "x0 " << x0 << endl;
 
 
-    CMercerKernel<double> kernel(2);
-    double t0, t1;
-    t0 = omp_get_wtime();
-    vec xc = curve.FindLocallyClosestPoint(x0,kernel,0.9,1e-4);
+//    CMercerKernel<double> kernel(2);
+//    double t0, t1;
+//    t0 = omp_get_wtime();
+//    vec xc = curve.FindLocallyClosestPoint(x0,kernel,0.9,1e-4);
 
-    cout << xc << endl;
+//    cout << xc << endl;
 
-    t1 = omp_get_wtime();
-    cout << t1-t0 << " s" << endl;
-    cout << xc << endl;
+//    t1 = omp_get_wtime();
+//    cout << t1-t0 << " s" << endl;
+//    cout << xc << endl;
 
 
 //   std::vector<CDescriptorFileHeader> headers;
