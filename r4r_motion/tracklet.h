@@ -33,6 +33,8 @@
 
 namespace R4R {
 
+typedef CInterestPoint<float,2> feature;
+
 /*! \brief feature trajectory
  *
  *
@@ -105,23 +107,23 @@ public:
 	void DeleteDescriptors();
 
 	//! Gets the status.
-	bool GetStatus() { return m_status; };
+    bool GetStatus() { return m_status; }
 
 	//! Sets the status.
-	void SetStatus(bool status) { m_status = status; };
+    void SetStatus(bool status) { m_status = status; }
 
 	/*! Gets the creation time.
 	 *
 	 *\details Note that there is no member function to change #m_to as it is uniquely defined during reconstruction.
 	 *
 	 */
-	size_t GetCreationTime() { return m_t0; };
+    size_t GetCreationTime() { return m_t0; }
 
 	//! Returns (initial) scale of the tracklet.
-	size_t GetScale() { return m_scale; };
+    size_t GetScale() { return m_scale; }
 
 	//! Computes the standard deviation of feature locations over time.
-	vec ComputeVariance();
+    //vec ComputeVariance();
 
 protected:
 

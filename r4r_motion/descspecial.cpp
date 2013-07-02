@@ -198,7 +198,6 @@ CFMHoGDescriptor::CFMHoGDescriptor(CRectangle<double> roi, size_t hsize, size_t 
     m_hsize(hsize),
     m_no_bins(nbins) {}
 
-
 bool CFMHoGDescriptor::Compute(cv::Mat& img) {
 
     // allocate space for histogram
@@ -245,7 +244,6 @@ bool CFMHoGDescriptor::Compute(cv::Mat& img) {
             // increment bin weighted with gradient norm
             double norm = sqrt(Ix*Ix+Iy*Iy);
 
-
             if(norm>numeric_limits<double>::epsilon())
                 fft[bin][0]  += sqrt(Ix*Ix+Iy*Iy);
 
@@ -254,22 +252,22 @@ bool CFMHoGDescriptor::Compute(cv::Mat& img) {
     }
 
     // compute fft
-//    fftw_plan p = fftw_plan_dft_1d(m_container.NElems(),
-//                                   fft,
-//                                   fft,
-//                                   FFTW_FORWARD,
-//                                   FFTW_ESTIMATE);
+    fftw_plan p = fftw_plan_dft_1d(m_container.NElems(),
+                                   fft,
+                                   fft,
+                                   FFTW_FORWARD,
+                                   FFTW_ESTIMATE);
 
-//    fftw_execute(p);
+    fftw_execute(p);
 
     // compute modulus
     for(size_t i=0; i<m_container.NElems(); i++)
-        m_container(i) = fft[i][0]; // (float)sqrt(fft[i][0]*fft[i][0]+fft[i][1]*fft[i][1]);
+        m_container(i) = (float)sqrt(fft[i][0]*fft[i][0]+fft[i][1]*fft[i][1]);
 
     m_container.Normalize();
 
     // tidy up
-    //fftw_destroy_plan(p);
+    fftw_destroy_plan(p);
     fftw_free(fft);
 
     return 0;

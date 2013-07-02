@@ -84,6 +84,9 @@ public:
     //! Writes vector to a stream.
     template <class U,u_int m> friend std::ostream& operator << (std::ostream& os, const CVector<U,m>& x);
 
+    //! Reads vector from a stream.
+    template <class U,u_int m> friend std::istream& operator >> (std::istream& is, CVector<U,m>& x);
+
     //! Low-level acces to the data.
     T* Data() { return m_data; }
 
@@ -260,6 +263,27 @@ inline CVector<T,n> operator-(const U& s, const CVector<T,n>& x) {
         result(i) = (T)s - x.Get(i);
 
     return result;
+
+}
+
+//! Checks two vectors for equality.
+template <typename T,u_int n>
+inline bool operator==(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+    bool result = true;
+
+    for(u_int i=0; i<n; i++)
+        result = result && (x.Get(i)==y.Get(i));
+
+    return result;
+
+}
+
+//! Checks two vectors for inequality.
+template <typename T,u_int n>
+inline bool operator!=(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+    return !(x==y);
 
 }
 

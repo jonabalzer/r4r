@@ -53,7 +53,6 @@ class CTracker:public std::vector<std::list<std::shared_ptr<CTracklet> > >  {
 
 public:
 
-
 	/*! \brief iterator class for CTracker objects
 	 *
 	 *
@@ -100,7 +99,6 @@ public:
 
 	friend class CTracker::iterator;
 
-
 	//! Standard constructor.
 	CTracker();
 
@@ -114,7 +112,7 @@ public:
 	void DeleteInvalidTracks();
 
 	//! Returns pointer to all tracklets at given scale.
-	std::list<std::shared_ptr<CTracklet> > Get(size_t s) { return at(s); };
+    std::list<std::shared_ptr<CTracklet> > Get(size_t s) { return at(s); }
 
 	//! Computes the number of tracklets in the container.
 	size_t Capacity();
@@ -128,7 +126,7 @@ public:
 	 * \param[in] img initial image
 	 *
 	 */
-	virtual bool Init(std::vector<cv::Mat>& pyramid) { return 0; };
+    virtual bool Init(std::vector<cv::Mat>& pyramid) = 0 ;
 
 	/*! \brief Executes one step of differential motion estimation.
 	 *
@@ -136,13 +134,13 @@ public:
 	 * \param[in] img1 frame at t+1
 	 *
 	 */
-	virtual bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) { m_global_t++ ; return 0; };
+    virtual bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) = 0; // { m_global_t++ ; return 0; }
 
 	//! Draws the current features into an image.
 	virtual void Draw(cv::Mat& img);
 
 	//! Adds new features to the tracker.
-    virtual bool AddTracklets(std::vector<cv::Mat>& pyramid) { return 0; }
+    virtual bool AddTracklets(std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Updates all descriptors if any.
 	 *
@@ -150,12 +148,12 @@ public:
 	 * \param[in] img1 frame at t+1
 	 *
 	 */
-    virtual bool UpdateDescriptors(std::vector<cv::Mat>& pyramid) { return 0; }
+    virtual bool UpdateDescriptors(std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Marks tracks as invalid.
 	 *
 	 */
-    virtual void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1);
+    virtual void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) = 0;
 
 	/*! \brief Saves all tracklets to file.
 	 *
@@ -200,7 +198,7 @@ public:
 	CIntegralImage<size_t> ComputeFeatureDensity(size_t width, size_t height, size_t s);
 
 	//! Returns the set of parameters.
-    CParameters GetParameters() { return *m_params; };
+    CParameters GetParameters() { return *m_params; }
 
 	//! Draws active tracklets into an image.
 	void DrawTails(cv::Mat& img, size_t length);
@@ -215,7 +213,7 @@ public:
 	static void OnMouseSelectBoundingBox(int event, int x, int y, int flags, void* params);
 
     //! Access to the global time.
-    size_t GetTime() { return m_global_t; };
+    size_t GetTime() { return m_global_t; }
 
     /*!
      * \brief Adds a new tracklet.

@@ -133,7 +133,6 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 }
 
-
 void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 	size_t no = 0;
@@ -295,8 +294,7 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
                 if(m_params->GetIntParameter("COMPUTE_HOG")) {
 
                     // compute HoG
-                    //CHistogramOfGradients* temp = new CHistogramOfGradients(droi);
-                    CFMHoGDescriptor* temp = new CFMHoGDescriptor(droi);
+                    CHistogramOfGradients* temp = new CHistogramOfGradients(droi);
 
                     //temp->Compute(imsmooth);
                     temp->Compute(pyramid[s]);

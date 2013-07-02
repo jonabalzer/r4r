@@ -9,6 +9,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include <omp.h>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -172,6 +174,10 @@ void MainWindow::on_stepButton_clicked()
     cvtColor(img, img_gray, CV_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
+    // start measuring time
+    double t0, t1;
+    t0 = omp_get_wtime();
+
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
 
@@ -186,6 +192,11 @@ void MainWindow::on_stepButton_clicked()
     // check validity of tracks
     m_tracker->Clean(pyramid,m_pyramid);
     //trackers[i]->DeleteInvalidTracks();
+
+    // compute and display framerate
+    t1 = omp_get_wtime();
+    double fps = 1.0/(t1-t0);
+    ui->speedLcdNumber->display(fps);
 
     // draw
     m_tracker->Draw(img);
@@ -204,7 +215,7 @@ void MainWindow::on_showMemoryUsage_triggered() {
     rusage usage;
     getrusage(RUSAGE_SELF,&usage);
     double mb = (double)usage.ru_maxrss/1024;
-    ui->memlcdNumber->display(mb);
+    ui->memLcdNumber->display(mb);
 
 }
 

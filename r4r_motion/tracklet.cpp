@@ -197,32 +197,32 @@ void CTracklet::DeleteDescriptors() {
 
 }
 
-vec CTracklet::ComputeVariance() {
+//vec CTracklet::ComputeVariance() {
 
-	vec x(size()), y(size());
-	vec result(2);
+//	vec x(size()), y(size());
+//	vec result(2);
 
-    list<CFeature>::iterator it;
+//    list<CFeature>::iterator it;
 
-	size_t t = 0;
+//	size_t t = 0;
 
-	for(it=begin(); it!=end(); it++) {
+//	for(it=begin(); it!=end(); it++) {
 
-        vec location = it->GetLocation();
+//        vec location = it->GetLocation();
 
-		x(t) = location(0);
-		y(t) = location(1);
+//		x(t) = location(0);
+//		y(t) = location(1);
 
-		t++;
+//		t++;
 
-	}
+//	}
 
-	result(0) = x.Variance();
-	result(1) = y.Variance();
+//	result(0) = x.Variance();
+//	result(1) = y.Variance();
 
-	return result;
+//	return result;
 
-}
+//}
 
 vec CTracklet::GetPastLocation(size_t steps) {
 

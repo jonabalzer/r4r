@@ -30,8 +30,6 @@
 
 namespace R4R {
 
-
-
 /*! \brief camera model
  *
  *

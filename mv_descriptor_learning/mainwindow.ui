@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>638</width>
-    <height>562</height>
+    <width>637</width>
+    <height>607</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <property name="geometry">
      <rect>
       <x>-1</x>
-      <y>-1</y>
+      <y>40</y>
       <width>640</width>
       <height>480</height>
      </rect>
@@ -39,13 +39,37 @@
    <widget class="QWidget" name="horizontalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>3</x>
-      <y>482</y>
-      <width>631</width>
+      <x>190</x>
+      <y>5</y>
+      <width>441</width>
       <height>31</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="displayLayout">
+     <item>
+      <widget class="QLabel" name="speedLabel">
+       <property name="text">
+        <string>Speed</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLCDNumber" name="speedLcdNumber"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="FPSLabel">
+       <property name="text">
+        <string>FPS</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QLabel" name="memLabel">
        <property name="text">
@@ -54,7 +78,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLCDNumber" name="memlcdNumber"/>
+      <widget class="QLCDNumber" name="memLcdNumber"/>
      </item>
      <item>
       <widget class="QLabel" name="MBLabel">
@@ -80,19 +104,18 @@
      <item>
       <widget class="QLCDNumber" name="frameLcdNumber"/>
      </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>362</x>
+      <y>524</y>
+      <width>269</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="controlLayout">
      <item>
       <widget class="QPushButton" name="stepButton">
        <property name="text">
@@ -101,16 +124,16 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="playButton">
+      <widget class="QPushButton" name="pauseButton">
        <property name="text">
-        <string>Play</string>
+        <string>Pause</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pauseButton">
+      <widget class="QPushButton" name="playButton">
        <property name="text">
-        <string>Pause</string>
+        <string>Play</string>
        </property>
       </widget>
      </item>
@@ -122,7 +145,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>638</width>
+     <width>637</width>
      <height>25</height>
     </rect>
    </property>

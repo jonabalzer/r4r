@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++0x -O3
 
 DEFINES += HAVE_FFTW  # add last flag depending on whether FFTW is present
 
