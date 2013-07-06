@@ -1,12 +1,28 @@
-/*
- * lm.h
- *
- *  Created on: May 30, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef LM_H_
-#define LM_H_
+#ifndef R4RLM_H_
+#define R4RLM_H_
 
 #include "iter.h"
 #include "types.h"
@@ -36,22 +52,22 @@ public:
 	CLeastSquaresProblem(size_t nopts, size_t noparams);
 
 	//! \brief Jointly computes the residual vector and Jacobian of the least-squares objective function.
-	virtual void ComputeResidualAndJacobian(vec& r, Matrix& J) {};
+    virtual void ComputeResidualAndJacobian(vec& r, Matrix& J) {}
 
 	//! Computes the residual vector of a weighted least-squares objective function.
-	virtual void ComputeResidual(vec& r) {};
+    virtual void ComputeResidual(vec& r) {}
 
 	//! Access to the model parameters.
-	vec& Get() { return m_model; };
+    vec& Get() { return m_model; }
 
 	//! Access to the weights.
-	vec& GetWeights() { return m_weights; };
+    vec& GetWeights() { return m_weights; }
 
 	//! Access to #m_nopts.
-	size_t GetNumberOfDataPoints() { return m_nopts; };
+    size_t GetNumberOfDataPoints() { return m_nopts; }
 
 	//! Access to #m_noparams.
-	size_t GetNumberOfModelParameters() { return m_noparams; };
+    size_t GetNumberOfModelParameters() { return m_noparams; }
 
 	/*! \brief Computes scattering of residuals to normalize them for re-weighting and/or outlier detection.
 	 *
@@ -60,7 +76,7 @@ public:
 	 * overload this with implementation of e.g. techniques such as the Donoho-Stahel or Minimum Covariance Determinant
 	 * (MCD) estimator.
 	 */
-    virtual vec ComputeDispersion(vec &r);
+    vec ComputeDispersion(vec &r);
 
 protected:
 

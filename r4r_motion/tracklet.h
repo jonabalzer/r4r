@@ -1,12 +1,28 @@
-/*
- * tracklet.h
- *
- *  Created on: Mar 16, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef TRACKLET_H_
-#define TRACKLET_H_
+#ifndef R4RTRACKLET_H_
+#define R4RTRACKLET_H_
 
 #include <list>
 #include <set>
@@ -42,19 +58,19 @@ public:
 	 * avoid memory leaks.
 	 *
 	 */
-	virtual ~CTracklet();
+    //virtual ~CTracklet();
 
 	//! Tests whether two tracklets are equal by looking at their initial position.
-	bool operator!=(CTracklet& tracklet) { return GetHash()!=tracklet.GetHash(); };
+    bool operator!=(CTracklet& tracklet) { return GetHash()!=tracklet.GetHash(); }
 
 	//! Directly updates the state without any filtering.
     void Update(CFeature x);
 
     //! Provides access to the current state.
-    CFeature& GetLatestState() { return back(); };
+    CFeature& GetLatestState() { return back(); }
 
 	//! Provides access to the current feature position.
-    vec GetLatestLocation() { return back().GetLocation(); };
+    vec GetLatestLocation() { return back().GetLocation(); }
 
 	//! Provides access to previous feature position.
 	vec GetPastLocation(size_t steps);
@@ -63,7 +79,7 @@ public:
 	vec GetPastLocationAtNativeScale(size_t steps);
 
 	//! Provides access to the current feature position w.r.t. to the native scale.
-    vec GetLatestLocationAtNativeScale() { return back().GetLocationAtNativeScale(); };
+    vec GetLatestLocationAtNativeScale() { return back().GetLocationAtNativeScale(); }
 
 	//! Extrapolates the current translational speed from the feature.
 	vec GetLatestVelocity();

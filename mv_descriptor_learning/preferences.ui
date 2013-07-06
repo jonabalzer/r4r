@@ -53,6 +53,9 @@
      </item>
      <item>
       <widget class="QComboBox" name="idNormComboBox">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
        <item>
         <property name="text">
          <string>Off</string>
@@ -205,6 +208,9 @@
     <layout class="QHBoxLayout" name="hogLayout">
      <item>
       <widget class="QCheckBox" name="hogOnCheckBox">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="text">
         <string>HOG</string>
        </property>
@@ -300,7 +306,7 @@
      <item>
       <widget class="QLineEdit" name="minFeatEdit">
        <property name="text">
-        <string>20</string>
+        <string>0</string>
        </property>
       </widget>
      </item>
@@ -592,19 +598,12 @@
       <height>27</height>
      </rect>
     </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
     <item>
      <property name="text">
       <string>Off</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Mean</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Median</string>
      </property>
     </item>
     <item>
@@ -615,6 +614,16 @@
     <item>
      <property name="text">
       <string>Subsample</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Spline</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Mean</string>
      </property>
     </item>
    </widget>

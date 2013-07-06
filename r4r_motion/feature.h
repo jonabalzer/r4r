@@ -1,21 +1,40 @@
-/*
- * feature.h
- *
- *  Created on: Apr 2, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef FEATURE_H_
-#define FEATURE_H_
+#ifndef R4RFEATURE_H_
+#define R4RFEATURE_H_
 
-#include <opencv2/opencv.hpp>
-#include "rect.h"
-#include "darray.h"
 #include <stdio.h>
 #include <list>
 #include <iostream>
 #include <fstream>
 #include <memory>
+
+#include <opencv2/opencv.hpp>
+
+#include "rect.h"
+#include "darray.h"
+
 
 using namespace std;
 
@@ -36,6 +55,8 @@ class CFeature {
 
     friend class CAbstractDescriptor;
     friend class CDescriptorFileHeader;
+    template<class Array> friend class CDescriptorAggregator;
+    template<class Array> friend class CSubsampleAggregator;
 
 public:
 
@@ -51,7 +72,10 @@ public:
 	CFeature(double x, double y, size_t scale, double quality = 0);
 
 	//! Destructor.
-	~CFeature();
+    //~CFeature();
+
+    //! Copy constructor.
+    CFeature(const CFeature& x);
 
 	//! Orders two image points.
     bool operator<(CFeature& x);
@@ -60,7 +84,7 @@ public:
     bool operator!=(CFeature& x);
 
 	//! Compares two image points.
-	bool operator==(CFeature& x) {  return !(*this!=x); };
+    bool operator==(CFeature& x) {  return !(*this!=x); }
 
 	//! Returns the scale.
 	size_t GetScale() { return m_scale; }
@@ -69,7 +93,7 @@ public:
 	double GetQuality() { return m_quality; }
 
 	//! Sets the strength/quality of the feature.
-	void SetQuality(double quality) { m_quality = quality; };
+    void SetQuality(double quality) { m_quality = quality; }
 
     //! Writes a feature to an output stream.
     friend std::ostream& operator<<(std::ostream& os, CFeature& x);
@@ -93,40 +117,41 @@ public:
 	void DeleteDescriptors();
 
 	//! Returns the number of descriptors attached to the feature.
-	size_t NoDescriptors() { return m_descriptors.size(); };
+    size_t NoDescriptors() { return m_descriptors.size(); }
 
 	//! Checks whether a descriptor of a given name exists.
 	bool HasDescriptor(const char* name);
 
 	//! Returns feature location w.r.t. to inherent scale.
-	vec GetLocation() { return m_location; };
+    vec GetLocation() { return m_location; }
 
     //! Returns feature location w.r.t. to native scale.
-	vec GetLocationAtNativeScale();
+    vec GetLocationAtNativeScale();
 
     //! Access to the descriptor container.
-    std::map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; };
+    std::map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; }
 
     //! Looks for descriptor with a specified name.
 	shared_ptr<CAbstractDescriptor> GetDescriptor(const char* name);
 
-	//! Looks for a descriptor a specified position.
+    //! Looks for a descriptor at specified position.
 	shared_ptr<CAbstractDescriptor> GetDescriptor(size_t no);
 
-    //! Looks for a descriptor a specified position.
+    //! Looks for name of descriptor at specified position.
     string GetDescriptorName(size_t no);
 
     //! Writes a set of features to file.
-    static bool SaveToFile(const char* filename, std::list<CFeature>& features);
+    static bool SaveToFile(const char* filename, std::list<CFeature>& features, const char* comment = nullptr);
 
     /*! \brief Reads a set of features from file.
      * \param[in] filename file name
      * \param[out] featurs list of features
      * \param[in] type precision of the container
+     * \returns number of features read, \f$-1\f$ on error
      */
-    static bool OpenFromFile(const char* filename, std::list<CFeature>& features);
+    static int OpenFromFile(const char* filename, std::vector<CFeature>& features, string& comment);
 
-    /*! \brief Reads a set of features from file.
+    /*! \brief Reads a set of features from file into a contiguous memory block.
      * \param[in] filename file name
      * \param[out] headers list of headers
      * \param[out] data pointer to a contiguous block of memory holding the descriptor data

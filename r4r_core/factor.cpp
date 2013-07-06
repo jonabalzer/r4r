@@ -1,25 +1,45 @@
-/*
- * factor.cpp
- *
- *  Created on: Jun 11, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "factor.h"
 #include <iostream>
 
 extern "C" void dgesvd_(char* jobu, char* jobvt, int* m, int* n, double* a, int* lda, double* s, double* u, int* ldu, double* vt, int* ldvt, double* work, int* lwork, int* info);
+extern "C" void sgesvd_(char* jobu, char* jobvt, int* m, int* n, float* a, int* lda, float* s, float* u, int* ldu, float* vt, int* ldvt, float* work, int* lwork, int* info);
 extern "C" void dpotrf_(char* uplo, int* n, double* a, int* lda, int* info);
 extern "C" void dpotri_(char* uplo, int* n, double* a, int* lda, int* info);
+extern "C" void spotrf_(char* uplo, int* n, float* a, int* lda, int* info);
+extern "C" void spotri_(char* uplo, int* n, float* a, int* lda, int* info);
 
 using namespace std;
 
 namespace R4R {
 
-bool CMatrixFactorization::SVD(const CDenseArray<double>& A, CDenseArray<double>& U, CDenseArray<double>& S, CDenseArray<double>& Vt) {
+template <>
+bool CMatrixFactorization<double>::SVD(const CDenseArray<double>& A, CDenseArray<double>& U, CDenseArray<double>& S, CDenseArray<double>& Vt) {
 
     // check dimensions
-    if(U.NCols()!=A.NRows() || U.NRows()!=A.NRows() || Vt.NCols()!=A.NCols() || Vt.NRows()!=A.NCols()) {
+    if(U.NCols()!=A.NRows() || U.NRows()!=A.NRows() || Vt.NCols()!=A.NCols() || Vt.NRows()!=A.NCols() || S.NElems()!=min(A.NRows(),A.NCols())) {
 
     	cout << "ERROR: Dimension mismatch." << endl;
     	return 1;
@@ -61,8 +81,54 @@ bool CMatrixFactorization::SVD(const CDenseArray<double>& A, CDenseArray<double>
 
 }
 
+template <>
+bool CMatrixFactorization<float>::SVD(const CDenseArray<float>& A, CDenseArray<float>& U, CDenseArray<float>& S, CDenseArray<float>& Vt) {
 
-size_t CMatrixFactorization::Rank(const CDenseArray<double>& A, double tol) {
+    // check dimensions
+    if(U.NCols()!=A.NRows() || U.NRows()!=A.NRows() || Vt.NCols()!=A.NCols() || Vt.NRows()!=A.NCols() || S.NElems()!=min(A.NRows(),A.NCols())) {
+
+        cout << "ERROR: Dimension mismatch." << endl;
+        return 1;
+
+    }
+
+    // init
+    int m, n, lda, ldu, ldvt, info, lwork;
+    m = A.NRows();
+    n = A.NCols();
+    lda = m;
+    ldu = m;
+    ldvt = n;
+    lwork = -1;
+
+    float wkopt;
+    float* work;
+
+    float* a = A.Data().get();
+    float* s = S.Data().get();
+    float* u = U.Data().get();
+    float* vt = Vt.Data().get();
+
+    sgesvd_("A","A",&m,&n,a,&lda,s,u,&ldu,vt,&ldvt,&wkopt,&lwork,&info);
+
+    lwork = (int)wkopt;
+    work = (float*)malloc(lwork*sizeof(float));
+
+    sgesvd_("All","All",&m,&n,a,&lda,s,u,&ldu,vt,&ldvt,work,&lwork,&info);
+
+    if(info>0) {
+
+        cout << "ERROR: The algorithm computing SVD failed to converge." << endl;
+        return 1;
+
+    }
+
+    return 0;
+
+}
+
+template <>
+size_t CMatrixFactorization<double>::Rank(const CDenseArray<double>& A, double tol) {
 
 	CDenseArray<double> U(A.NRows(),A.NRows());
 	CDenseArray<double> S(min(A.NRows(),A.NCols()),1);
@@ -83,7 +149,8 @@ size_t CMatrixFactorization::Rank(const CDenseArray<double>& A, double tol) {
 
 }
 
-bool CMatrixFactorization::Cholesky(CDenseArray<double>& A) {
+template <>
+bool CMatrixFactorization<double>::Cholesky(CDenseArray<double>& A) {
 
    if(A.NCols()!=A.NRows()) {
 
@@ -112,7 +179,8 @@ bool CMatrixFactorization::Cholesky(CDenseArray<double>& A) {
 
 }
 
-bool CMatrixFactorization::InvertSymmetric(CDenseArray<double>& A) {
+template <>
+bool CMatrixFactorization<double>::InvertSymmetric(CDenseArray<double>& A) {
 
    if(A.NCols()!=A.NRows()) {
 
@@ -142,6 +210,9 @@ bool CMatrixFactorization::InvertSymmetric(CDenseArray<double>& A) {
    return 0;
 
 }
+
+template class CMatrixFactorization<double>;
+template class CMatrixFactorization<float>;
 
 }
 

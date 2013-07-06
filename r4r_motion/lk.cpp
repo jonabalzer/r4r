@@ -1,12 +1,25 @@
-/*
- * lk.cpp
- *
- *  Created on: Aug 13, 2012
- *      Author: jbalzer
- */
-
-
-
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "lk.h"
 //#include <tbb/tbb.h>
@@ -16,10 +29,7 @@ using namespace std;
 using namespace cv;
 //using namespace tbb;
 
-
-
 namespace R4R {
-
 
 CLukasKanade::CLukasKanade(const vec u0, const size_t hsize, const cv::Mat& img0, const cv::Mat& img1):
 	CLeastSquaresProblem((2*hsize+1)*(2*hsize+1),2),
@@ -133,14 +143,7 @@ void CLowLevelTracking::LukasKanadeMT(cv::Mat& img0, cv::Mat& img1, vector<vec>&
 
 	});
 
-
-
-
 }
-
-
-
-
 
 CLKTrackerInvoker::CLKTrackerInvoker(const cv::Mat& img0, const cv::Mat& img1, const vec* points0, vec* points1, uchar* status, size_t hsize, size_t maxiter, double eps, double lambda):
 		m_img0(&img0),

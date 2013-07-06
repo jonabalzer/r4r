@@ -1,12 +1,25 @@
-/*
- * sarray.cpp
- *
- *  Created on: Apr 10, 2012
- *      Author: jbalzer
- */
-
-
-
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "sarray.h"
 #include "darray.h"
@@ -928,7 +941,7 @@ CSparseBandedArray<T> CSparseBandedArray<T>::Transpose(const CSparseBandedArray<
 template <class T>
 void CSparseBandedArray<T>::Delete(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
 		Transpose(i,j);
@@ -948,7 +961,7 @@ void CSparseBandedArray<T>::Delete(size_t i, size_t j) {
 template <class T>
 void CSparseBandedArray<T>::DeleteRow(size_t i) {
 
-	assert(i>=0 && i<m_nrows);
+    assert(i<m_nrows);
 
 	for(size_t j=0; j<m_ncols; j++)
 		Delete(i,j);
@@ -958,7 +971,7 @@ void CSparseBandedArray<T>::DeleteRow(size_t i) {
 template <class T>
 void CSparseBandedArray<T>::DeleteCol(size_t j) {
 
-	assert(j>=0 && j<m_ncols);
+    assert(j<m_ncols);
 
 	for(size_t i=0; i<m_nrows; i++)
 		Delete(i,j);
@@ -1002,7 +1015,7 @@ T CSparseBandedArray<T>::Get(size_t i, size_t j) {
 	if(m_transpose)
 		Transpose(i,j);
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	// convert index
 	int b = Band(i,j);
@@ -1071,7 +1084,7 @@ void CSparseBandedArray<T>::Set(size_t i, size_t j, T v) {
 	if(m_transpose)
 		Transpose(i,j);
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
 	// convert index
 	int b = Band(i,j);

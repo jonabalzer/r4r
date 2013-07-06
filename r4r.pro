@@ -5,7 +5,9 @@ SUBDIRS += \
     r4r_motion \
     robust_regression \
     mv_descriptor_learning \
-    scratch
+    scratch \
+    r4r_hardware \
+    iotest
 
 QMAKE_CXXFLAGS += -std=c++0x
 

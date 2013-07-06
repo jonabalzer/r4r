@@ -1,12 +1,35 @@
-#ifndef KERNELS_H
-#define KERNELS_H
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
+
+#ifndef R4RKERNELS_H
+#define R4RKERNELS_H
 
 #include <iostream>
 #include <math.h>
 
 namespace R4R {
 
-enum KERNEL {  IDENTITY, CHISQUARED, INTERSECTION, HELLINGER, SPARSEONESIDED  };
+enum KERNEL {  IDENTITY, CHISQUARED, INTERSECTION, HELLINGER };
 
 template <class T>
 class CMercerKernel {
@@ -23,10 +46,10 @@ public:
     virtual double Evaluate(T* x, T* y);
 
     //! Compute the norm induced by the kernel.
-    virtual double ComputeKernelNorm(T* x) { return sqrt(Evaluate(x,x)); }
+    double ComputeKernelNorm(T* x) { return sqrt(Evaluate(x,x)); }
 
     //! Computes the gradient the kernel w.r.t. \f$x\f$.
-    virtual void Gradient(T* x, T* y, T* nablax);
+    void Gradient(T* x, T* y, T* nablax);
 
     //! Create a kernel by number. Make sure to de-allocate it later.
     static CMercerKernel<T>* Create(int no, int n);
@@ -233,28 +256,6 @@ private:
 
 };
 
-template <class T>
-class COneSidedSparseKernel: public CMercerKernel<T> {
-
-public:
-
-    //! Constructor.
-    COneSidedSparseKernel():CMercerKernel<T>::CMercerKernel() {}
-
-    //! Constructor.
-    COneSidedSparseKernel(int n):CMercerKernel<T>::CMercerKernel(n){}
-
-    //! Evaluate kernel.
-    virtual double Evaluate(T* x, T* y) { return 0; }
-
-    //! Evaluate sparse kernel.
-    virtual double Evaluate(T* x, int* indices, T* y);
-
-private:
-
-    using CMercerKernel<T>::m_n;
-
-};
 
 }
 

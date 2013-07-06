@@ -1,10 +1,25 @@
-/*
- * utils.cpp
- *
- *  Created on: May 29, 2012
- *      Author: jbalzer
- */
-
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "rutils.h"
 #include "factor.h"
@@ -158,7 +173,7 @@ mat CLinearAlgebra::InvertTransformation(mat& F) {
 	tinv.Scale(-1);
 
 	// assemble result
-	mat Finv(F);
+    mat Finv(4,4);
 
 	for(size_t i=0; i<Finv.NRows()-1; i++) {
 
@@ -407,7 +422,7 @@ mat CLinearAlgebra::ProjectToSO3(mat& R) {
 	vec s(min(R.NRows(),R.NCols()));
 	mat Vt(R.NCols(),R.NCols());
 
-	CMatrixFactorization::SVD(R,U,s,Vt);
+    CMatrixFactorization<double>::SVD(R,U,s,Vt);
 
 	return U*Vt;
 
@@ -450,7 +465,7 @@ mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const C
 	mat Vt(A.NCols(),A.NCols());
 
 	// SVD
-	CMatrixFactorization::SVD(A,U,s,Vt);
+    CMatrixFactorization<double>::SVD(A,U,s,Vt);
 
 	// essential matrix builds from last row of Vt
 	E0(0,0) = Vt(Vt.NRows()-1,0);
@@ -469,7 +484,7 @@ mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const C
 	mat Vtp(3,3);
 
 	// SVD
-	CMatrixFactorization::SVD(E0,Up,sp,Vtp);
+    CMatrixFactorization<double>::SVD(E0,Up,sp,Vtp);
 
 	double sm = 0.5*(sp(0)+sp(1));
 	mat sigma(3,3);
@@ -524,7 +539,7 @@ mat CLinearAlgebra::EstimateHomography(const vector<pair<vec,vec> >& corr) {
 	mat Vt(A.NCols(),A.NCols());
 
 	// SVD
-	CMatrixFactorization::SVD(A,U,s,Vt);
+    CMatrixFactorization<double>::SVD(A,U,s,Vt);
 
 	// assemle homography
 	H(0,0) = Vt(Vt.NRows()-1,0);
@@ -571,7 +586,7 @@ mat CLinearAlgebra::FactorEssentialMatrix(const mat& E) {
 	vec t(3);
 
 	// first try with positive sign, there are two options
-	CMatrixFactorization::SVD(En,U,s,Vt);
+    CMatrixFactorization<double>::SVD(En,U,s,Vt);
 
 	Ut = mat::Transpose(U);
 
@@ -610,7 +625,7 @@ mat CLinearAlgebra::FactorEssentialMatrix(const mat& E) {
 	// try with different sign
 	En.Scale(-1);
 
-	CMatrixFactorization::SVD(En,U,s,Vt);
+    CMatrixFactorization<double>::SVD(En,U,s,Vt);
 
 	Ut = mat::Transpose(U);
 

@@ -8,7 +8,6 @@ QMAKE_CXXFLAGS += -std=c++0x
 
 DEFINES += HAVE_FFTW  # add last flag depending on whether FFTW is present
 
-
 TARGET = r4r_motion
 TEMPLATE = lib
 
@@ -55,6 +54,8 @@ symbian {
     addFiles.path = !:/sys/bin
     DEPLOYMENT += addFiles
 }
+
+unix:!macx:!symbian: LIBS += -L$$OUT_PWD/../r4r_core/ -lr4r_core
 
 unix:!symbian {
     maemo5 {

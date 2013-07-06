@@ -1,11 +1,28 @@
-/*
- * darray.cpp
- *
- *  Created on: Apr 5, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include "darray.h"
+#include "types.h"
 
 #include <string.h>
 #include <math.h>
@@ -42,7 +59,11 @@ CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, T val):
 	m_nrows(nrows),
 	m_ncols(ncols),
     m_transpose(false),
+#ifndef __SSE4_1__
+    m_data(new T[nrows*ncols]) {
+#else
     m_data((T*)_mm_malloc(nrows*ncols*sizeof(T),16),CDenseMatrixDeallocator<T>()){
+#endif
 
     fill_n(m_data.get(),nrows*ncols,val);
 
@@ -252,53 +273,68 @@ ostream& operator<< (ostream& os, const CDenseArray<U>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<bool>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " B1U" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::B1U << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(bool)*x.NElems());
+
+    return os;
+
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " I4S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::I4S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(int)*x.NElems());
+
+    return os;
+
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<float>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " F4S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::F4S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(float)*x.NElems());
+
+    return os;
+
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<size_t>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " L8U" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::L8U << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(size_t)*x.NElems());
+
+    return os;
+
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " D8S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::D8S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(double)*x.NElems());
+
+    return os;
+
 }
 
 template<>
-ETYPE CDenseArray<bool>::GetType() { return B1U; }
+ETYPE CDenseArray<bool>::GetType() { return ETYPE::B1U; }
 
 template<>
-ETYPE CDenseArray<int>::GetType() { return I4S; }
+ETYPE CDenseArray<int>::GetType() { return ETYPE::I4S; }
 
 template<>
-ETYPE CDenseArray<size_t>::GetType() { return L8U; }
+ETYPE CDenseArray<size_t>::GetType() { return ETYPE::L8U; }
 
 template<>
-ETYPE CDenseArray<float>::GetType() { return F4S; }
+ETYPE CDenseArray<float>::GetType() { return ETYPE::F4S; }
 
 template<>
-ETYPE CDenseArray<double>::GetType() { return D8S; }
+ETYPE CDenseArray<double>::GetType() { return ETYPE::D8S; }
 
 template<class U>
 istream& operator >> (istream& is, CDenseArray<U>& x) {
@@ -330,157 +366,261 @@ ifstream& operator >> (ifstream& in, CDenseArray<U>& x) {
 
         x.m_data.reset();
 
+#ifndef __SSE4_1__
+        x.m_data.reset(new U[nrows*ncols]);
+#else
         x.m_data.reset((U*)_mm_malloc(nrows*ncols*sizeof(U),16));
+#endif
         x.m_nrows = nrows;
         x.m_ncols = ncols;
         x.m_transpose = false;
 
     }
 
-    char sign, type;
-    size_t nbytes;
-
-    in >> type;
-    in >> nbytes;
-    in >> sign;
+    int temp;
+    in >> temp;
+    ETYPE type = (ETYPE)temp;
     in.get();
-
-    stringstream ss;
-    ss << type << nbytes << sign;
-
-    // create buffer
-    char* buffer = new char[nrows*ncols*nbytes];
-
-    // read data
-    in.read(buffer,nbytes*nrows*ncols);
 
     U* pdata = x.m_data.get();
 
-    if(ss.str()=="B1U") {
+    size_t nelems = nrows*ncols;
 
-        bool* cbuffer = (bool*)buffer;
+    switch(type) {
+
+    case ETYPE::B1U:
+    {
+
+        bool* buffer = new bool[nelems];
+        in.read((char*)buffer,nelems*sizeof(bool));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="S2S") {
+    case ETYPE::C1S:
+    {
 
-        short* cbuffer = (short*)buffer;
+        char* buffer = new char[nelems];
+        in.read((char*)buffer,nelems*sizeof(char));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="S2U") {
+    case ETYPE::C1U:
+    {
 
-        unsigned short* cbuffer = (unsigned short*)buffer;
+        unsigned char* buffer = new unsigned char[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned char));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="C4S") {
+    case ETYPE::S2S:
+    {
 
-        char* cbuffer = (char*)buffer;
+        short* buffer = new short[nelems];
+        in.read((char*)buffer,nelems*sizeof(short));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
+
+    }
+    case ETYPE::S2U:
+    {
+
+        unsigned short* buffer = new unsigned short[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned short));
+
+        // copy data and cast
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="C4U") {
+    case ETYPE::I4S:
+    {
 
-        unsigned char* cbuffer = (unsigned char*)buffer;
+        int* buffer = new int[nelems];
+        in.read((char*)buffer,nelems*sizeof(int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="I4S") {
+    case ETYPE::I4U:
+    {
 
-        int* cbuffer = (int*)buffer;
+        unsigned int* buffer = new unsigned int[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="I4U") {
+    case ETYPE::F4S:
+    {
 
-        unsigned int* cbuffer = (unsigned int*)buffer;
+        float* buffer = new float[nelems];
+        in.read((char*)buffer,nelems*sizeof(float));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="F4S") {
+    case ETYPE::L8S:
+    {
 
-        float* cbuffer = (float*)buffer;
+        long int* buffer = new long int[nelems];
+        in.read((char*)buffer,nelems*sizeof(long int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
+    case ETYPE::L8U:
+    {
 
-    if(ss.str()=="L8S") {
-
-        long* cbuffer = (long*)buffer;
+        size_t* buffer = new size_t[nelems];
+        in.read((char*)buffer,nelems*sizeof(size_t));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="L8U") {
+    case ETYPE::D8S:
+    {
 
-        unsigned long* cbuffer = (unsigned long*)buffer;
+        double* buffer = new double[nelems];
+        in.read((char*)buffer,nelems*sizeof(double));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="D8S") {
+    default:
+        return in;
 
-        double* cbuffer = (double*)buffer;
-
-        // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
 
     }
-
-    delete [] buffer;
 
     return in;
 
 }
 
 template <class T>
+bool CDenseArray<T>::WriteToFile(const char* filename) {
+
+    ofstream out(filename);
+
+    if(!out.is_open()) {
+
+        cerr << "ERROR: Could not open " << filename << "..." << endl;
+        return 1;
+
+    }
+
+    out << *this;
+
+    out.close();
+
+    return 0;
+
+}
+
+template <class T>
+bool CDenseArray<T>::ReadFromFile(const char* filename) {
+
+    ifstream in(filename);
+
+    if(!in.is_open()) {
+
+        cerr << "ERROR: File " << filename << " not found..." << endl;
+        return 1;
+
+    }
+
+    in >> *this;
+
+    in.close();
+
+    return 0;
+
+}
+
+template <class T>
 bool CDenseArray<T>::Normalize() {
 
-	T norm = Norm2();
+    double norm = Norm2();
 
 	if(norm>0) {
 
-		T s = 1/norm;
+        T s = T(1/norm);
 
 		Scale(s);
 
@@ -589,7 +729,9 @@ double CDenseArray<T>::Norm1() const {
 }
 
 template <class T>
-double CDenseArray<T>::Norm(size_t p) const {
+double CDenseArray<T>::Norm(double p) const {
+
+    assert(p>0);
 
 	double sum = 0;
 
@@ -598,7 +740,7 @@ double CDenseArray<T>::Norm(size_t p) const {
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
         sum += pow(fabs((double)pdata[i]),p);
 
-	return sum;
+    return pow(sum,1/p);
 
 }
 
@@ -631,7 +773,7 @@ void CDenseArray<T>::Abs() {
 template <class T>
 T CDenseArray<T>::Get(size_t i, size_t j) const {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
     T* pdata = m_data.get();
 
@@ -648,24 +790,40 @@ CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {
     if(m_transpose)
         return GetRow(j);
 
-    // create shared pointer to col data
-    T* pdata = m_data.get() + j*m_nrows;
-    shared_ptr<T> colptr(m_data,m_data.get()  + j*m_nrows);
+    // create shared pointer to col data, this will not be 16-byte aligned anymore!!!
+   // shared_ptr<T> colptr(m_data,m_data.get()+j*m_nrows);
 
     // create column view
-    CDenseVector<T> col(m_nrows,colptr);
+    //CDenseVector<T> col(m_nrows,colptr);
 
-	return col;
+    //return col;
+
+    CDenseVector<T> col(m_nrows); // this will be 16-byte aligned
+
+    for(size_t i=0; i<m_nrows; i++)
+        col(i) = Get(i,j);
+
+    return col;
 
 }
 
 template <class T>
 void CDenseArray<T>::SetColumn(size_t j, const CDenseVector<T>& col) {
 
-	assert(col.NCols()==1 && col.NRows() == NRows() && j>=0 && j<=NCols());
+    assert(col.NCols()==1 && col.NRows() == NRows() && j<=NCols());
 
 	for(size_t i=0; i<col.NRows(); i++)
 		this->operator ()(i,j) = col.Get(i);
+
+}
+
+template <class T>
+void CDenseArray<T>::SetRow(size_t i, const CDenseVector<T>& row) {
+
+    assert(row.NRows()==1 && row.NCols() == NCols() && i<=NRows());
+
+    for(size_t j=0; j<row.NCols(); j++)
+        this->operator ()(i,j) = row.Get(j);
 
 }
 
@@ -689,7 +847,7 @@ CDenseVector<T> CDenseArray<T>::GetRow(size_t i) const {
 template <class T>
 T& CDenseArray<T>::operator()(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_ncols);
+    assert(i<m_nrows && j<m_ncols);
 
     T* pdata = m_data.get();
 
@@ -737,6 +895,7 @@ CDenseArray<T> CDenseArray<T>::operator+(const CDenseArray& array) const {
 
     CDenseArray<T> result(array.m_nrows,array.m_ncols);
 
+    // this does not work low-level because of possible transpositions
 	for(size_t i=0; i<m_nrows; i++) {
 
 		for(size_t j=0; j<m_ncols; j++) {
@@ -762,7 +921,6 @@ CDenseArray<T> CDenseArray<T>::operator^(const CDenseArray& array) const {
     T* px = m_data.get();
     T* py = array.m_data.get();
     T* pz = result.m_data.get();
-
 
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
         pz[i] = px[i]*py[i];
@@ -946,7 +1104,17 @@ void CDenseArray<T>::Scale(T scalar) {
     T* pdata = m_data.get();
 
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
-        pdata[i] = scalar*pdata[i];
+        pdata[i] *= scalar;
+
+}
+
+template <class T>
+void CDenseArray<T>::Add(const T& scalar) {
+
+    T* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pdata[i] += scalar;
 
 }
 
@@ -986,6 +1154,22 @@ T CDenseArray<T>::Variance() {
 
 }
 
+template <class T>
+T CDenseArray<T>::MAD() {
+
+    T median = Median();
+
+    CDenseArray<T> temp = this->Clone();
+
+    T* pdata = temp.m_data.get();
+    T* pthisdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pdata[i] = fabs(pthisdata[i]-median);
+
+    return temp.Median();
+
+}
 
 template <class T>
 T CDenseArray<T>::Min() const {
@@ -1029,6 +1213,7 @@ template class CDenseArray<double>;
 template class CDenseArray<int>;
 template class CDenseArray<size_t>;
 template class CDenseArray<bool>;
+//template class CDenseArray<rgb>;
 
 template ostream& operator<< (ostream& os, const CDenseArray<double>& x);
 template istream& operator>> (istream& is, CDenseArray<double>& x);
@@ -1060,6 +1245,9 @@ CDenseVector<T>::CDenseVector(size_t nrows, size_t ncols):
     CDenseArray<T>::CDenseArray(nrows,ncols) {
 
     assert(nrows==1 || ncols==1);
+
+    if(nrows==1)
+        m_transpose = true;
 
 }
 
@@ -1153,7 +1341,18 @@ CDenseVector<T> CDenseVector<T>::operator+(const CDenseVector<T>& vector) const 
 
 }
 
+template <class T>
+void CDenseVector<T>::Add(const CDenseVector<T>& vector) {
 
+    assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
+
+    T* px = m_data.get();
+    T* py = vector.m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        px[i] += py[i];
+
+}
 
 template <class T>
 CDenseVector<T> CDenseVector<T>::operator-(const CDenseVector<T>& vector) const {
@@ -1289,7 +1488,7 @@ T CDenseSymmetricArray<T>::Norm2() const {
 template <class T>
 T& CDenseSymmetricArray<T>::operator()(size_t i, size_t j) {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_nrows);
+    assert(i<m_nrows && j<m_nrows);
 
 	if(i>j)
 		return operator()(j,i);
@@ -1301,7 +1500,7 @@ T& CDenseSymmetricArray<T>::operator()(size_t i, size_t j) {
 template <class T>
 T CDenseSymmetricArray<T>::Get(size_t i, size_t j) const {
 
-	assert(i>=0 && i<m_nrows && j>=0 && j<m_nrows);
+    assert(i<m_nrows && j<m_nrows);
 
 	if(i>j)
 		return Get(j,i);

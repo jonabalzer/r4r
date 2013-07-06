@@ -79,7 +79,7 @@ void MainWindow::on_actionOpen_triggered()
     QString filename = QFileDialog::getOpenFileName(this,
                                                     "Open video file...",
                                                     ".",
-                                                    "(*.mov);;(*.avi);;(*.mp4);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
+                                                    "(*.mp4);;(*.avi);;(*.mov);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
 
 
     // check if it is an image or video
@@ -215,7 +215,7 @@ void MainWindow::on_playButton_clicked()
     if(m_cap.isOpened())
         m_timer.start(35);
     else
-        QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
+        QMessageBox::critical(this,"Error","Could not open source.");
 
 }
 
@@ -289,33 +289,44 @@ void MainWindow::on_actionSave_Descriptors_triggered()
         return;
 
     // create aggregator
-    CDescriptorAggregator<vecf>* aggregator;
+    CDescriptorAggregator<matf>* aggregator;
 
-//    switch(m_params.GetIntParameter("AGGREGATOR")) {
+    switch(m_params.GetIntParameter("AGGREGATOR")) {
 
-//    case 1:
-//        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
-//        break;
-//    case 2:
-//        aggregator = new CSubsampleAggregator<matf>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
-//        break;
-//    default:
+    case 1:
+        cout << "Init frame." << endl;
+        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
+        break;
+    case 2:
+        aggregator = new CSubsampleAggregator<matf>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
+        break;
 
-//        aggregator = new CDescriptorAggregator<matf>(m_tracker,name.c_str());
-//        //m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
-//        //return;
-//        break;
-//    }
+    case 3:
+        aggregator = new CSplineInterpolationAggregator<matf>(m_tracker,name.c_str(),10,3);
+        break;
+
+    case 4:
+        aggregator = new CMeanAggregator<matf>(m_tracker,name.c_str());
+        break;
+
+    default:
+
+        aggregator = new CDescriptorAggregator<matf>(m_tracker,name.c_str());
+        //m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
+        //return;
+        break;
+    }
 
     // aggregate
-    //aggregator->Aggregate();
-    //list<CFeature> feats = aggregator->Get();
+    aggregator->Aggregate();
+    list<CFeature> feats = aggregator->Get();
 
-    aggregator = new CDescriptorAggregator<vecf>(m_tracker,name.c_str());
+    CFeature::SaveToFile(filename.toStdString().c_str(),feats,comment.toStdString().c_str());
 
-    aggregator->Aggregate(filename.toStdString().c_str(),comment.toStdString().c_str());
+    //aggregator = new CDescriptorAggregator<vecf>(m_tracker,name.c_str());
+    //aggregator->Aggregate(filename.toStdString().c_str(),comment.toStdString().c_str());
 
-    delete aggregator;
+    //delete aggregator;
 
     // save
     //CFeature::SaveDescriptors(filename.toStdString().c_str(),feats,name.c_str(),comment.toStdString().c_str());
@@ -341,3 +352,4 @@ void MainWindow::on_actionAbout_triggered()
 {
     QMessageBox::information(this,"About","More info: http://vision.ucla.edu");
 }
+

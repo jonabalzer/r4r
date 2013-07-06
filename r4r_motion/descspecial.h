@@ -1,5 +1,28 @@
-#ifndef DESCSPECIAL_H
-#define DESCSPECIAL_H
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
+
+#ifndef R4RDESCSPECIAL_H
+#define R4RDESCSPECIAL_H
 
 #ifdef HAVE_FFTW
 #include <fftw3.h>
@@ -13,6 +36,11 @@ namespace R4R {
 
 #ifdef HAVE_FFTW
 
+/*! \brief modulus of the FFT of the patch
+ *
+ *
+ *
+ */
 class CFourierModulusDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,mat> {
 
 public:
@@ -52,6 +80,29 @@ private:
     double m_sigma;                 //! variance of Gaussian windowing function, if zero no windowing is performed
 
 };
+
+
+#ifdef HAVE_FFTW
+
+class CFMHoGDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,vecf> {
+
+public:
+
+    //! Constructor.
+    CFMHoGDescriptor(CRectangle<double> roi, size_t hsize = 30, size_t nbins = 128);
+
+    //! \copydoc CDescriptor::Compute(cv::Mat&)
+    bool Compute(cv::Mat& img);
+
+private:
+
+    size_t m_hsize;                 //! size of the neighboorhood in which the descriptor is computed
+    size_t m_no_bins;               //! number of histogram bins
+
+};
+
+#endif // HAVE_FFTW
+
 
 
 }

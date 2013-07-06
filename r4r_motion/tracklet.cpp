@@ -1,9 +1,25 @@
-/*
- * tracklet.cpp
- *
- *  Created on: Mar 16, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
 #include <stdio.h>
 #include <iostream>
@@ -36,16 +52,11 @@ CTracklet::CTracklet(size_t t0, size_t s, CFeature x0):
 
 }
 
-CTracklet::~CTracklet() {
+//CTracklet::~CTracklet() {
 
-//	list<shared_ptr<CFeature> >::iterator it;
+//    clear();
 
-//	for(it=begin(); it!=end(); it++)
-//		it->reset();
-
-	clear();
-
-}
+//}
 
 
 void CTracklet::Update(CFeature x) {
@@ -119,7 +130,6 @@ ostream& operator<<(ostream& os, CTracklet& x) {
 }
 
 bool CTracklet::SaveToFile(const char* filename) {
-
 
     if(size()==0)
         return 1;

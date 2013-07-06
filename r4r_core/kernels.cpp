@@ -1,8 +1,34 @@
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
+
 #include "kernels.h"
 #include <math.h>
 #include <algorithm>
+
+#ifdef __SSE4_1__
 #include <xmmintrin.h>
 #include <smmintrin.h>
+#endif
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -27,6 +53,16 @@ double CMercerKernel<T>::Evaluate(T *x, T *y) {
 template<>
 double CMercerKernel<float>::Evaluate(float* x, float* y) {
 
+#ifndef __SSE4_1__
+
+    float result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += x[i]*y[i];
+
+    return (double)result;
+
+#else
     __m128* px = (__m128*)x;
     __m128* py = (__m128*)y;
 
@@ -50,15 +86,7 @@ double CMercerKernel<float>::Evaluate(float* x, float* y) {
         result[0] += x[i]*y[i];
 
     return (double)result[0];
-
-}
-
-template<>
-double CMercerKernel<int>::Evaluate(int *x, int *y) {
-
-
-
-    return 0;
+#endif
 
 }
 
@@ -97,11 +125,7 @@ CMercerKernel<T>* CMercerKernel<T>::Create(int no, int n) {
         kernel = new CHellingerKernel<T>(n);
         break;
     }
-    case SPARSEONESIDED:
-    {
-        kernel = new COneSidedSparseKernel<T>(n);
-        break;
-    }
+
     }
 
     return kernel;
@@ -115,8 +139,13 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     cout << "Size (mxn): " << notests << " " << n << endl;
 
+#ifndef __SSE4_1__
+    float* x = new float[n];
+    float* y = new float[n];
+#else
     float* x = (float*)_mm_malloc(n*sizeof(float),16);
     float* y = (float*)_mm_malloc(n*sizeof(float),16);
+#endif
 
     for(size_t i=0; i<n; i++) {
 
@@ -125,17 +154,7 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     }
 
-    // only for sparse-sided
-    int indices[10];
-    for(size_t i=0; i<10; i++)
-        indices[i] = rand()%n;
-
-    CMercerKernel<float>* kernel;
-
-    if(kn!=SPARSEONESIDED)
-        kernel = CMercerKernel<float>::Create(kn,n);
-    else
-        kernel = CMercerKernel<float>::Create(kn,10);
+    CMercerKernel<float>* kernel = CMercerKernel<float>::Create(kn,n);
 
     double t0, t1;
 
@@ -145,20 +164,11 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     float result;
 
-    if(kn!=SPARSEONESIDED) {
 
-        for(size_t k=0; k<notests; k++)
-            result = kernel->Evaluate(x,y);
+    for(size_t k=0; k<notests; k++)
+        result = kernel->Evaluate(x,y);
 
-    }
-    else {
 
-        COneSidedSparseKernel<float>* osk = (COneSidedSparseKernel<float>*)(kernel);
-
-        for(size_t k=0; k<notests; k++)
-            result = osk->Evaluate(x,indices,y);
-
-    }
 
 #ifdef _OPENMP
     t1 = omp_get_wtime();
@@ -239,19 +249,7 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
         break;
 
     }
-    case SPARSEONESIDED:
-    {
 
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<10;i++)
-                comparison += x[i]*y[indices[i]];
-
-        }
-
-    }
     }
 
 
@@ -262,8 +260,14 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     cout << comparison << endl;
 
+#ifndef __SSE4_1__
+    delete [] x;
+    delete [] y;
+#else
     _mm_free(y);
     _mm_free(x);
+#endif
+
     delete kernel;
 
 
@@ -299,6 +303,27 @@ double CChiSquaredKernel<T>::Evaluate(T* x, T* y) {
 
 template <>
 double CChiSquaredKernel<float>::Evaluate(float* x, float* y) {
+
+#ifndef __SSE4_1__
+
+    double result, num;
+    double xi, yi;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        xi = (double)x[i];
+        yi = (double)y[i];
+
+        num = xi*yi;
+
+        if(num>0)               // this implies that x+y!=0 if x,y>0
+            result += num/(xi+yi);
+
+    }
+
+    return result;
+
+#else
 
     __m128* px = (__m128*)x;
     __m128* py = (__m128*)y;
@@ -344,6 +369,8 @@ double CChiSquaredKernel<float>::Evaluate(float* x, float* y) {
 
     return (double)fresult;
 
+#endif
+
 }
 
 template class CChiSquaredKernel<float>;
@@ -367,6 +394,17 @@ double CIntersectionKernel<T>::Evaluate(T* x, T* y) {
 
 template <>
 double CIntersectionKernel<float>::Evaluate(float* x, float* y) {
+
+#ifndef __SSE4_1__
+
+    double result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += (double)min<float>(x[i],y[i]);
+
+    return result;
+
+#else
 
     __m128* px = (__m128*)x;
     __m128* py = (__m128*)y;
@@ -393,6 +431,8 @@ double CIntersectionKernel<float>::Evaluate(float* x, float* y) {
         fresult += min<float>(x[i],y[i]);
 
     return (double)fresult;
+
+#endif
 
 }
 
@@ -424,6 +464,25 @@ double CHellingerKernel<T>::Evaluate(T* x, T* y) {
 template <>
 double CHellingerKernel<float>::Evaluate(float* x, float* y) {
 
+
+#ifndef __SSE4_1__
+
+    double result = 0;
+    double xi, yi;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        xi = (double)x[i];
+        yi = (double)y[i];
+
+        result += sqrt(xi*yi);
+
+    }
+
+    return result;
+
+#else
+
     __m128* px = (__m128*)x;
     __m128* py = (__m128*)y;
 
@@ -448,6 +507,8 @@ double CHellingerKernel<float>::Evaluate(float* x, float* y) {
         fresult += sqrt(x[i]*y[i]);
 
     return (double)fresult;
+
+#endif
 
 }
 
@@ -506,17 +567,5 @@ template class CPolynomialKernel<double>;
 template class CPolynomialKernel<int>;
 template class CPolynomialKernel<bool>;
 template class CPolynomialKernel<size_t>;
-
-template <class T>
-double COneSidedSparseKernel<T>::Evaluate(T *x, int* indices, T* y) {
-
-    double result = 0;
-
-    for(size_t i=0; i<m_n; i++)
-        result += (double)x[indices[i]]*(double)y[i];
-
-    return result;
-
-}
 
 }

@@ -21,42 +21,51 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "interp.h"
+#ifndef R4RIMAGE_H
+#define R4RIMAGE_H
 
-using namespace std;
-using namespace cv;
+#include "types.h"
 
 namespace R4R {
 
-vector<Mat> CImageInterpolation::BuildGaussianPyramidForDetection(const Mat& img, size_t nlevels, size_t filtersize, double sigma) {
+/*! \brief R4R's own gray value image class
+ *
+ *
+ *
+ */
+class CImage: public CDenseArray<unsigned char> {
 
-	vector<Mat> pyramid;
+public:
 
-	Mat p0 = img.clone();
+    //! Constructor.
+    CImage();
 
-	GaussianBlur(img,p0,Size(filtersize,filtersize),sigma);
+    //! Constructor.
+    CImage(size_t w, size_t h):CDenseArray<unsigned char>(h,w){}
 
-	pyramid.push_back(p0);
+};
 
-	for(size_t i=0; i<nlevels; i++) {
 
-		Mat dst = pyramid.back().clone();
+/*! \brief R4R's own gray value image class
+ *
+ *
+ *
+ */
+class CRGBImage: public CDenseArray<rgb> {
 
-		GaussianBlur(pyramid.back(),dst,Size(filtersize,filtersize),sigma);
+public:
 
-		Mat dst2 = CImageInterpolation::Downsample(dst);
+    //! Constructor.
+    CRGBImage();
 
-		pyramid.push_back(dst2);
+    //! \copydoc CDenseArray(size_t,size_t,std::shared_ptr<T>)
+    CRGBImage(size_t w, size_t h, std::shared_ptr<rgb> data):CDenseArray<rgb>(w,h,data) {}
 
-	}
+    //! Constructor.
+    CRGBImage(size_t w, size_t h):CDenseArray<rgb>::CDenseArray(h,w){}
 
-	return pyramid;
+};
 
 }
 
-
-
-}
-
-
-
+#endif // IMAGE_H

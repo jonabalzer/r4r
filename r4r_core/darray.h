@@ -1,19 +1,38 @@
-/*
- * darray.h
- *
- *  Created on: Apr 5, 2012
- *      Author: jbalzer
- */
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef DARRAY_H_
-#define DARRAY_H_
+#ifndef R4RDARRAY_H_
+#define R4RDARRAY_H_
 
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
 #include <memory>
+
+#ifdef __SSE4_1__
 #include <xmmintrin.h>
 #include <malloc.h>
+#endif
 
 #include "kernels.h"
 
@@ -24,18 +43,23 @@ class  CDenseMatrixDeallocator {
 
 public:
 
+#ifndef __SSE4_1__
+    void operator()(T* p) const { delete [] p; }
+#else
     void operator()(T* p) const { _mm_free(p); }
+#endif
 
 };
 
-enum ETYPE {  NA = 0,
-              B1U = 1,
-              C1U = 2, C1S = 3,
-              S2U = 4, S2S = 5,
-              I4S = 6, I4U = 7,
-              F4S = 8,
-              L8S = 9, L8U = 10,
-              D8S = 11 };
+// use typesafe enums in C++11
+enum class ETYPE {  NA = 0,
+                    B1U = 1,
+                    C1U = 2, C1S = 3,
+                    S2U = 4, S2S = 5,
+                    I4S = 6, I4U = 7,
+                    F4S = 8,
+                    L8S = 9, L8U = 10,
+                    D8S = 11 };
 
 template<class T> class CDenseVector;
 
@@ -53,7 +77,7 @@ public:
 	CDenseArray();
 
 	//! Constructor
-	CDenseArray(size_t nrows, size_t ncols, T val = 0);
+    CDenseArray(size_t nrows, size_t ncols, T val = T(0));
 
 	//! Copy constructor.
 	CDenseArray(const CDenseArray& array);
@@ -92,7 +116,7 @@ public:
     double Norm1() const;
 
 	//! Computes \f$l_p\f$-norm.
-    double Norm(size_t p) const;
+    double Norm(double p) const;
 
     //! Computes the Hamming norm of a vector. Only implemented for Boolean type.
     double HammingNorm();
@@ -106,11 +130,14 @@ public:
 	//! Returns a column.
     CDenseVector<T> GetColumn(size_t j) const;
 
-	//! Returns a column.
+    //! Sets a column.
 	void SetColumn(size_t j, const CDenseVector<T>& col);
 
 	//! Returns a row.
     CDenseVector<T> GetRow(size_t i) const;
+
+    //! Sets a row.
+    void SetRow(size_t i, const CDenseVector<T>& row);
 
 	//! Element access.
 	T& operator()(size_t i, size_t j);
@@ -133,7 +160,7 @@ public:
 	//! Multiplies the array with a scalar.
     CDenseArray<T> operator*(const T& scalar) const;
 
-	//! Multiplies the array with a scalar.
+    //! Divides the array by a scalar.
     CDenseArray<T> operator/(const T& scalar) const;
 
 	//! Multiplies the object with an array from the right.
@@ -169,6 +196,9 @@ public:
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
 
+    //! In-place addition of a scalar.
+    void Add(const T& scalar);
+
 	//! Sums up all elements.
 	T Sum() const;
 
@@ -180,6 +210,9 @@ public:
 
 	//! Median of matrix entries;
     T Median();
+
+    //! Median of absolute deviations.
+    T MAD();
 
 	//! Minimum of matrix entries;
 	T Min() const;
@@ -214,6 +247,12 @@ public:
     //! Reads matrix from a file stream.
     template <class U> friend std::ifstream& operator >> (std::ifstream& is, CDenseArray<U>& x);
 
+    //! Writes a matrix to a file.
+    bool WriteToFile(const char* filename);
+
+    //! Reads a matrix from file.
+    bool ReadFromFile(const char* filename);
+
 	//! Normalizes the matrix.
 	bool Normalize();
 
@@ -230,7 +269,7 @@ public:
 	T Determinant() const;
 
 	//! Returns the number of bytes of the data type.
-	size_t SizeOf() { return sizeof(T); };
+    size_t SizeOf() { return sizeof(T); }
 
     //! Returns the numerical type.
     ETYPE GetType();
@@ -283,6 +322,9 @@ public:
 	//! Sums two vectors.
     CDenseVector<T> operator+(const CDenseVector<T>& vector) const;
 
+    //! In-place addition of a vector.
+    void Add(const CDenseVector<T>& vector);
+
 	//! Subtracts two vectors.
     CDenseVector<T> operator-(const CDenseVector<T>& vector) const;
 
@@ -315,7 +357,6 @@ protected:
 	using CDenseArray<T>::m_data;
 
 };
-
 
 /*! \brief convenience class for creating vectors of length \f$n\f$
  *
