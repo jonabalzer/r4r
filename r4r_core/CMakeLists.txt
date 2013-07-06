@@ -1,5 +1,5 @@
 
-set(CMAKE_CXX_FLAGS "-Wall -std=c++0x ${CMAKE_CXX_FLAGS}") 
+set(CMAKE_CXX_FLAGS "-Wall -std=c++0x ${CMAKE_CXX_FLAGS} -fopenmp -O3") 
 
 set(SOURCES_H
     cam.h
@@ -17,7 +17,7 @@ set(SOURCES_H
     sarray.h
     trafo.h
     types.h
-    utils.h)
+    rutils.h)
     
 set(SOURCES_CPP
     cam.cpp
@@ -34,6 +34,6 @@ set(SOURCES_CPP
     rect.cpp
     sarray.cpp
     trafo.cpp
-    utils.cpp)
+    rutils.cpp)
     
 add_library(r4r_core SHARED ${SOURCES_CPP})

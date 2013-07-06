@@ -35,6 +35,7 @@
 #endif
 
 #include "kernels.h"
+#include "vecn.h"
 
 namespace R4R {
 
@@ -168,6 +169,9 @@ public:
 
 	//! Multiplies the object with an array from the right.
     CDenseVector<T> operator*(const CDenseVector<T>& vector) const;
+
+    //! Matrix-vector multiplication.
+    template<u_int n> CVector<T,n> operator*(const CVector<T,n>& vector) const;
 
 	//! Computes the standard inner product.
     static double InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
@@ -310,6 +314,9 @@ public:
     //! Constructs a column vector length \f$n\f$ from the given data.
     CDenseVector(size_t n, std::shared_ptr<T> data);
 
+    //! Copy constructor.
+    template<u_int n> CDenseVector(CVector<T,n>& x);
+
     //! Assignment operator.
     CDenseVector<T> operator=(const CDenseVector<T>& array);
 
@@ -441,19 +448,19 @@ public:
 	CDenseArray<T> operator*(const CDenseArray<T>& array) const;
 
 	//! Access number of cols.
-	size_t NRows() const { return m_nrows; };
+    size_t NRows() const { return m_nrows; }
 
 	//! Access number of cols.
-	size_t NCols() const { return m_nrows; };
+    size_t NCols() const { return m_nrows; }
 
 	//! Get pointer to the data.
-	T* Data() const { return m_data; };
+    T* Data() const { return m_data; }
 
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
 
 	//! Method stump (transpose does not do anything for symmetric matrices).
-	void Transpose() {};
+    void Transpose() {}
 
 protected:
 

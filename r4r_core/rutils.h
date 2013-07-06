@@ -96,7 +96,7 @@ public:
 	static mat CreateInverseTransformationMatrix(double tx, double ty, double tz, double ox, double oy, double oz);
 
 	//! Computes a transformation matrix from translation and rotation parameters.
-	static mat CreateTransformationMatrix(vec params) { return CreateTransformationMatrix(params(0),params(1),params(2),params(3),params(4),params(5)); };
+    static mat CreateTransformationMatrix(vec params) { return CreateTransformationMatrix(params(0),params(1),params(2),params(3),params(4),params(5)); }
 
 	//! Computes a transformation matrix from translation and rotation parameters.
 	static mat CreateTransformationMatrix(mat& R, vec& t);

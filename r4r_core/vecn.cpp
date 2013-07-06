@@ -21,10 +21,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "vecn.h"
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
+#include <string.h>
+
+#include "vecn.h"
+#include "darray.h"
 
 using namespace std;
 
@@ -41,6 +44,15 @@ template <typename T, u_int n>
 CVector<T,n>::CVector(T val) {
 
     fill_n(m_data,n,val);
+
+}
+
+template <typename T, u_int n>
+CVector<T,n>::CVector(const CDenseVector<T>& x) {
+
+    assert(n==x.NElems());
+
+    memcpy(&m_data[0],x.Data().get(),n*sizeof(T));
 
 }
 
@@ -122,7 +134,6 @@ bool CVector<T,n>::Normalize() {
 
     T normc = (T)norm;
 
-    cout << normc << endl;
     if(norm>0) {
 
         for(u_int i=0; i<n; i++)
@@ -148,6 +159,17 @@ ostream& operator << (ostream& os, const CVector<U,m>& x) {
 
 }
 
+template <class U, u_int m>
+istream& operator >> (istream& is, CVector<U,m>& x) {
+
+    for(u_int i=0; i<m; i++)
+        is >> x(i);
+
+    return is;
+
+}
+
+
 template class CVector<float,3>;
 template class CVector<double,3>;
 template class CVector<unsigned char,3>;
@@ -160,6 +182,11 @@ template ostream& operator << (ostream& os, const CVector<unsigned char,3>& x);
 template ostream& operator << (ostream& os, const CVector<float,2>& x);
 template ostream& operator << (ostream& os, const CVector<double,2>& x);
 template ostream& operator << (ostream& os, const CVector<unsigned char,2>& x);
-
+template istream& operator >> (istream& is, CVector<float,3>& x);
+template istream& operator >> (istream& is, CVector<double,3>& x);
+template istream& operator >> (istream& is, CVector<unsigned char,3>& x);
+template istream& operator >> (istream& is, CVector<float,2>& x);
+template istream& operator >> (istream& is, CVector<double,2>& x);
+template istream& operator >> (istream& is, CVector<unsigned char,2>& x);
 
 }

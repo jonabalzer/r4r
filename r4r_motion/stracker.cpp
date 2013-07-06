@@ -53,41 +53,53 @@ bool CSimpleTracker::Init(vector<Mat>& pyramid) {
 
 bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
-	for(size_t s = 0; s<pyramid0.size(); s++) {
+    // sort features according to scale, this setup allows for scale changes
+    vector<vector<Point2f> > points0(pyramid0.size());
+    vector<vector<Point2f> > points1(pyramid0.size());
+    vector<vector<shared_ptr<CTracklet>> > tracklets(pyramid0.size());
+
+    list<shared_ptr<CTracklet> >::iterator it;
+
+    for(it=begin(); it!=end(); it++) {
+
+        // only consider live tracks
+        if((*it)->GetStatus()) {
+
+            imfeature f0 = (*it)->GetLatestState();
+            vec2f u0 = f0.GetLocation();
+            u_int scale = (u_int)(f0.GetScale()+0.5);
+
+            // make sure we can track at that level
+            if(scale<pyramid0.size() && scale<pyramid1.size()) {
+
+                points0[scale].push_back(Point2f(u0.Get(0),u0.Get(1)));
+                points1[scale].push_back(Point2f(u0.Get(0),u0.Get(1)));
+                tracklets[scale].push_back(*it);                            // keep order in which tracklets are added
+
+            }
+
+        }
+
+    }
+
+    for(size_t s=0; s<pyramid0.size(); s++) {
 
 		// make a smooth copy of current pyramid level for descriptor computation
 		Mat imsmooth;
         GaussianBlur(pyramid1[s],imsmooth,Size(0,0),m_params->GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
 
-		vector<Point2f> points0;
-		vector<Point2f> points1;
-		vector<uchar> status;
+        // error/status flags
+        vector<uchar> status;
 		vector<float> error;
 
-		list<shared_ptr<CTracklet> >::iterator it;
-
-		// get current feature locations
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
-
-			if((*it)->GetStatus()) {
-
-				vec u0 = (*it)->GetLatestLocation();
-
-				points0.push_back(Point2f(u0(0),u0(1)));
-				points1.push_back(Point2f(u0(0),u0(1)));
-
-			}
-
-		}
-
 		// check if there are features at that scale
-		if(points0.size()>0) {
+        if(points0[s].size()>0) {
 
 			// perform LK tracking
 			calcOpticalFlowPyrLK(pyramid0[s],
 								 pyramid1[s],
-								 points0,
-								 points1,
+                                 points0[s],
+                                 points1[s],
 								 status,
 								 error,
                                  Size(2*m_params->GetIntParameter("TRACKING_HSIZE")+1,2*m_params->GetIntParameter("TRACKING_HSIZE")+1),
@@ -96,36 +108,26 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
                                               m_params->GetIntParameter("MAX_ITER"),
                                               m_params->GetDoubleParameter("ACCURACY")),
                                  m_params->GetDoubleParameter("LAMBDA"),
-								 0);
+                                 0);
 
-			size_t counter = 0;
+            // update tracklets
+            for(size_t i=0; i<tracklets[s].size(); i++) {
 
-			// update tracklets
-			for(it=at(s).begin(); it!=at(s).end(); it++) {
+                if(status[i] && points1[s][i].x>0 && points1[s][i].x<pyramid1[s].cols-1 && points1[s][i].y>0 && points1[s][i].y<pyramid1[s].rows-1) {
 
-				if((*it)->GetStatus()) {
+                    vec2f loc = {points1[s][i].x,points1[s][i].y};
+                    imfeature x(loc,s,0);
+                    tracklets[s][i]->Update(x);
 
-					// if status is ok and point in image, update feature
-					if(status[counter] && points1[counter].x>0 && points1[counter].x<pyramid1[s].cols-1 && points1[counter].y>0 && points1[counter].y<pyramid1[s].rows-1) {
+                }
+                else
+                    tracklets[s][i]->SetStatus(false);
 
-                        CFeature x(points1[counter].x,points1[counter].y,s);
-						(*it)->Update(x);
+            }
 
-					}
-					else
-						(*it)->SetStatus(false);
+        }
 
-					counter++;
-
-				}
-
-			}
-
-		}
-
-
-	}
-
+    }
 
 	m_global_t++;
 
@@ -133,12 +135,11 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 }
 
-
 void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 	size_t no = 0;
 
-	for(size_t s = 0; s<pyramid0.size(); s++) {
+    for(u_int s=0; s<pyramid0.size(); s++) {
 
 		// compute integral image for counting features
 		CIntegralImage<size_t> cimg = ComputeFeatureDensity(pyramid0[0].cols/pow(2,s),pyramid0[0].rows/pow(2,s),s);
@@ -146,16 +147,18 @@ void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 		list<shared_ptr<CTracklet> >::iterator it;
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        for(it=begin(); it!=end(); it++) {
+
+            imfeature f = (*it)->GetLatestState();
+            vec2f x = f.GetLocation();
+            u_int scale = u_int(f.GetScale()+0.5);
 
 			// if feature is still alive
-			if((*it)->GetStatus()) {
-
-				vec x = (*it)->GetLatestLocation();
+            if((*it)->GetStatus() && scale==s) {
 
 				// check quality and distance criterion
-                if((*it)->GetLatestState().GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE") ||
-                   cimg.EvaluateFast(x(0),x(1),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"))>1) {
+                if(f.GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE") ||
+                   cimg.EvaluateFast(x.Get(0),x.Get(1),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"))>1) {
 
 					// delete last feature
 					(*it)->pop_back();
@@ -201,7 +204,8 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
 
 				if(cimg.EvaluateFast(keypoints[i].pt.x,keypoints[i].pt.y,hsize,hsize)==1) {
 
-                    CFeature x(keypoints[i].pt.x,keypoints[i].pt.y,s);
+                    vec2f loc = { keypoints[i].pt.x,keypoints[i].pt.y };
+                    imfeature x(loc,s,0);
 
 					// create new tracklet with feature
 					AddTracklet(x);
@@ -221,98 +225,102 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
 
 bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
-	list<shared_ptr<CTracklet> >::iterator it;
+    // smooth image for gradient computation
+    vector<Mat> pyrsmooth;
+    for(size_t s=0; s<pyramid.size(); s++) {
 
-	for(size_t s=0; s<size(); s++) {
-
-		Mat imsmooth;
+        Mat imsmooth;
         GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params->GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        pyrsmooth.push_back(imsmooth);
 
-			if((*it)->GetStatus()) {
+    }
 
-                CFeature& x = (*it)->GetLatestState();
-                vec u0 = x.GetLocation();
+    list<shared_ptr<CTracklet> >::iterator it;
 
-				// create new feature
-				CRectangle<double> droi(u0.Get(0),
-										u0.Get(1),
-                                        m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
-                                        m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
+    for(it=begin(); it!=end(); it++) {
 
-				// adjust region to scale
-				droi.Scale(1.0/pow(2,s));
+        if((*it)->GetStatus()) {
 
-				// compute brief descriptor
-                CBRIEF* briefdesc1 = new CBRIEF(droi);
-                shared_ptr<CAbstractDescriptor> brief(briefdesc1);
-				brief->Compute(imsmooth);
-				//brief->Compute(pyramid[s]);
-                x.AttachDescriptor("BRIEF",brief);
+            imfeature& x = (*it)->GetLatestState();
+            vec2f u0 = x.GetLocation();
+            u_int s = u_int(x.GetScale()+0.5);
 
-				// compute quality
-                shared_ptr<CAbstractDescriptor> desc0 = (*it)->front().GetDescriptor("BRIEF");
-				double quality = 1;
+            // create new feature
+            CRectangle<double> droi(u0.Get(0),
+                                    u0.Get(1),
+                                    m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
+                                    m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
-				if(desc0!=nullptr) {
+            // adjust region to scale
+            droi.Scale(1.0/pow(2,s));
 
-                    shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
-					quality = briefdesc0->Distance(*briefdesc1);
+            // compute brief descriptor
+            CBRIEF* briefdesc1 = new CBRIEF(droi);
+            shared_ptr<CAbstractDescriptor> brief(briefdesc1);
+            brief->Compute(pyrsmooth[s]);
+            //brief->Compute(pyramid[s]);
+            x.AttachDescriptor("BRIEF",brief);
 
-				}
+            // compute quality
+            shared_ptr<CAbstractDescriptor> desc0 = (*it)->front().GetDescriptor("BRIEF");
+            double quality = 1;
 
-                x.SetQuality(quality);
+            if(desc0!=nullptr) {
 
-                if(m_params->GetIntParameter("COMPUTE_ID")) {
+                shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
+                quality = briefdesc0->Distance(*briefdesc1);
 
-					// compute identity descriptor
-					CIdentityDescriptor* tempid = new CIdentityDescriptor(droi,
-                                                                          (size_t)m_params->GetIntParameter("NORMALIZE_ID"),
-                                                                          (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
+            }
 
-					tempid->Compute(pyramid[s]);
+            x.SetQuality(quality);
 
-                    shared_ptr<CAbstractDescriptor> id(tempid);
-                    x.AttachDescriptor("ID",id);
+            if(m_params->GetIntParameter("COMPUTE_ID")) {
 
-				}
+                // compute identity descriptor
+                CIdentityDescriptor* tempid = new CIdentityDescriptor(droi,
+                                                                      (size_t)m_params->GetIntParameter("NORMALIZE_ID"),
+                                                                      (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
-                if(m_params->GetIntParameter("COMPUTE_GRAD")) {
+                tempid->Compute(pyramid[s]);
 
-                    // compute normalized gradient field
-                    CIdentityGradientDescriptor* temp = new CIdentityGradientDescriptor(droi,
-                                                                                        m_params->GetDoubleParameter("ALPHA_GRAD_NORM"),
-                                                                                        (size_t)m_params->GetIntParameter("NORMALIZE_GRAD"),
-                                                                                        (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
-                    temp->Compute(imsmooth);
+                shared_ptr<CAbstractDescriptor> id(tempid);
+                x.AttachDescriptor("ID",id);
 
-                    shared_ptr<CAbstractDescriptor> idg(temp);
-                    x.AttachDescriptor("GRAD",idg);
+            }
 
-                }
+            if(m_params->GetIntParameter("COMPUTE_GRAD")) {
 
-                if(m_params->GetIntParameter("COMPUTE_HOG")) {
+                // compute normalized gradient field
+                CIdentityGradientDescriptor* temp = new CIdentityGradientDescriptor(droi,
+                                                                                    m_params->GetDoubleParameter("ALPHA_GRAD_NORM"),
+                                                                                    (size_t)m_params->GetIntParameter("NORMALIZE_GRAD"),
+                                                                                    (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
+                temp->Compute(pyrsmooth[s]);
 
-                    // compute HoG
-                    //CHistogramOfGradients* temp = new CHistogramOfGradients(droi);
-                    CFMHoGDescriptor* temp = new CFMHoGDescriptor(droi);
+                shared_ptr<CAbstractDescriptor> idg(temp);
+                x.AttachDescriptor("GRAD",idg);
 
-                    //temp->Compute(imsmooth);
-                    temp->Compute(pyramid[s]);
-                    //temp->Normalize(2,1e-3);
+            }
 
-                    shared_ptr<CAbstractDescriptor> pdesc(temp);
-                    x.AttachDescriptor("HOG",pdesc);
+            if(m_params->GetIntParameter("COMPUTE_HOG")) {
 
-                }
+                // compute HoG
+                CHistogramOfGradients* temp = new CHistogramOfGradients(droi);
 
-			}
+                //temp->Compute(imsmooth);
+                temp->Compute(pyramid[s]);
+                //temp->Normalize(2,1e-3);
+
+                shared_ptr<CAbstractDescriptor> pdesc(temp);
+                x.AttachDescriptor("HOG",pdesc);
+
+            }
+
+        }
 
 
-		}
-
-	}
+    }
 
 	return 0;
 

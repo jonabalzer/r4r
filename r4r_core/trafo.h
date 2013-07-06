@@ -24,8 +24,9 @@
 #ifndef R4RTRAFO_H_
 #define R4RTRAFO_H_
 
-#include "types.h"
 #include <vector>
+
+#include "types.h"
 
 namespace R4R {
 
@@ -44,6 +45,9 @@ public:
 
     //! Concatenates two transformations.
     CTransformation<T,n> operator*(const CTransformation<T,n>& x) const;
+
+    //! Constructor.
+    CTransformation(const CDenseArray<T>& F);
 
     //! Non-destructive access.
     T Get(u_int i, u_int j) const;
@@ -66,11 +70,20 @@ public:
     //! Writes transformation to a stream.
     template <class U,u_int m> friend std::ostream& operator << (std::ostream& os, const CTransformation<U,m>& x);
 
+    //! Reads transformation matrix from a stream.
+    template <class U,u_int m> friend std::istream& operator >> (std::istream& is, CTransformation<U,m>& x);
+
     //! Low-level access to data.
     T* Data() { return m_F; }
 
     //! Parallelized mass transformation.
     std::vector<CVector<T,n> > Transform(const std::vector<CVector<T,n> >& x);
+
+    //! Returns Jacobian of the transformation, i.e., its linear part.
+    CDenseArray<T> GetJacobian();
+
+    //! Access to translation vector.
+    CVector<T,n> GetTranslation();
 
 protected:
 
@@ -115,7 +128,6 @@ protected:
     using CTransformation<T,n>::m_F;
 
 };
-
 
 /*! \brief 2D rotation
  *
@@ -222,6 +234,9 @@ public:
     //! Constructor.
     CRigidMotion():CTransformation<T,n>() {}
 
+    //! Constructor.
+    CRigidMotion(const CDenseArray<T>& x):CTransformation<T,n>(x) {}
+
 protected:
 
     using CTransformation<T,n>::m_F;
@@ -237,6 +252,9 @@ template<typename T>
 class CRigidMotion<T,2>:public CTransformation<T,2> {
 
 public:
+
+    //! Constructor.
+    CRigidMotion():CTransformation<T,2>() {}
 
     //! Constructor.
     CRigidMotion(T o, T t1, T t2);
@@ -261,7 +279,13 @@ class CRigidMotion<T,3>:public CTransformation<T,3> {
 public:
 
     //! Constructor.
+    CRigidMotion():CTransformation<T,3>() {}
+
+    //! Constructor.
     CRigidMotion(T o1, T o2, T o3, T t1, T t2, T t3);
+
+    //! Constructor. FIXME: This has to project to SE(3)!
+    CRigidMotion(const CDenseArray<T>& x):CTransformation<T,3>(x) {}
 
     //! \copydoc CTransformation<T,n>::Invert()
     virtual bool Invert();

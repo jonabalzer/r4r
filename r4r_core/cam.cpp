@@ -34,6 +34,357 @@ using namespace std;
 
 namespace R4R {
 
+vector<vec2> CAbstractCam::Project(const vector<vec3>& x) const {
+
+    vector<vec2> result(x.size());
+
+#pragma omp parallel for
+    for(size_t i=0; i<x.size(); i++)
+        result[i] = Project(x[i]);
+
+    return result;
+
+}
+
+vector<vec2f> CAbstractCam::Project(const vector<vec3f>& x) const {
+
+    vector<vec2f> result(x.size());
+
+#pragma omp parallel for
+    for(size_t i=0; i<x.size(); i++)
+        result[i] = Project(x[i]);
+
+    return result;
+
+}
+
+vector<vec3> CAbstractCam::Normalize(const vector<vec2>& u) const {
+
+    vector<vec3> result(u.size());
+
+#pragma omp parallel for
+    for(size_t i=0; i<u.size(); i++)
+        result[i] = Normalize(u[i]);
+
+    return result;
+
+}
+
+vector<vec3f> CAbstractCam::Normalize(const vector<vec2f>& u) const {
+
+    vector<vec3f> result(u.size());
+
+#pragma omp parallel for
+    for(size_t i=0; i<u.size(); i++)
+        result[i] = Normalize(u[i]);
+
+    return result;
+
+}
+
+CPinholeCam::CPinholeCam() {
+
+    m_size[0] = 0;
+    m_size[1] = 0;
+    m_f[0] = 0;
+    m_f[1] = 0;
+    m_c[0] = 0;
+    m_c[1] = 0;
+
+    for(size_t i=0;i<5;i++)
+        m_k[i]=0;
+
+    m_alpha = 0;
+
+}
+
+CPinholeCam::CPinholeCam(size_t w, size_t h) {
+
+    m_size[0] = w;
+    m_size[1] = h;
+    m_f[0] = m_size[0];
+    m_f[1] = m_size[1];
+    m_c[0] = 0.5*m_f[0];
+    m_c[1] = 0.5*m_f[1];
+
+    for(size_t i=0;i<5;i++)
+        m_k[i]=0;
+
+    m_alpha = 0;
+
+}
+
+vec2 CPinholeCam::Project(const vec3& x) const {
+
+    vec2 xn = { x.Get(0)/x.Get(2), x.Get(1)/x.Get(2) };
+
+    // radial distortion
+    double r = xn.Norm2();
+
+    vec2 dx;
+    dx(0) = 2*m_k[2]*xn.Get(0)*xn.Get(1) + m_k[3]*(r*r + 2*xn.Get(0)*xn.Get(0));
+    dx(1) = m_k[2]*(r*r + 2*xn.Get(1)*xn.Get(1)) + 2*m_k[3]*xn.Get(0)*xn.Get(1);
+
+    double fac = 1 + m_k[0]*r*r + m_k[1]*r*r*r*r + m_k[4]*r*r*r*r*r*r;
+    vec2 xd = xn*fac + dx;
+
+    // transform to pixel coordinates
+    vec2 xp;
+    xp(0) = m_f[0]*(xd.Get(0) + m_alpha*xd.Get(1)) + m_c[0];
+    xp(1) = m_f[1]*xd.Get(1) + m_c[1];
+
+    return xp;
+
+}
+
+vec2f CPinholeCam::Project(const vec3f& x) const {
+
+    vec2f xn = { x.Get(0)/x.Get(2), x.Get(1)/x.Get(2) };
+
+    // radial distortion
+    double r = xn.Norm2();
+
+    vec2f dx;
+    dx(0) = 2*m_k[2]*xn.Get(0)*xn.Get(1) + m_k[3]*(r*r + 2*xn.Get(0)*xn.Get(0));
+    dx(1) = m_k[2]*(r*r + 2*xn.Get(1)*xn.Get(1)) + 2*m_k[3]*xn.Get(0)*xn.Get(1);
+
+    double fac = 1 + m_k[0]*r*r + m_k[1]*r*r*r*r + m_k[4]*r*r*r*r*r*r;
+    vec2f xd = xn*fac + dx;
+
+    // transform to pixel coordinates
+    vec2f xp;
+    xp(0) = m_f[0]*(xd.Get(0) + m_alpha*xd.Get(1)) + m_c[0];
+    xp(1) = m_f[1]*xd.Get(1) + m_c[1];
+
+    return xp;
+
+}
+
+
+void CPinholeCam::Project(const vec3& x, vec2& u, mat& J) const {
+
+    u = Project(x);
+
+    J(0,0) = m_f[0]/x.Get(2);
+    J(0,2) = -(u.Get(0)-m_c[0])/x.Get(2);
+    J(1,1) = m_f[1]/x.Get(2);
+    J(1,2) = -(u(1)-m_c[1])/x.Get(2);
+
+}
+
+void CPinholeCam::Project(const vec3f& x, vec2f& u, matf& J) const {
+
+    u = Project(x);
+
+    J(0,0) = m_f[0]/x.Get(2);
+    J(0,2) = -(u.Get(0)-m_c[0])/x.Get(2);
+    J(1,1) = m_f[1]/x.Get(2);
+    J(1,2) = -(u(1)-m_c[1])/x.Get(2);
+
+}
+
+vec3 CPinholeCam::Normalize(const vec2& u) const {
+
+    // FIXME: add undistortion
+    vec3 x;
+    x(0) = (1.0/m_f[0])*(u.Get(0)-m_c[0]);
+    x(1) = (1.0/m_f[1])*(u.Get(1)-m_c[1]);
+    x(2) = 1.0;
+
+    return x;
+
+}
+
+vec3f CPinholeCam::Normalize(const vec2f& u) const {
+
+    // TODO: add undistortion
+    vec3f x;
+    x(0) = (1.0/m_f[0])*(u.Get(0)-m_c[0]);
+    x(1) = (1.0/m_f[1])*(u.Get(1)-m_c[1]);
+    x(2) = 1.0;
+
+    return x;
+
+}
+
+ostream& operator<< (ostream& os, const CPinholeCam& x) {
+
+    os << "# dims" << endl;
+    os << x.m_size[0] << " " << x.m_size[1] << endl;
+    os << "# focal lengths" << endl;
+    os << x.m_f[0] << " " << x.m_f[1] << endl;
+    os << "# principle point" << endl;
+    os << x.m_c[0] << " " << x.m_c[1] << endl;
+    os << "# radial distortion coefficients" << endl;
+    os << x.m_k[0] << " " << x.m_k[1] << " " << x.m_k[2] << " " << x.m_k[3] << " " << x.m_k[4] << endl;
+    os << "# skew coefficient" << endl;
+    os << x.m_alpha;
+
+    return os;
+
+}
+
+istream& operator >> (istream& is, CPinholeCam& x) {
+
+    string linebuffer;
+
+    getline(is,linebuffer);
+
+    is >> x.m_size[0];
+    is >> x.m_size[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_f[0];
+    is >> x.m_f[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_c[0];
+    is >> x.m_c[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_k[0];
+    is >> x.m_k[1];
+    is >> x.m_k[2];
+    is >> x.m_k[3];
+    is >> x.m_k[4];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_alpha;
+
+    return is;
+
+}
+
+template<typename T>
+CView<T>::CView(CAbstractCam& cam, const CRigidMotion<T,3> &F):
+    m_cam(cam),
+    m_F(F),
+    m_Finv(F) {
+
+    m_Finv.Invert();
+
+}
+
+
+template<typename T>
+CVector<T,2> CView<T>::Project(const CVector<T,3>& x) {
+
+    CVector<T,3> xc = m_F.Transform(x);
+
+    return m_cam.Project(xc);
+
+}
+
+template<typename T>
+void CView<T>::Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J) {
+
+    CVector<T,3> xc = m_F.Transform(x);
+
+    m_cam.Project(xc,u,J);
+
+}
+
+template<typename T>
+vector<CVector<T,2> > CView<T>::Project(const std::vector<CVector<T,3> >& x) {
+
+    vector<CVector<T,3> > xc = m_F.Transform(x);
+
+    return m_cam.Project(xc);
+
+}
+
+template<typename T>
+CVector<T,3> CView<T>::Normalize(const CVector<T,2>& u) {
+
+    CVector<T,3> xc = m_cam.Normalize(u);
+
+    return m_Finv.Transform(xc);
+
+}
+
+template<typename T>
+vector<CVector<T,3> > CView<T>::Normalize(const std::vector<CVector<T,2> >& u) {
+
+    vector<CVector<T,3> > xc = m_cam.Normalize(u);
+
+    return m_Finv.Transform(xc);
+
+}
+
+template<typename T>
+bool CView<T>::SaveToFile(const char* filename) {
+
+    ofstream out(filename);
+
+    if(!out) {
+
+        cout << "ERROR: Could not open file " << filename << "." << endl;
+        return 1;
+
+    }
+
+    m_cam.Write(out);
+    out << endl;
+    out << m_F;
+
+    out.close();
+
+    return 0;
+
+}
+
+template<typename T>
+bool CView<T>::OpenFromFile(const char* filename) {
+
+    ifstream in(filename);
+
+    if(!in) {
+
+        cout << "ERROR: Could not open " << filename << "." << endl;
+        return 1;
+
+     }
+
+    m_cam.Read(in);
+
+    in.get();
+
+    in >> m_F;
+
+    in.close();
+
+    m_Finv = m_F;
+    m_Finv.Invert();
+
+    return 0;
+
+}
+
+template<typename U>
+ostream& operator << (ostream& os, const CView<U>& x) {
+
+    // guarantees polymorphic behavior
+    x.m_cam.Write(os);
+    os << endl;
+
+    os << x.m_F << endl;
+    os << x.m_Finv;
+
+    return os;
+
+}
+
+template class CView<float>;
+template class CView<double>;
+
 CCam::CCam():
     m_F(4,4),
     m_Finv(4,4) {

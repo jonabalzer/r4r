@@ -1,26 +1,29 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2013-02-21T19:42:29
+# Project created by QtCreator 2013-07-05T14:55:04
 #
 #-------------------------------------------------
 
 QT       += core gui
 
-TARGET = mv_descriptor_learning
-TEMPLATE = app
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+TARGET = clam
+TEMPLATE = app
 
 QMAKE_CXXFLAGS += -std=c++0x -O3
 
 SOURCES += main.cpp\
-           mainwindow.cpp \
-           preferences.cpp
+        mainwindow.cpp \
+    preferences.cpp
 
 HEADERS  += mainwindow.h \
-            preferences.h
+    preferences.h
 
-FORMS    += mainwindow.ui \
-            preferences.ui
+FORMS    += \
+    mainwindow.ui \
+    preferences.ui
+
 
 unix:!symbian|win32: LIBS += -L/usr/local/lib/\
                              -lopencv_core\

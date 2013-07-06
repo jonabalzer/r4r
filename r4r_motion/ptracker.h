@@ -60,7 +60,7 @@ public:
 	cv::Mat PushforwardImage(cv::Mat& bg, cv::Mat& fg);
 
 	//! Access to RoI.
-	cv::Rect GetRoI() { return m_texture_domain; };
+    cv::Rect GetRoI() { return m_texture_domain; }
 
 	//! Generates an occlusion map.
 	cv::Mat GenerateOcclusionMap(cv::Mat& img, double eps);
@@ -68,7 +68,7 @@ public:
 private:
 
 	CCam m_cam;						//!< camera
-	cv::Mat m_img0;						//!< initial frame
+    cv::Mat m_img0;					//!< initial frame
 	std::list<vec> m_motion;		//!< motion
 	cv::Rect m_texture_domain;		//!< domain in the initial image replaced and pushed forward during tracking
 	cv::Mat m_H;					//!< homography from the initial image to the current image

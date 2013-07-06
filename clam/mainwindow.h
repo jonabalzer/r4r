@@ -8,7 +8,7 @@
 #include "opencv2/opencv.hpp"
 
 #include "params.h"
-#include "stracker.h"
+#include "mtracker.h"
 #include "dagg.h"
 
 #include "preferences.h"
@@ -17,6 +17,7 @@
 using namespace cv;
 using namespace std;
 using namespace R4R;
+
 
 namespace Ui {
 class MainWindow;
@@ -29,32 +30,22 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-
+    
 private slots:
 
-    void on_actionExit_triggered();
-
-    void on_actionOpen_triggered();
-
-    void on_stepButton_clicked();
-
-    void on_playButton_clicked();
-
-    void on_pauseButton_clicked();
-
-    void on_actionSave_Tracks_triggered();
+    void on_actionQuit_triggered();
 
     void on_actionPreferences_triggered();
 
-    void set_params(CParameters params) { m_params = params; }
+    void on_stepButton_clicked();
 
-    void on_actionSave_Descriptors_triggered();
+    void on_pauseButton_clicked();
 
-    void on_actionClose_triggered();
+    void on_playButton_clicked();
+
+    void on_actionOpen_triggered();
 
     void on_showMemoryUsage_triggered();
-
-    void on_actionAbout_triggered();
 
 signals:
 
@@ -62,7 +53,7 @@ signals:
 
 private:
 
-    Ui::MainWindow* ui;
+    Ui::MainWindow *ui;
     Preferences* m_preferences;
 
     VideoCapture m_cap;

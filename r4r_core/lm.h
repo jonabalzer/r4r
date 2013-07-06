@@ -24,9 +24,11 @@
 #ifndef R4RLM_H_
 #define R4RLM_H_
 
+#include <vector>
+
 #include "iter.h"
 #include "types.h"
-#include <vector>
+
 
 namespace R4R {
 
@@ -52,10 +54,10 @@ public:
 	CLeastSquaresProblem(size_t nopts, size_t noparams);
 
 	//! \brief Jointly computes the residual vector and Jacobian of the least-squares objective function.
-    virtual void ComputeResidualAndJacobian(vec& r, Matrix& J) {}
+    virtual void ComputeResidualAndJacobian(vec& r, Matrix& J) = 0;
 
 	//! Computes the residual vector of a weighted least-squares objective function.
-    virtual void ComputeResidual(vec& r) {}
+    virtual void ComputeResidual(vec& r) = 0;
 
 	//! Access to the model parameters.
     vec& Get() { return m_model; }
@@ -76,7 +78,7 @@ public:
 	 * overload this with implementation of e.g. techniques such as the Donoho-Stahel or Minimum Covariance Determinant
 	 * (MCD) estimator.
 	 */
-    vec ComputeDispersion(vec &r);
+    virtual vec ComputeDispersion(vec &r);
 
 protected:
 

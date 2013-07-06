@@ -1,6 +1,3 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
-
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QProgressDialog>
@@ -8,6 +5,12 @@
 
 #include <sys/time.h>
 #include <sys/resource.h>
+
+#include <omp.h>
+
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -32,9 +35,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // set parameters
     m_preferences->on_applyButton_clicked();
 
-    // show memory usage
-    emit show_memoryUsage();
-
 }
 
 MainWindow::~MainWindow()
@@ -51,9 +51,8 @@ void MainWindow::on_actionExit_triggered()
      QApplication::exit();
 }
 
-void MainWindow::show_image(const Mat& img) {
+void MainWindow::show_image(const QImage& qimg) {
 
-    QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
     QPixmap pixmap = QPixmap::fromImage(qimg.rgbSwapped());
 
     if(3*qimg.height()>4*qimg.width())
@@ -136,10 +135,11 @@ void MainWindow::on_actionOpen_triggered()
     m_tracker->UpdateDescriptors(m_pyramid);
 
     // draw
-    m_tracker->Draw(img);
+    QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
+    m_tracker->Draw(qimg,1);
 
     // display
-    show_image(img);
+    show_image(qimg);
     emit show_memoryUsage();
 
 }
@@ -172,6 +172,10 @@ void MainWindow::on_stepButton_clicked()
     cvtColor(img, img_gray, CV_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
+    // start measuring time
+    double t0, t1;
+    t0 = omp_get_wtime();
+
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
 
@@ -187,30 +191,32 @@ void MainWindow::on_stepButton_clicked()
     m_tracker->Clean(pyramid,m_pyramid);
     //trackers[i]->DeleteInvalidTracks();
 
-    // draw
-    m_tracker->Draw(img);
-    m_tracker->DrawTails(img,20);
+    // compute and display framerate
+    t1 = omp_get_wtime();
+    double fps = 1.0/(t1-t0);
+    ui->speedLcdNumber->display(fps);
 
-    // display
-    show_image(img);
+    // draw trails
+    QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
+    m_tracker->Draw(qimg,5);
+    show_image(qimg);
+
+    // display frame no and mem usage
     ui->frameLcdNumber->display((int)m_tracker->GetTime());
     emit show_memoryUsage();
 
 }
-
 
 void MainWindow::on_showMemoryUsage_triggered() {
 
     rusage usage;
     getrusage(RUSAGE_SELF,&usage);
     double mb = (double)usage.ru_maxrss/1024;
-    ui->memlcdNumber->display(mb);
+    ui->memLcdNumber->display(mb);
 
 }
 
-
-void MainWindow::on_playButton_clicked()
-{
+void MainWindow::on_playButton_clicked() {
 
     if(m_cap.isOpened())
         m_timer.start(35);
@@ -219,9 +225,10 @@ void MainWindow::on_playButton_clicked()
 
 }
 
-void MainWindow::on_pauseButton_clicked()
-{
+void MainWindow::on_pauseButton_clicked() {
+
      m_timer.stop();
+
 }
 
 void MainWindow::on_actionSave_Tracks_triggered()
@@ -237,10 +244,11 @@ void MainWindow::on_actionSave_Tracks_triggered()
 
 }
 
-void MainWindow::on_actionPreferences_triggered()
-{
+void MainWindow::on_actionPreferences_triggered() {
+
     m_timer.stop();
     m_preferences->show();
+
 }
 
 void MainWindow::on_actionSave_Descriptors_triggered()
@@ -284,7 +292,6 @@ void MainWindow::on_actionSave_Descriptors_triggered()
                                                     "",
                                                     tr("(*.txt)"));
 
-
     if(filename.isEmpty())
         return;
 
@@ -312,24 +319,17 @@ void MainWindow::on_actionSave_Descriptors_triggered()
     default:
 
         aggregator = new CDescriptorAggregator<matf>(m_tracker,name.c_str());
-        //m_tracker->SaveDescriptors(filename.toStdString().c_str(),name.c_str(),comment.toStdString().c_str());
-        //return;
+
         break;
     }
 
     // aggregate
     aggregator->Aggregate();
-    list<CFeature> feats = aggregator->Get();
+    list<imfeature> feats = aggregator->Get();
 
-    CFeature::SaveToFile(filename.toStdString().c_str(),feats,comment.toStdString().c_str());
+    imfeature::SaveToFile(filename.toStdString().c_str(),feats,comment.toStdString().c_str());
 
-    //aggregator = new CDescriptorAggregator<vecf>(m_tracker,name.c_str());
-    //aggregator->Aggregate(filename.toStdString().c_str(),comment.toStdString().c_str());
-
-    //delete aggregator;
-
-    // save
-    //CFeature::SaveDescriptors(filename.toStdString().c_str(),feats,name.c_str(),comment.toStdString().c_str());
+    delete aggregator;
 
 }
 

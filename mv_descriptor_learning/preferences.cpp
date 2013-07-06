@@ -7,16 +7,16 @@
 Preferences::Preferences(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Preferences),
-    m_parent(parent)
-{
-    ui->setupUi(this);
+    m_parent(parent) {
 
+    ui->setupUi(this);
 
 }
 
-Preferences::~Preferences()
-{
+Preferences::~Preferences() {
+
     delete ui;
+
 }
 
 void Preferences::on_applyButton_clicked()
@@ -55,8 +55,7 @@ void Preferences::on_applyButton_clicked()
 
 }
 
-void Preferences::on_saveButton_clicked()
-{
+void Preferences::on_saveButton_clicked() {
 
     // create new parameter object
     CParameters params;
@@ -93,8 +92,7 @@ void Preferences::on_saveButton_clicked()
 
 }
 
-void Preferences::on_loadButton_clicked()
-{
+void Preferences::on_loadButton_clicked() {
 
     QString filename = QFileDialog::getOpenFileName(this, tr("Save file..."),
                                                     ".",
@@ -105,12 +103,9 @@ void Preferences::on_loadButton_clicked()
 
     ui->scaleSpinBox->setValue(params.GetIntParameter("SCALE"));
 
-
-
 }
 
-void Preferences::on_aggComboBox_currentIndexChanged(int index)
-{
+void Preferences::on_aggComboBox_currentIndexChanged(int index) {
 
     if(index==2)
         ui->downSampleEdit->setEnabled(true);
