@@ -30,8 +30,6 @@
 #include <fstream>
 #include <memory>
 
-#include <opencv2/opencv.hpp>
-
 #include "rect.h"
 #include "darray.h"
 #include "vecn.h"
@@ -205,16 +203,19 @@ private:
 template<typename T,u_int n>
 class CInterestPoint {
 
+    template<class Array> friend class CDescriptorAggregator;
+    template<class Array> friend class CSubsampleAggregator;
+
 public:
 
     //! Standard constructor.
     CInterestPoint();
 
     //! Constructor.
-    CInterestPoint(CVector<T,n>& location, u_int scale, T quality);
+    CInterestPoint(CVector<T,n>& location, float scale, T quality);
 
     //! Returns the scale.
-    u_int GetScale() { return m_scale; }
+    float GetScale() { return m_scale; }
 
     //! Returns the strength/quality of the feature.
     T GetQuality() { return m_quality; }
@@ -283,7 +284,7 @@ public:
 private:
 
     CVector<T,n> m_location;                                                //! feature location
-    u_int m_scale;                                                         //!< scale
+    float m_scale;                                                          //!< scale
     T m_quality;                                                            //!< quality measure, e.g., for storing motion estimation residual
     std::map<string,shared_ptr<CAbstractDescriptor> > m_descriptors;        //!< attached descriptors
 

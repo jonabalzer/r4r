@@ -34,29 +34,21 @@ using namespace cv;
 namespace R4R {
 
 CTracker::CTracker():
-	vector<list<shared_ptr<CTracklet> > >(),
+    list<shared_ptr<CTracklet> >(),
     m_global_t(0),
-    m_n_active_tracks(0) {
-
-}
+    m_n_active_tracks(0) {}
 
 CTracker::CTracker(CParameters* params):
-    vector<list<shared_ptr<CTracklet> > >(params->GetIntParameter("SCALE")+1),
-    //vector<list<shared_ptr<CTracklet> > >(6), // hard-coded limit
+    list<shared_ptr<CTracklet> >(),
     m_params(params),
-	m_global_t(0)
-{}
+    m_global_t(0) {}
 
 CTracker::~CTracker() {
 
 	list<shared_ptr<CTracklet> >::iterator it;
 
-	for(size_t s=0; s<size(); s++) {
-
-		for(it=at(s).begin(); it!=at(s).end(); it++)
-			it->reset();
-
-	}
+    for(it=begin(); it!=end(); it++)
+        it->reset();
 
 	clear();
 
@@ -64,96 +56,35 @@ CTracker::~CTracker() {
 
 void CTracker::DeleteInvalidTracks() {
 
-	list<shared_ptr<CTracklet> >::iterator it;
-
-	for(size_t s=0; s<size(); s++) {
-
-		vector<shared_ptr<CTracklet> > todel;
-
-		// mark for deletion
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
-
-			if(!(*it)->GetStatus() && (*it)!=nullptr) {
-
-                todel.push_back(move(*it));
-
-			}
-
-		}
-
-		// delete and remove from list
-		for(size_t i=0; i<todel.size(); i++) {
-
-			todel[i].reset();
-			at(s).remove(todel[i]);
-
-		}
-
-	}
-
-}
-
-shared_ptr<CTracklet> CTracker::AddTracklet(CFeature x) {
-
-    shared_ptr<CTracklet> tracklet(new CTracklet(m_global_t,x.GetScale(),x));
-
-	// discrepancy between size of vector and s
-	int d = tracklet->GetScale() - size();
-
-	// insert empty sets
-	for(int i=0; i<=d; i++)
-		push_back(list<shared_ptr<CTracklet> >());
-
-	// insert tracklet at s
-	at(tracklet->GetScale()).push_back(tracklet);
-
-	return tracklet;
-
-}
-
-void CTracker::AddTracklet(std::shared_ptr<CTracklet> tracklet) {
-
-	// discrepancy between size of vector and s
-	int d = tracklet->GetScale() - size();
-
-	// insert empty sets
-	for(int i=0; i<=d; i++)
-		push_back(list<shared_ptr<CTracklet> >());
-
-	// insert tracklet at s
-	at(tracklet->GetScale()).push_back(tracklet);
-
-}
-
-void CTracker::Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) {
-
     list<shared_ptr<CTracklet> >::iterator it;
-    size_t counter = 0;
+    vector<shared_ptr<CTracklet> > todel;
 
-    for(size_t s=0; s<size(); s++) {
+    // mark for deletion
+    for(it=begin(); it!=end(); it++) {
 
-            // mark for deletion
-        for(it=at(s).begin(); it!=at(s).end(); it++) {
-
-            if((*it)->GetStatus())
-                counter++;
-
-        }
+         if(!(*it)->GetStatus() && (*it)!=nullptr)
+             todel.push_back(move(*it));
 
     }
 
-    m_n_active_tracks = counter;
+    // delete and remove from list
+    for(size_t i=0; i<todel.size(); i++) {
+
+        // the tracklet will be destroyed if this is the last reference
+        todel[i].reset();
+        remove(todel[i]);
+
+    }
 
 }
 
-size_t CTracker::Capacity() {
+shared_ptr<CTracklet> CTracker::AddTracklet(imfeature x) {
 
-	size_t result = 0;
+    shared_ptr<CTracklet> tracklet(new CTracklet(m_global_t,x));
 
-	for(size_t s=0; s<size(); s++)
-		result += at(s).size();
+    push_back(tracklet);
 
-	return result;
+	return tracklet;
 
 }
 
@@ -163,88 +94,36 @@ size_t CTracker::ActiveCapacity() {
 
 	list<shared_ptr<CTracklet> >::iterator it;
 
-	for(size_t s=0; s<size(); s++) {
+    for(it=begin(); it!=end(); it++) {
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        if((*it)->GetStatus())
+            result++;
 
-			if((*it)->GetStatus())
-				result++;
-
-
-		}
-
-	}
+    }
 
 	return result;
 
 }
 
-void CTracker::Draw(Mat& img) {
+#ifdef QT_GUI_LIB
 
-	list<shared_ptr<CTracklet> >::iterator it;
+void CTracker::Draw(QImage& img, size_t length) {
 
-	for(size_t s=0; s<size(); s++) {
+    list<shared_ptr<CTracklet> >::iterator it;
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+    for(it=begin(); it!=end(); it++) {
 
-			if((*it)->GetStatus()) {
+        if((*it)->GetStatus()) {
 
-                CFeature x = (*it)->GetLatestState();
+            (*it)->Draw(img, length);
 
-				if(m_global_t - (*it)->GetCreationTime()<10) {
+        }
 
-					// draw additional inner circle
-                    x.Draw(img,CFeature::COLORS[(*it)->GetScale()],2);
-                    x.Draw(img);
-
-				}
-				else
-                    x.Draw(img);
-
-
-			}
-
-		}
-
-	}
+    }
 
 }
 
-void CTracker::DrawTails(cv::Mat& img, size_t length) {
-
-	list<shared_ptr<CTracklet> >::iterator it;
-
-	for(size_t s=0; s<size(); s++) {
-
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
-
-			if((*it)->GetStatus()) {
-
-				(*it)->Draw(img, length);
-
-			}
-
-		}
-
-	}
-
-}
-
-void CTracker::DeleteDescriptors() {
-
-	list<shared_ptr<CTracklet> >::iterator it;
-
-	for(size_t s=0; s<size(); s++) {
-
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
-
-			(*it)->DeleteDescriptors();
-
-		}
-
-	}
-
-}
+#endif
 
 bool CTracker::SaveToFile(const char* dir, const char* prefix) {
 
@@ -254,45 +133,37 @@ bool CTracker::SaveToFile(const char* dir, const char* prefix) {
 
 	size_t counter = 0;
 
-	for(size_t s=0; s<size(); s++) {
+    for(it=begin(); it!=end(); it++) {
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        stringstream no;
+        no.fill('0');
+        no.width(4);
+        no << counter;
+        counter++;
 
-			stringstream no;
-			no.fill('0');
-			no.width(4);
-			no << counter;
-			counter++;
+        stringstream filename;
+        filename << dir << prefix << no.str() << ".dat";
 
-			stringstream filename;
-			filename << dir << prefix << no.str() << ".dat";
+        imfeature::SaveToFile(filename.str().c_str(),*(*it));
 
-            CFeature::SaveToFile(filename.str().c_str(),*(*it));
-
-		}
-
-	}
+    }
 
 	return 0;
 
 }
 
-shared_ptr<CTracklet> CTracker::SearchTracklet(CFeature x0, size_t t0) {
+shared_ptr<CTracklet> CTracker::SearchTracklet(imfeature x0, size_t t0) {
 
 	list<shared_ptr<CTracklet> >::iterator it;
 
 	shared_ptr<CTracklet> result;
 
-	for(size_t s=0; s<size(); s++) {
+    for(it=begin(); it!=end(); it++) {
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        if((*it)->GetCreationTime()==t0 && (*it)->front()==x0)
+            result = *it;
 
-            if((*it)->GetCreationTime()==t0 && x0.operator ==((*it)->front()))
-				result = *it;
-
-		}
-
-	}
+    }
 
 	return result;
 
@@ -306,21 +177,17 @@ shared_ptr<CTracklet> CTracker::SearchFittestTracklet() {
 
 	shared_ptr<CTracklet> result;
 
-	for(size_t s=0; s<size(); s++) {
+    for(it=begin(); it!=end(); it++) {
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        if((*it)->size()>max) {
 
-			if((*it)->size()>max) {
+            result = *it;
 
-				result = *it;
+            max = result->size();
 
-				max = result->size();
+        }
 
-			}
-
-		}
-
-	}
+    }
 
 	return result;
 
@@ -335,42 +202,32 @@ map<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > > CTracker::ComputeCovisi
 
 	list<shared_ptr<CTracklet> >::iterator it, it2;
 
-	// each tracklet is covisible with itself
-	for(size_t s=0; s<size(); s++) {
+    for(it=begin(); it!=end(); it++) {
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        list<shared_ptr<CTracklet> > adjlist;
+        adjlist.push_back(*it);
 
-			list<shared_ptr<CTracklet> > adjlist;
-			adjlist.push_back(*it);
+        graph.insert(pair<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > >(*it,adjlist));
 
-			graph.insert(pair<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > >(*it,adjlist));
+    }
 
-		}
+    for(it=begin(); it!=end(); it++) {
 
-	}
+        for(size_t t=0; t<size(); t++) {
 
-	// now compute general relationships
-	for(size_t s=0; s<size(); s++) {
+            for(it2=begin(); it2!=end(); it2++) {
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+                size_t t01 = (*it)->GetCreationTime();
+                size_t t02 = (*it2)->GetCreationTime();
 
-			for(size_t t=0; t<size(); t++) {
+                if((*it)!=(*it2) && (t01+(*it)->size()-1>=t02 || t01<=t02+(*it2)->size()-1))
+                    graph[*it].push_back(*it2);
 
-				for(it2=at(s).begin(); it2!=at(s).end(); it2++) {
+            }
 
-					size_t t01 = (*it)->GetCreationTime();
-					size_t t02 = (*it2)->GetCreationTime();
+        }
 
-					if((*it)!=(*it2) && (t01+(*it)->size()-1>=t02 || t01<=t02+(*it2)->size()-1))
-						graph[*it].push_back(*it2);
-
-				}
-
-			}
-
-		}
-
-	}
+    }
 
 	return graph;
 
@@ -381,126 +238,44 @@ void CTracker::SetAllTrackletsActive() {
 
 	list<shared_ptr<CTracklet> >::iterator it;
 
-	for(size_t s=0; s<size(); s++) {
+    for(it=begin(); it!=end(); it++) {
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        (*it)->SetStatus(true);
 
-			(*it)->SetStatus(true);
-
-		}
-
-	}
-
+    }
 
 }
-
-
 
 CIntegralImage<size_t> CTracker::ComputeFeatureDensity(size_t width, size_t height, size_t s) {
 
 	// init image
 	CIntegralImage<size_t> img(width,height);
 
-	// check whether there are tracklets at that scale at all
-	if(at(s).size()>0) {
+    list<shared_ptr<CTracklet> >::iterator it;
 
-		list<shared_ptr<CTracklet> >::iterator it;
+    for(it=begin(); it!=end(); it++) {
 
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
+        // only consider active tracklets
+        if((*it)->GetStatus()) {
 
-			if((*it)->GetStatus()) {
+            // get the current feature
+            imfeature f = (*it)->GetLatestState();
 
-				vec pt = (*it)->GetLatestLocation();
+            // if it matches the given scale add it to the integral image
+            if(f.GetScale()==s) {
 
-				img.AddDensityFast(pt(0),pt(1),1.0);
+                vec2f x = f.GetLocation();
+                img.AddDensityFast(x.Get(0),x.Get(1),1.0);
 
-			}
+            }
 
-		}
+        }
 
-	}
+    }
 
 	return img;
 
 }
-
-
-void CTracker::OnMouseSelectBoundingBox(int event, int x, int y, int flags, void* params) {
-
-	int* ploc = (int*)params;
-
-	if (event == CV_EVENT_LBUTTONUP) {
-
-		ploc[0] = x;
-		ploc[1] = y;
-		ploc[2] = -1;
-
-	}
-
-	if (event == CV_EVENT_RBUTTONUP) {
-
-		ploc[0] = x;
-		ploc[1] = y;
-		ploc[2] = 1;
-
-	}
-
-}
-
-
-Rect CTracker::GetManualBoundingBox(Mat& img) {
-
-	namedWindow("Init",CV_WINDOW_AUTOSIZE|CV_GUI_NORMAL);
-
-	// set intial bounding box
-	cout << "Select initial bounding box by clicking on top-left/bottom-right corners..." << endl;
-
-	displayOverlay("Init","Select initial bounding box by clicking on top-left/bottom-right corners...");
-
-	int p[3];
-
-	cvSetMouseCallback("Init",CTracker::OnMouseSelectBoundingBox,p);
-
-	Point2i tl(0,0), br(0,0);
-
-	while (1) {
-
-		imshow("Init",img);
-
-		if(p[2]==-1) {
-
-			tl.x = p[0];
-			tl.y = p[1];
-
-		}
-
-		if(p[2]==1 && p[0]>tl.x && p[1]>tl.y) {
-
-			br.x = p[0];
-			br.y = p[1];
-			break;
-
-		}
-
-		waitKey(33);
-
-	}
-
-	rectangle(img,tl,br,Scalar(255,255,255),2);
-
-	imshow("Init",img);
-
-	cout << "Press any key to continue..." << endl;
-
-	waitKey(0);
-
-	destroyWindow("Init");
-
-	return Rect(tl.x,tl.y,br.x-tl.x,br.y-tl.y);
-
-}
-
-
 
 CTracker::iterator::iterator(CTracker* tracker):
 	m_tracker(tracker),
@@ -513,7 +288,7 @@ CTracker::iterator::iterator(CTracker* tracker):
 
 void CTracker::iterator::UpdateTracklets() {
 
-    map<shared_ptr<CTracklet>,list<CFeature>::iterator >::iterator it;
+    map<shared_ptr<CTracklet>,list<imfeature>::iterator >::iterator it;
 
 	for(it=m_data.begin(); it!=m_data.end(); it++)
 		(it->second)++;
@@ -524,21 +299,17 @@ void CTracker::iterator::AddTracklets() {
 
 	list<shared_ptr<CTracklet> >::iterator it;
 
-	for(size_t s=0; s<m_tracker->size(); s++) {
+    for(it=m_tracker->begin(); it!=m_tracker->end(); it++) {
 
-		for(it=m_tracker->at(s).begin(); it!=m_tracker->at(s).end(); it++) {
+        if((*it)->GetCreationTime()==m_t) {
 
-			if((*it)->GetCreationTime()==m_t) {
+            list<imfeature>::iterator itt = it->get()->begin();
 
-                list<CFeature>::iterator itt = it->get()->begin();
+            m_data.insert(pair<shared_ptr<CTracklet>,list<imfeature>::iterator >(*it,itt));
 
-                m_data.insert(pair<shared_ptr<CTracklet>,list<CFeature>::iterator >(*it,itt));
+        }
 
-			}
-
-		}
-
-	}
+    }
 
 }
 
@@ -546,16 +317,12 @@ void CTracker::iterator::Clean() {
 
 	list<shared_ptr<CTracklet> >::iterator it;
 
-	for(size_t s=0; s<m_tracker->size(); s++) {
+    for(it=m_tracker->begin(); it!=m_tracker->end(); it++) {
 
-		for(it=m_tracker->at(s).begin(); it!=m_tracker->at(s).end(); it++) {
+        if(m_t>(*it)->GetCreationTime()+(*it)->size()-1)
+            m_data.erase(*it);
 
-			if(m_t>(*it)->GetCreationTime()+(*it)->size()-1)
-				m_data.erase(*it);
-
-		}
-
-	}
+    }
 
 }
 

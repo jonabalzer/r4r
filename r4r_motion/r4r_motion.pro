@@ -13,34 +13,31 @@ TEMPLATE = lib
 
 DEFINES += R4R_MOTION_LIBRARY
 
-SOURCES += \
-    tracker.cpp \
+SOURCES += tracker.cpp \
     stracker.cpp \
-    ptracker.cpp \
+    #ptracker.cpp \
     mtracker.cpp \
     map.cpp \
     lk.cpp \
     feature.cpp \
     descriptor.cpp \
     basic.cpp \
-    tval.cpp \
-    tsttrack.cpp \
+    #tsttrack.cpp \
     tracklet.cpp \
     dagg.cpp \
     descspecial.cpp
 
 HEADERS += \
-    tval.h \
     tracker.h \
     stracker.h \
-    ptracker.h \
+    #ptracker.h \
     mtracker.h \
     map.h \
     lk.h \
     feature.h \
     descriptor.h \
     basic.h \
-    tsttrack.h \
+    #tsttrack.h \
     tracklet.h \
     dagg.h \
     descspecial.h

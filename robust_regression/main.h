@@ -5,9 +5,10 @@
 #include <fstream>
 #include <math.h>
 
-using namespace std;
 
 #include "lm.h"
+
+using namespace std;
 using namespace R4R;
 
 class CRosenbrockFunction:public CLeastSquaresProblem<mat> {
@@ -20,19 +21,15 @@ public:
     //! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&,Matrix&)
     void ComputeResidualAndJacobian(vec& r, mat& J);
 
-    //! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&, Matrix&, const vec&)
-    void ComputeResidualAndJacobian(vec& r, mat& J, const vec& weights) {};
-
     //! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
     void ComputeResidual(vec& r);
 
     //! Prints out the ground truth parameters.
-    vec GetGroundTruth() { vec x(2); x(0) = 1; x(1) = 1; return x; };
+    vec GetGroundTruth() { vec x(2); x(0) = 1; x(1) = 1; return x; }
 
 private:
 
 };
-
 
 class COsbourneFunction:public CLeastSquaresProblem<mat> {
 
@@ -43,9 +40,6 @@ public:
 
     //! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&,Matrix&)
     void ComputeResidualAndJacobian(vec& r, mat& J);
-
-    //! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&, Matrix&, const vec&)
-    void ComputeResidualAndJacobian(vec& r, mat& J, const vec& weights) {};
 
     //! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
     void ComputeResidual(vec& r);

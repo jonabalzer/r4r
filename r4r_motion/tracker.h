@@ -34,6 +34,10 @@
 #ifndef R4RTRACKER_H_
 #define R4RTRACKER_H_
 
+#ifdef QT_GUI_LIB
+#include <QImage>
+#endif
+
 
 #include <opencv2/opencv.hpp>
 #include <algorithm>
@@ -49,7 +53,7 @@ namespace R4R {
  *
  *
  */
-class CTracker:public std::vector<std::list<std::shared_ptr<CTracklet> > >  {
+class CTracker:public std::list<std::shared_ptr<CTracklet> >  {
 
 public:
 
@@ -75,16 +79,16 @@ public:
         bool operator()() { return m_t<=m_tracker->m_global_t; }
 
 		//! Dereferencing operator.
-        std::map<shared_ptr<CTracklet>,std::list<CFeature>::iterator > operator*() { return m_data; }
+        std::map<shared_ptr<CTracklet>,std::list<imfeature>::iterator > operator*() { return m_data; }
 
 		//! Access to the internal counter.
 		size_t GetTime() const { return m_t; }
 
 	private:
 
-		CTracker* m_tracker;																		//!< tracker to iterate through
-        std::map<shared_ptr<CTracklet>,std::list<CFeature>::iterator > m_data;	//!< data container
-		size_t m_t;																					//!< global time variable
+        CTracker* m_tracker;													//!< tracker to iterate through
+        std::map<shared_ptr<CTracklet>,std::list<imfeature>::iterator > m_data;	//!< data container
+        size_t m_t;																//!< global time variable
 
 		//! Advances the iterators that are currently alive.
 		void UpdateTracklets();
@@ -105,17 +109,14 @@ public:
 	//! Standard constructor.
     CTracker(CParameters* params);
 
-	//! Standard destructor.
+    //! Standard destructor.
 	virtual ~CTracker();
 
 	//! Deletes all tracklets which have died from memory.
 	void DeleteInvalidTracks();
 
-	//! Returns pointer to all tracklets at given scale.
-    std::list<std::shared_ptr<CTracklet> > Get(size_t s) { return at(s); }
-
 	//! Computes the number of tracklets in the container.
-	size_t Capacity();
+    size_t Capacity() { return size(); }
 
 	//! Computes the number of tracklets in the container that are still alive.
 	size_t ActiveCapacity();
@@ -126,18 +127,15 @@ public:
 	 * \param[in] img initial image
 	 *
 	 */
-    virtual bool Init(std::vector<cv::Mat>& pyramid) = 0 ;
+    virtual bool Init(std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Executes one step of differential motion estimation.
 	 *
-	 * \param[in] img0 frame at t
-	 * \param[in] img1 frame at t+1
+     * \param[in] img0 frame at \f$t\f$
+     * \param[in] img1 frame at \f$t+1\f$
 	 *
 	 */
     virtual bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) = 0; // { m_global_t++ ; return 0; }
-
-	//! Draws the current features into an image.
-	virtual void Draw(cv::Mat& img);
 
 	//! Adds new features to the tracker.
     virtual bool AddTracklets(std::vector<cv::Mat>& pyramid) = 0;
@@ -169,16 +167,13 @@ public:
 	virtual bool SaveToFile(const char* dir, const char* prefix);
 
 	//! Searches for a tracklet with given initial feature and initial time.
-    std::shared_ptr<CTracklet> SearchTracklet(CFeature x0, size_t t0);
+    std::shared_ptr<CTracklet> SearchTracklet(imfeature x0, size_t t0);
 
 	//! Searches for the tracklet with maximal life time.
 	std::shared_ptr<CTracklet> SearchFittestTracklet();
 
 	//! Computes the adjacency list of the covisibility graph.
 	std::map<std::shared_ptr<CTracklet>,std::list<std::shared_ptr<CTracklet> > > ComputeCovisibilityGraph();
-
-	//! Deletes descriptors attached to any of tracked features.
-	void DeleteDescriptors();
 
 	//! Sets all tracklets to active.
 	void SetAllTrackletsActive();
@@ -193,6 +188,8 @@ public:
 	 * \returns Integral image \f$\mathcal{I}\f$. At evaluation, no swapping of indices is required, i.e., if \f$(i,j)\f$
 	 * denotes a pixel where \f$i\f$ is the horizontal image location and \f$j\f$ the vertical one, the integral bound is
 	 * passed in that same order \f$\mathcal{I}(i,j)\f$.
+     *
+     * \TODO call this by reference with the integral image as argument, no need to pass size
 	 *
 	 */
 	CIntegralImage<size_t> ComputeFeatureDensity(size_t width, size_t height, size_t s);
@@ -200,17 +197,8 @@ public:
 	//! Returns the set of parameters.
     CParameters GetParameters() { return *m_params; }
 
-	//! Draws active tracklets into an image.
-	void DrawTails(cv::Mat& img, size_t length);
-
     //! Returns the number of tracks still alive.
     size_t GetNumberOfActiveTracks() { return m_n_active_tracks; }
-
-	//! Lets the user select an initial bounding box.
-	static cv::Rect GetManualBoundingBox(cv::Mat& img);
-
-	//! Callback routine for selecting a bounding box.
-	static void OnMouseSelectBoundingBox(int event, int x, int y, int flags, void* params);
 
     //! Access to the global time.
     size_t GetTime() { return m_global_t; }
@@ -226,7 +214,14 @@ public:
      * \param[in] x pointer to a dynamically allocated CFeatureDescriptor object
      *
      */
-    std::shared_ptr<CTracklet> AddTracklet(CFeature x);
+    std::shared_ptr<CTracklet> AddTracklet(imfeature x);
+
+#ifdef QT_GUI_LIB
+
+    //! Draws active tracklets into an image.
+    void Draw(QImage& img, size_t length);
+
+#endif
 
 protected:
 
@@ -234,14 +229,9 @@ protected:
 	size_t m_global_t;						//!< global time variable
     size_t m_n_active_tracks;               //!< number of active tracks
 
-
-
-	//! Adds a new tracklet to the pool.
-	void AddTracklet(std::shared_ptr<CTracklet> tracklet);
-
 };
 
-}
+} // end of namespace
 
 #endif /* TRACKER_H_ */
 

@@ -34,17 +34,13 @@ using namespace std;
 namespace R4R {
 
 CTracklet::CTracklet():
-    list<CFeature>(),
+    list<imfeature>(),
 	m_t0(0),
-	m_scale(0),
-	m_status(false) {
+	m_status(false) {}
 
-}
-
-CTracklet::CTracklet(size_t t0, size_t s, CFeature x0):
-    list<CFeature>(),
+CTracklet::CTracklet(size_t t0, imfeature x0):
+    list<imfeature>(),
 	m_t0(t0),
-	m_scale(s),
 	m_status(true)
 {
 
@@ -52,35 +48,27 @@ CTracklet::CTracklet(size_t t0, size_t s, CFeature x0):
 
 }
 
-//CTracklet::~CTracklet() {
-
-//    clear();
-
-//}
-
-
-void CTracklet::Update(CFeature x) {
+void CTracklet::Update(imfeature x) {
 
 	push_back(x);
 
 }
 
+vec2f CTracklet::GetLatestVelocity() {
 
-vec CTracklet::GetLatestVelocity() {
+    list<imfeature>::reverse_iterator rit = rbegin();
 
-    list<CFeature>::reverse_iterator rit = rbegin();
+    vec2f x1 = (*rit).GetLocation();
 
-    vec x1 = (*rit).GetLocation();
-
-	vec v(2);
+    vec2f v;
 
 	if(size()>1) {
 
-	rit++;
+        rit++;
 
-    vec x0 = (*rit).GetLocation();
+        vec2f x0 = (*rit).GetLocation();
 
-	v = x1 - x0;
+        v = x1 - x0;
 
 	}
 
@@ -88,27 +76,58 @@ vec CTracklet::GetLatestVelocity() {
 
 }
 
+#ifdef QT_GUI_LIB
 
-void CTracklet::Draw(Mat& img, size_t length) {
+const Qt::GlobalColor CTracklet::COLORS[10] = { Qt::green,
+                                                Qt::red,
+                                                Qt::blue,
+                                                Qt::cyan,
+                                                Qt::magenta,
+                                                Qt::white,
+                                                Qt::yellow,
+                                                Qt::darkGreen,
+                                                Qt::darkRed,
+                                                Qt::darkBlue };
 
-    list<CFeature>::reverse_iterator ita, itb;
+void CTracklet::Draw(QImage& img, size_t length) {
 
+    // check if length > 0
+    if(length==0)
+        return;
+
+    // access to the two last features
+    list<imfeature>::reverse_iterator ita, itb;
     ita = rbegin();
     itb = rbegin();
     itb++;
+
+    // get scale for color
+    u_int scale = u_int((*ita).GetScale());
+
+    // prepare drawing
+    QPainter p(&img);
+    QPen pen;
+    pen.setColor(COLORS[scale]);
+    pen.setWidth(2);
+    p.setPen(pen);
+
+    // draw circle if length of trail is 1
+    if(length==1) {
+
+        vec2f a = (*ita).GetLocationAtNativeScale();
+        p.drawEllipse(int(a.Get(0)),int(a.Get(1)),10,10);
+        return;
+
+    }
 
     size_t counter = 0;
 
     while (itb!=rend() && counter<length) {
 
-        vec a = (*ita).GetLocation();
-        vec b = (*itb).GetLocation();
+        vec2f a = (*ita).GetLocationAtNativeScale();
+        vec2f b = (*itb).GetLocationAtNativeScale();
 
-    	double s = pow(2,m_scale);
-    	a.Scale(s);
-    	b.Scale(s);
-
-        line(img,Point2f(a(0),a(1)),Point2f(b(0),b(1)),CFeature::COLORS[m_scale],1,CV_AA,0);
+        p.drawLine(int(a.Get(0)),int(a.Get(1)),int(b.Get(0)),int(b.Get(1)));
 
     	ita++;
     	itb++;
@@ -118,49 +137,16 @@ void CTracklet::Draw(Mat& img, size_t length) {
 
 }
 
+#endif
+
 ostream& operator<<(ostream& os, CTracklet& x) {
 
-    list<CFeature>::iterator it;
+    list<imfeature>::iterator it;
 
 	for(it=x.begin(); it!=x.end(); it++)
         os << (*it) << endl;
 
 	return os;
-
-}
-
-bool CTracklet::SaveToFile(const char* filename) {
-
-    if(size()==0)
-        return 1;
-
-    ofstream out(filename,ofstream::binary);
-
-    if(!out) {
-
-        cout << "ERROR: Could not open file " << filename << "." << endl;
-        return 1;
-
-     }
-
-    out << "# Creation time:" << endl << m_t0 << endl;
-    out << "# Life time:" << endl << size() << endl;
-    out << "# Scale:" << endl << m_scale << endl;
-    out << "# x-coordinate y-coordinate" << endl;
-    out << "# quality" << endl;
-    out << "# number of descriptor" << endl;
-    out <<	"# descriptor 1" << endl;
-    out <<	"# ..." << endl;
-    out <<	"# descriptor n" << endl;
-
-    list<CFeature>::iterator it;
-
-    for(it=begin(); it!=end(); it++)
-        out << (*it);
-
-    out.close();
-
-    return 0;
 
 }
 
@@ -171,7 +157,7 @@ std::string CTracklet::GetHash() {
 	t0.width(4);
 	t0 << m_t0;
 
-    vec pt = front().GetLocation();
+    vec2f pt = front().GetLocation();
 
 	stringstream x0, y0;
 	x0.fill('0');
@@ -188,45 +174,9 @@ std::string CTracklet::GetHash() {
 
 }
 
-void CTracklet::DeleteDescriptors() {
+vec2f CTracklet::GetPastLocation(size_t steps) {
 
-    list<CFeature>::iterator it;
-
-	for(it=begin(); it!=end(); it++)
-        it->DeleteDescriptors();
-
-}
-
-//vec CTracklet::ComputeVariance() {
-
-//	vec x(size()), y(size());
-//	vec result(2);
-
-//    list<CFeature>::iterator it;
-
-//	size_t t = 0;
-
-//	for(it=begin(); it!=end(); it++) {
-
-//        vec location = it->GetLocation();
-
-//		x(t) = location(0);
-//		y(t) = location(1);
-
-//		t++;
-
-//	}
-
-//	result(0) = x.Variance();
-//	result(1) = y.Variance();
-
-//	return result;
-
-//}
-
-vec CTracklet::GetPastLocation(size_t steps) {
-
-    list<CFeature>::reverse_iterator rit = rbegin();
+    list<imfeature>::reverse_iterator rit = rbegin();
 
 	for(size_t i=0; i<steps; i++)
 		rit++;
@@ -235,9 +185,9 @@ vec CTracklet::GetPastLocation(size_t steps) {
 
 }
 
-vec CTracklet::GetPastLocationAtNativeScale(size_t steps) {
+vec2f CTracklet::GetPastLocationAtNativeScale(size_t steps) {
 
-    list<CFeature>::reverse_iterator rit = rbegin();
+    list<imfeature>::reverse_iterator rit = rbegin();
 
 	for(size_t i=0; i<steps; i++)
 		rit++;

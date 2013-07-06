@@ -762,7 +762,7 @@ CInterestPoint<T,n>::CInterestPoint():
     m_quality(0) {}
 
 template<typename T,u_int n>
-CInterestPoint<T,n>::CInterestPoint(CVector<T,n>& location, u_int scale, T quality):
+CInterestPoint<T,n>::CInterestPoint(CVector<T,n>& location, float scale, T quality):
     m_location(location),
     m_scale(scale),
     m_quality(quality) {}
@@ -1021,6 +1021,9 @@ bool CInterestPoint<T,n>::SaveToFile(const char* filename, std::list<CInterestPo
     else
         out << "# " << comment << endl;
 
+    // write number of features (for matlab import)
+    out << features.size() << endl;
+
     size_t counter = 0;
 
     for(it=features.begin(); it!=features.end(); it++, counter++) {
@@ -1055,6 +1058,10 @@ int CInterestPoint<T,n>::LoadFromFile(const char* filename, std::vector<CInteres
     // read comment line
     getline(in,comment);
     comment = comment.substr(2,comment.size()-1);
+
+    int nis;
+    in >> nis;
+    in.get();
 
     int no = 0;
 

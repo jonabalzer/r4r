@@ -29,7 +29,6 @@
 
 #include "tracker.h"
 #include "features.h"
-//#include <tools/stree.h>
 
 namespace R4R {
 
@@ -99,7 +98,7 @@ protected:
 	void Detect(std::vector<cv::Mat>& pyramid);
 
 	//! Advances all features below a given node.
-	void TrackSubTree(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1, shared_ptr<CSTTracklet> node, vec t0);
+    void TrackSubTree(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1, shared_ptr<CSTTracklet> node, vec2f t0);
 
 
 };
@@ -193,9 +192,6 @@ public:
 
 	//! \copydoc CTracker::AddTracklets(cv::Mat&)
 	virtual bool AddTracklets(std::vector<cv::Mat>& pyramid);
-
-	//! \copydoc CTracker::Draw(cv::Mat&)
-	//virtual void Draw(cv::Mat& img);
 
 	//! Saves the current tree to a file in the dot format.
 	bool SaveToFile(const char* filename);

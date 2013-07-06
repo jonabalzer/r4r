@@ -29,6 +29,8 @@
 
 namespace R4R {
 
+template<typename T> class CDenseVector;
+
 /*! \brief short vectors of length \f$n\f$
  *
  *
@@ -44,6 +46,9 @@ public:
 
     //! Constructor.
     CVector(T val);
+
+    //! Constructor.
+    CVector(const CDenseVector<T>& x);
 
     //! Initializer list constructor.
     CVector(std::initializer_list<T> list);

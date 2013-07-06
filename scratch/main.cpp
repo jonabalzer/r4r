@@ -9,7 +9,7 @@
 #include "factor.h"
 #include "types.h"
 #include "trafo.h"
-
+#include "cam.h"
 
 using namespace std;
 using namespace R4R;
@@ -22,8 +22,49 @@ bool rw_descriptors();
 int main()
 {
 
-    rw_descriptors();
-    cout << "Returned" << endl;
+    mat M(3,4);
+    M.Rand(0,1);
+
+    cout << M << endl;
+    CRigidMotion<double,3> F(M);
+
+    mat R = F.GetJacobian();
+    cout << R << endl;
+
+    CVector<double,3> t=F.GetTranslation();
+    cout << t << endl;
+
+    vec t2(t);
+    cout << "t2" << t2 << endl;
+
+   /* CPinholeCam cam;
+    CView myview(cam,F);
+    myview.OpenFromFile("camtest.txt");
+
+
+    cout << myview << endl;
+
+    vec3 x={1,4,2};
+
+    vec2 y = myview.Project(x);
+    cout << y << endl;
+
+    vector<vec3> in;
+    for(size_t i=0; i<1000000; i++)
+        in.push_back(x);
+
+    double t0 = omp_get_wtime();
+    vector<vec2> out = myview.Project(in);
+    double t1 = omp_get_wtime();
+    cout << t1-t0 << endl;
+
+    cout << out[0] << endl;*/
+
+
+
+
+    //rw_descriptors();
+    //cout << "Returned" << endl;
 
 //    ON::Begin();
 

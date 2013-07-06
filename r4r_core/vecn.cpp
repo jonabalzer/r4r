@@ -21,10 +21,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "vecn.h"
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
+#include <string.h>
+
+#include "vecn.h"
+#include "darray.h"
 
 using namespace std;
 
@@ -41,6 +44,15 @@ template <typename T, u_int n>
 CVector<T,n>::CVector(T val) {
 
     fill_n(m_data,n,val);
+
+}
+
+template <typename T, u_int n>
+CVector<T,n>::CVector(const CDenseVector<T>& x) {
+
+    assert(n==x.NElems());
+
+    memcpy(&m_data[0],x.Data().get(),n*sizeof(T));
 
 }
 

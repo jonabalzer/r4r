@@ -21,13 +21,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "trafo.h"
-#include "factor.h"
-
 #include <math.h>
 #include <assert.h>
 #include <string.h>
 #include <limits>
+
+#include "trafo.h"
+#include "factor.h"
 
 using namespace std;
 
@@ -43,6 +43,14 @@ CTransformation<T,n>::CTransformation() {
 
 }
 
+template <typename T,u_int n>
+CTransformation<T,n>::CTransformation(const CDenseArray<T>& F) {
+
+    assert(F.NRows()==n && F.NCols()==(n+1));
+
+    memcpy(&m_F[0],F.Data().get(),n*(n+1)*sizeof(T));
+
+}
 
 template <typename T,u_int n>
 CTransformation<T,n> CTransformation<T,n>::operator*(const CTransformation<T,n>& x) const {
@@ -144,6 +152,7 @@ vector<CVector<T,n> > CTransformation<T,n>::Transform(const vector<CVector<T,n> 
 
     vector<CVector<T,n> > result(x.size());
 
+#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Transform(x[i]);
 
@@ -151,9 +160,10 @@ vector<CVector<T,n> > CTransformation<T,n>::Transform(const vector<CVector<T,n> 
 
 }
 
-
 template <class U,u_int m>
 ostream& operator << (ostream& os, const CTransformation<U,m>& x) {
+
+    os << "# coordinate transformation" << endl;
 
     for(u_int i=0; i<m; i++) {
 
@@ -171,6 +181,25 @@ ostream& operator << (ostream& os, const CTransformation<U,m>& x) {
 
 }
 
+
+template <class U,u_int m>
+istream& operator >> (istream& is, CTransformation<U,m>& x) {
+
+    // get comment line
+    string linebuffer;
+    getline(is,linebuffer);
+
+    // read transformation
+    for(u_int i=0; i<m; i++) {
+
+        for(u_int j=0; j<(m+1); j++)
+            is >> x.m_F[m*j+i];
+
+    }
+
+    return is;
+
+}
 
 template <typename T,u_int n>
 bool CTransformation<T,n>::Invert() {
@@ -235,6 +264,28 @@ bool CTransformation<T,n>::Invert() {
 
 }
 
+template <typename T,u_int n>
+CDenseArray<T> CTransformation<T,n>::GetJacobian() {
+
+    CDenseArray<T> result(n,n);
+
+    memcpy(result.Data().get(),&m_F[0],n*n*sizeof(T));
+
+    return result;
+
+}
+
+template <typename T,u_int n>
+CVector<T,n> CTransformation<T,n>::GetTranslation() {
+
+    CVector<T,n> result;
+
+    for(u_int i=0; i<n; i++)
+        result(i) = m_F[n*n+i];
+
+    return result;
+
+}
 
 template class CTransformation<double,2>;
 template class CTransformation<float,2>;
@@ -244,6 +295,10 @@ template ostream& operator << (ostream& os, const CTransformation<double,3>& x);
 template ostream& operator << (ostream& os, const CTransformation<double,2>& x);
 template ostream& operator << (ostream& os, const CTransformation<float,3>& x);
 template ostream& operator << (ostream& os, const CTransformation<float,2>& x);
+template istream& operator >> (istream& is, CTransformation<double,3>& x);
+template istream& operator >> (istream& is, CTransformation<double,2>& x);
+template istream& operator >> (istream& is, CTransformation<float,3>& x);
+template istream& operator >> (istream& is, CTransformation<float,2>& x);
 
 template<typename T>
 CRotation<T,2>::CRotation(T o) {

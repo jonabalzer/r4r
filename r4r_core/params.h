@@ -31,7 +31,6 @@
 
 namespace R4R {
 
-
 /*! \brief container for user-definable parameters
  *
  *

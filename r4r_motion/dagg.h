@@ -42,10 +42,10 @@ public:
     void Aggregate();
 
     //! Aggregates over the entire tracker into a file.
-    virtual bool Aggregate(const char* filename, const char* comment = nullptr);
+    //virtual bool Aggregate(const char* filename, const char* comment = nullptr);
 
     //! Access to the aggregates.
-    list<CFeature>& Get() { return m_aggregate; }
+    list<imfeature>& Get() { return m_aggregate; }
 
 protected:
 
@@ -53,11 +53,11 @@ protected:
     virtual void AggregateTracklet(CTracklet* tracklet);
 
     //! Copies the feature including only the descriptors specified by #m_name.
-    CFeature CopyFeature(CFeature x);
+    imfeature CopyFeature(imfeature x);
 
     CTracker* m_tracker;                //! tracker to aggregate over
     string m_name;                      //! name of the descriptor to aggregate
-    list<CFeature> m_aggregate;         //! list of aggregated features
+    list<imfeature> m_aggregate;         //! list of aggregated features
 
 };
 

@@ -1096,6 +1096,28 @@ CDenseVector<T> CDenseArray<T>::operator*(const CDenseVector<T>& vector) const {
 
 }
 
+template<class T>
+template <u_int n> CVector<T,n> CDenseArray<T>::operator*(const CVector<T,n>& vector) const {
+
+    assert(m_ncols==n);
+
+    CVector<T,n> result;
+
+    for(size_t i=0; i<n; i++) {
+
+        T sum = 0;
+
+        for(size_t k=0; k<m_ncols; k++)
+            sum += Get(i,k)*(vector.Get(k));
+
+        result(i) = sum;
+
+    }
+
+    return result;
+
+}
+
 
 
 template <class T>
@@ -1230,6 +1252,11 @@ template ifstream& operator>> (ifstream& is, CDenseArray<size_t>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<bool>& x);
 template istream& operator>> (istream& is, CDenseArray<bool>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<bool>& x);
+template CVector<double,2> CDenseArray<double>::operator*(const CVector<double,2>& vector) const;
+template CVector<double,3> CDenseArray<double>::operator*(const CVector<double,3>& vector) const;
+template CVector<float,2> CDenseArray<float>::operator*(const CVector<float,2>& vector) const;
+template CVector<float,3> CDenseArray<float>::operator*(const CVector<float,3>& vector) const;
+
 
 template <class T>
 CDenseVector<T>::CDenseVector():
@@ -1273,6 +1300,20 @@ CDenseVector<T> CDenseVector<T>::operator=(const CDenseVector<T>& vector) {
     return *this;
 
 }
+
+template <class T>
+template<u_int n>
+CDenseVector<T>::CDenseVector(CVector<T,n>& x):
+    CDenseArray<T>::CDenseArray(n,1) {
+
+    memcpy(m_data.get(),x.Data(),n*sizeof(T));
+
+}
+
+template CDenseVector<double>::CDenseVector<3>(CVector<double,3>& x);
+template CDenseVector<double>::CDenseVector<2>(CVector<double,2>& x);
+template CDenseVector<float>::CDenseVector<3>(CVector<float,3>& x);
+template CDenseVector<float>::CDenseVector<2>(CVector<float,2>& x);
 
 template <class T>
 CDenseVector<T> CDenseVector<T>::Clone() {
@@ -1418,6 +1459,7 @@ template class CDenseVector<float>;
 template class CDenseVector<int>;
 template class CDenseVector<size_t>;
 template class CDenseVector<bool>;
+template class CDenseVector<u_char>;
 
 
 template <class T>

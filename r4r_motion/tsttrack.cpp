@@ -29,6 +29,7 @@
 #include "feature.h"
 #include "lk.h"
 #include "interp.h"
+#include "types.h"
 
 using namespace cv;
 using namespace std;
@@ -71,7 +72,8 @@ void CTST::Detect(vector<Mat>& pyramid) {
 				if(cimg.EvaluateFast(keypoints[i].pt.x,keypoints[i].pt.y,hsize,hsize)==1) {
 
 					// create feature
-                    CFeature x(keypoints[i].pt.x,keypoints[i].pt.y,s,0);
+                    vec2f loc = { keypoints[i].pt.x, keypoints[i].pt.y };
+                    feature x(loc,s,0);
 
 					// compute descriptor
 					CRectangle<double> roi(keypoints[i].pt.x,
@@ -90,8 +92,8 @@ void CTST::Detect(vector<Mat>& pyramid) {
 #endif
 
 					// create new tracklet
-                    shared_ptr<CSTTracklet> tracklet(new CSTTracklet(m_global_t,x.GetScale(),x));
-					AddTracklet(tracklet);
+                    shared_ptr<CSTTracklet> tracklet(new CSTTracklet(m_global_t,x));
+                    push_back(tracklet);
 
 				}
 
@@ -110,17 +112,13 @@ bool CTST::Init(vector<Mat>& pyramid) {
     size_t s = m_params->GetIntParameter("SCALE") + 1;
 
 	// root node will be center of image
-	vec center(2);
-	center(0) = 0.5*(pyramid[0].cols-1);
-	center(1) = 0.5*(pyramid[0].rows-1);
-	center.Scale((1/pow(2,s)));
-
-	// create the root feature
-    CFeature x(center(0),center(1),s);
+    vec2f center = { float(0.5*(pyramid[0].cols-1)), float(0.5*(pyramid[0].rows-1)) };
+    center = center*(1.0/pow(2,s));
+    feature x(center,s,0);
 
 	// create a new tracklet
-    shared_ptr<CSTTracklet> tracklet(new CSTTracklet(m_global_t,x.GetScale(),x));
-	AddTracklet(tracklet);
+    shared_ptr<CSTTracklet> tracklet(new CSTTracklet(m_global_t,x));
+    push_back(tracklet);
 
 	// make virtual node root of the tree
 	m_root = tracklet;
@@ -205,7 +203,7 @@ shared_ptr<CSTTracklet> CTST::FindParent(shared_ptr<CTracklet> tracklet) {
 
 void CTST::DrawChildren(cv::Mat& img, shared_ptr<CSTTracklet> node) {
 
-	vec parent = node->GetLatestLocationAtNativeScale();
+    vec2f parent = node->GetLatestLocationAtNativeScale();
 
 	set<shared_ptr<CSTTracklet> >::iterator it;
 
@@ -216,7 +214,7 @@ void CTST::DrawChildren(cv::Mat& img, shared_ptr<CSTTracklet> node) {
 
 			size_t s = (*it)->GetScale();
 
-            (*it)->GetLatestState().Draw(img,CFeature::COLORS[s],(m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE")+1)*pow(2,s));
+            //(*it)->GetLatestState().Draw(img,CFeature::COLORS[s],(m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE")+1)*pow(2,s));
 
 		}
 
@@ -367,14 +365,14 @@ void CTST::PruneTree(shared_ptr<CSTTracklet> node) {
 }
 
 
-void CTST::TrackSubTree(std::vector<cv::Mat>& pyramid0, vector<Mat>& pyramid1, shared_ptr<CSTTracklet> node, vec t0) {
+void CTST::TrackSubTree(std::vector<cv::Mat>& pyramid0, vector<Mat>& pyramid1, shared_ptr<CSTTracklet> node, vec2f t0) {
 
     size_t hdist = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE");
 
-	vec u0 = node->GetLatestLocation();
+    vec2f u0 = node->GetLatestLocation();
 
 	// predict position
-	vec u1 = u0 + t0;
+    vec2f u1 = u0 + t0;
 
 	if(node->GetStatus()) {
 
@@ -421,11 +419,8 @@ void CTST::TrackSubTree(std::vector<cv::Mat>& pyramid0, vector<Mat>& pyramid1, s
 		u1(0) = roid.tl().x + candidates[0].pt.x;			// ok, keypoints are 0-based
 		u1(1) = roid.tl().y + candidates[0].pt.y;
 
-        CFeature x(u1(0),u1(1),node->GetScale(),0);
+        feature x(u1,node->GetScale(),0);
 		node->Update(x);
-
-
-
 
 	}
 	else {
@@ -441,17 +436,17 @@ void CTST::TrackSubTree(std::vector<cv::Mat>& pyramid0, vector<Mat>& pyramid1, s
 
 	// motion estimation for children
 	set<shared_ptr<CSTTracklet> >::iterator it;
-	vec t1 = u1 - u0;
+    vec2f t1 = u1 - u0;
 
 	for(it=node->m_children.begin(); it!=node->m_children.end(); it++) {
 
 		size_t sd = node->GetScale() - (*it)->GetScale();
 
 		// convert to children's scale
-		vec t1s = t1*pow(2,sd);
+        vec2f t1s = t1*pow(2,sd);
 
 		if(!node->GetStatus())		// only push down initialization if feature is valid
-			t1s.Scale(0);
+            t1s = 0*t1s;
 
 		TrackSubTree(pyramid0,pyramid1,(*it),t1s);
 
@@ -642,11 +637,11 @@ bool CTSTLK::Init(vector<Mat>& pyramid) {
     size_t s = m_params->GetIntParameter("SCALE");
 
 	// root node will be center of image
-	Point2f center(0.5*(pyramid[0].cols-1),0.5*(pyramid[0].rows-1));
+    vec2f center { float(0.5*(pyramid[0].cols-1)),float(0.5*(pyramid[0].rows-1)) };
 	center = (1/pow(2,s))*center;
 
 	// create the root feature
-    CFeature x0(center.x,center.y,s);
+    feature x0(center,s,0);
 
 	// create a new tracklet
 	shared_ptr<CTracklet> tracklet = AddTracklet(x0);
@@ -668,7 +663,7 @@ bool CTSTLK::ValidateDescendants(Mat& img, CTSTNode* node) {
 	size_t s = node->m_tracklet->GetScale() - 1;
 
 	// get the current feature state from tracklet attached to the node
-	vec xp = node->m_tracklet->GetLatestLocation();
+    vec2f xp = node->m_tracklet->GetLatestLocation();
 
 	// get appropriately scaled bounding box around feature
 	Rect_<float> roi;
@@ -699,7 +694,7 @@ bool CTSTLK::ValidateDescendants(Mat& img, CTSTNode* node) {
 	for(it=node->m_children.begin(); it!=node->m_children.end(); it++) {
 
 		// get the latest state of the children
-		vec xc = (*it)->m_tracklet->GetLatestLocation();
+        vec2f xc = (*it)->m_tracklet->GetLatestLocation();
 
 		// set input of integral image to one
 		cimg.AddDensityFast(xc(0)-roi.tl().x,xc(1)-roi.tl().y,1);
@@ -711,7 +706,7 @@ bool CTSTLK::ValidateDescendants(Mat& img, CTSTNode* node) {
 
 	for(it=node->m_children.begin(); it!=node->m_children.end(); it++) {
 
-		vec xc = (*it)->m_tracklet->GetLatestLocation();
+        vec2f xc = (*it)->m_tracklet->GetLatestLocation();
 
 		size_t no = cimg.EvaluateFast(xc(0)-roi.tl().x,
 						 	 	 	  xc(1)-roi.tl().y,
@@ -755,7 +750,7 @@ bool CTSTLK::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 			for(it=nodes[s].begin(); it!=nodes[s].end(); it++) {
 
-				vec x0 = (*it)->m_tracklet->GetLatestLocation();
+                vec2f x0 = (*it)->m_tracklet->GetLatestLocation();
 				points0[counter] = Point2f(x0(0),x0(1));
 
 				// do not use initial value of invalid parent
@@ -764,10 +759,10 @@ bool CTSTLK::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 				else {
 
 					// get velocity from parent which has been already updated
-					vec vp = (*it)->m_parent->m_tracklet->GetLatestVelocity();
+                    vec2f vp = (*it)->m_parent->m_tracklet->GetLatestVelocity();
 
 					// get current location of node at current level
-					vec x = (*it)->m_tracklet->GetLatestLocation();
+                    vec2f x = (*it)->m_tracklet->GetLatestLocation();
 
 					// predict the new state of node at current level by parent's velocity scaled correctly
 					points1[counter] = Point2f(x(0)+2*vp(0),x(1)+2*vp(0));
@@ -802,7 +797,8 @@ bool CTSTLK::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 				if(status[counter] && points1[counter].x>=1 && points1[counter].x<=pyramid0[s].cols-2 && points1[counter].y>=1 && points1[counter].y<=pyramid0[s].rows-2) {
 
 					// create new feature
-                    CFeature x(points1[counter].x,points1[counter].y,s,error[counter]);
+                    vec2f loc = { points1[counter].x , points1[counter].y };
+                    feature x(loc,s,error[counter]);
 
 					// append feature at the end of the track
 					(*it)->m_tracklet->Update(x);
@@ -882,7 +878,7 @@ void CTSTLK::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 	}
 
-	// FIXME: counter number of trees recursively
+    // FIXME: count number of trees recursively
 
 }
 
@@ -902,7 +898,7 @@ bool CTSTLK::Reproduce(vector<Mat>& pyramid, CTSTNode* node) {
 	size_t s = node->m_tracklet->GetScale() - 1;
 
 	// get the current feature state from tracklet attached to the node
-	vec xp = node->m_tracklet->GetLatestLocation();
+    vec2f xp = node->m_tracklet->GetLatestLocation();
 
 	// get appropriately scaled bounding box around feature
 	Rect_<float> roi;
@@ -953,9 +949,9 @@ bool CTSTLK::Reproduce(vector<Mat>& pyramid, CTSTNode* node) {
 	for(it=node->m_children.begin(); it!=node->m_children.end(); it++) {
 
 		// get the latest state of the children w.r.t. bounding box origin
-		vec xc = (*it)->m_tracklet->GetLatestLocation();
+        vec2f xc = (*it)->m_tracklet->GetLatestLocation();
 
-		cimg.AddDensityFast(xc(0),xc(1),1);
+        cimg.AddDensityFast(xc.Get(0),xc.Get(1),1);
 
 	}
 
@@ -973,10 +969,11 @@ bool CTSTLK::Reproduce(vector<Mat>& pyramid, CTSTNode* node) {
 		if(no==1) {
 
 			// transform feature location back to image coordinates
-			Point2f feature = roi.tl() + keypoints[i].pt;
+            Point2f f = roi.tl() + keypoints[i].pt;
 
 			// create new feature and a track for it
-            CFeature x(feature.x,feature.y,s);
+            vec2f loc = {f.x,f.y};
+            feature x(loc,s,0);
 			shared_ptr<CTracklet> tracklet = AddTracklet(x);
 
 			// insert new node into the tree
@@ -996,39 +993,6 @@ bool CTSTLK::Reproduce(vector<Mat>& pyramid, CTSTNode* node) {
 	return 0;
 
 }
-
-/*
-
-void CTSTLK::Draw(Mat& img) {
-
-	list<shared_ptr<CTracklet> >::iterator it;
-
-	for(size_t s=0; s<size(); s++) {
-
-		for(it=at(s).begin(); it!=at(s).end(); it++) {
-
-			if((*it)->GetStatus() && s!=(size_t)m_params.GetIntParameter("SCALE")) {
-
-				vec x = (*it)->GetLatestLocation();
-
-				Rect_<float> roi(pow(2,s)*(x(0)-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
-								 pow(2,s)*(x(1)-m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE")),
-								 pow(2,s+1)*m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"),
-								 pow(2,s+1)*m_params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE"));
-
-				rectangle(img,roi.tl(),roi.br(),CFeature::COLORS[s],1);
-
-			}
-
-		}
-
-	}
-
-}
-*/
-
-
-
 
 
 }	// end of namespace

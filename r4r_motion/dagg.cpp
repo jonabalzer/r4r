@@ -44,15 +44,11 @@ void CDescriptorAggregator<Array>::Aggregate() {
 
     list<shared_ptr<CTracklet> >::iterator it;
 
-    for(size_t s=0; s<m_tracker->size(); s++) {
+    for(it=m_tracker->begin(); it!=m_tracker->end(); it++) {
 
-        for(it=m_tracker->at(s).begin(); it!=m_tracker->at(s).end(); it++) {
+        cout << ".";
 
-            cout << ".";
-
-            AggregateTracklet((*it).get());
-
-        }
+        AggregateTracklet((*it).get());
 
     }
 
@@ -63,16 +59,16 @@ void CDescriptorAggregator<Array>::Aggregate() {
 template <class Array>
 void CDescriptorAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
 
-    list<CFeature>::iterator it = tracklet->begin();
+    list<imfeature>::iterator it = tracklet->begin();
 
     // keep the first feature as reference
-    CFeature x0 = *it;
+    imfeature x0 = *it;
 
     for(it; it!=tracklet->end(); it++) {
 
         if(it->HasDescriptor(m_name.c_str())) {
 
-            CFeature x = CDescriptorAggregator<Array>::CopyFeature(*it);
+            imfeature x = CDescriptorAggregator<Array>::CopyFeature(*it);
 
             // copy properties of reference feature
             x.m_scale = x0.m_scale;
@@ -88,141 +84,136 @@ void CDescriptorAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
 
 }
 
-template <class Array>
-bool CDescriptorAggregator<Array>::Aggregate(const char* filename, const char* comment) {
+//template <class Array>
+//bool CDescriptorAggregator<Array>::Aggregate(const char* filename, const char* comment) {
 
-    string fndata;
+//    string fndata;
 
-    // check if file exists
-    ifstream in(filename);
-    bool exists = in.good();
+//    // check if file exists
+//    ifstream in(filename);
+//    bool exists = in.good();
 
-    if(exists) {
+//    if(exists) {
 
-        string usercomment;
-        getline(in,usercomment);
-        getline(in,fndata);
+//        string usercomment;
+//        getline(in,usercomment);
+//        getline(in,fndata);
 
-    }
+//    }
 
-    in.close();
+//    in.close();
 
-    // open header file
-    ofstream headers(filename,ios_base::app);
+//    // open header file
+//    ofstream headers(filename,ios_base::app);
 
-    if(!headers.is_open()) {
+//    if(!headers.is_open()) {
 
-        cout << "ERROR: Could not open file." << endl;
-        return 1;
+//        cout << "ERROR: Could not open file." << endl;
+//        return 1;
 
-    }
+//    }
 
-    // if the file is empty, create header
-    if(!exists) {
+//    // if the file is empty, create header
+//    if(!exists) {
 
-        headers << "# created by r4r_motion" << endl;
+//        headers << "# created by r4r_motion" << endl;
 
-        stringstream ss;
-        ss << filename << ".dat";
-        fndata = ss.str();
-        headers << fndata;
+//        stringstream ss;
+//        ss << filename << ".dat";
+//        fndata = ss.str();
+//        headers << fndata;
 
-    }
+//    }
 
-    // write headers
-    list<shared_ptr<CTracklet> >::iterator it;
+//    // write headers
+//    list<shared_ptr<CTracklet> >::iterator it;
 
-    // go through tracklets
-    for(size_t s=0; s<m_tracker->size(); s++) {
+//    // go through tracklets
+//    for(it=m_tracker->begin(); it!=m_tracker->end(); it++) {
 
-        for(it=m_tracker->at(s).begin(); it!=m_tracker->at(s).end(); it++) {
+//        string hash = (*it)->GetHash();
 
-            string hash = (*it)->GetHash();
+//        list<feature>::iterator itf;
 
-            list<CFeature>::iterator itf;
+//        for(itf=(*it)->begin(); itf!=(*it)->end(); itf++) {
 
-            for(itf=(*it)->begin(); itf!=(*it)->end(); itf++) {
+//            if(itf->HasDescriptor(m_name.c_str())) {
 
-                if(itf->HasDescriptor(m_name.c_str())) {
+//                // break line first
+//                headers << endl;
 
-                    // break line first
-                    headers << endl;
+//                // create header and write it
+//                CDescriptorFileHeader header(*itf);
+//                header.SetDescriptor(*itf,m_name.c_str());
+//                header.SetComment((string(comment)+string("_")+hash).c_str());
 
-                    // create header and write it
-                    CDescriptorFileHeader header(*itf);
-                    header.SetDescriptor(*itf,m_name.c_str());
-                    header.SetComment((string(comment)+string("_")+hash).c_str());
+//                headers << header;
 
-                    headers << header;
+//            }
 
-                }
+//        }
 
-            }
+//    }
 
-        }
 
-    }
 
-    headers.close();
+//    headers.close();
 
-    // now write data
-    ofstream data(fndata,ios_base::app);
+//    // now write data
+//    ofstream data(fndata,ios_base::app);
 
-    if(!data.is_open()) {
+//    if(!data.is_open()) {
 
-        cout << "ERROR: Could not open file." << endl;
-        return 1;
+//        cout << "ERROR: Could not open file." << endl;
+//        return 1;
 
-    }
+//    }
 
-    // go through tracklets again
-    for(size_t s=0; s<m_tracker->size(); s++) {
+//    // go through tracklets again
+//    for(it=m_tracker->begin(); it!=m_tracker->end(); it++) {
 
-        for(it=m_tracker->at(s).begin(); it!=m_tracker->at(s).end(); it++) {
+//        list<feature>::iterator itf;
 
-            list<CFeature>::iterator itf;
+//        for(itf=(*it)->begin(); itf!=(*it)->end(); itf++) {
 
-            for(itf=(*it)->begin(); itf!=(*it)->end(); itf++) {
+//            if(itf->HasDescriptor(m_name.c_str())) {
 
-                if(itf->HasDescriptor(m_name.c_str())) {
+//                shared_ptr<CAbstractDescriptor> pdesc = itf->GetDescriptor(m_name.c_str());
 
-                    shared_ptr<CAbstractDescriptor> pdesc = itf->GetDescriptor(m_name.c_str());
+//                // write type
+//                ETYPE type = pdesc->GetType();
 
-                    // write type
-                    ETYPE type = pdesc->GetType();
+//                // access to data
+//                void* pdata = pdesc->GetData();
 
-                    // access to data
-                    void* pdata = pdesc->GetData();
+//                // write data depending on number of bytes
+//                if(type==ETYPE::B1U || type == ETYPE::C1U || type == ETYPE::C1S)
+//                    data.write((char*)(pdata),sizeof(char)*pdesc->NElems());
+//                else if(type==ETYPE::S2U || type == ETYPE::S2S)
+//                    data.write((char*)(pdata),sizeof(short)*pdesc->NElems());
+//                else if(type==ETYPE::I4S || type==ETYPE::I4U || type==ETYPE::F4S)
+//                    data.write((char*)(pdata),sizeof(int)*pdesc->NElems());
+//                else if(type==ETYPE::L8S || type==ETYPE::L8U || type==ETYPE::D8S)
+//                    data.write((char*)(pdata),sizeof(double)*pdesc->NElems());
 
-                    // write data depending on number of bytes
-                    if(type==ETYPE::B1U || type == ETYPE::C1U || type == ETYPE::C1S)
-                        data.write((char*)(pdata),sizeof(char)*pdesc->NElems());
-                    else if(type==ETYPE::S2U || type == ETYPE::S2S)
-                        data.write((char*)(pdata),sizeof(short)*pdesc->NElems());
-                    else if(type==ETYPE::I4S || type==ETYPE::I4U || type==ETYPE::F4S)
-                        data.write((char*)(pdata),sizeof(int)*pdesc->NElems());
-                    else if(type==ETYPE::L8S || type==ETYPE::L8U || type==ETYPE::D8S)
-                        data.write((char*)(pdata),sizeof(double)*pdesc->NElems());
+//            }
 
-                }
+//        }
 
-            }
+//    }
 
-        }
+//    data.close();
 
-    }
+//    return 0;
 
-    data.close();
-
-    return 0;
-
-}
+//}
 
 template <class Array>
-CFeature CDescriptorAggregator<Array>::CopyFeature(CFeature x) {
+imfeature CDescriptorAggregator<Array>::CopyFeature(imfeature x) {
 
     // don't copy all the old descriptors
-    CFeature result(x.GetLocation(),x.GetScale(),x.GetQuality());
+    vec2f loc = x.GetLocation();
+    imfeature result(loc,x.GetScale(),x.GetQuality());
 
     if(x.HasDescriptor(m_name.c_str())) {
 
@@ -241,7 +232,7 @@ CFeature CDescriptorAggregator<Array>::CopyFeature(CFeature x) {
 template <class Array>
 void CInitFrameAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
 
-    CFeature x = CDescriptorAggregator<Array>::CopyFeature(*tracklet->begin());
+    imfeature x = CDescriptorAggregator<Array>::CopyFeature(*tracklet->begin());
 
     if(x.HasDescriptor(m_name.c_str()))
         m_aggregate.push_back(x);
@@ -257,10 +248,10 @@ CSubsampleAggregator<Array>::CSubsampleAggregator(CTracker* tracker, const char*
 template <class Array>
 void CSubsampleAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
 
-    list<CFeature>::iterator it = tracklet->begin();
+    list<imfeature>::iterator it = tracklet->begin();
 
     // keep the first feature as reference
-    CFeature x0 = *it;
+    imfeature x0 = *it;
 
     size_t counter = 0;
 
@@ -268,7 +259,7 @@ void CSubsampleAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
 
         if(counter%m_n==0 && it->HasDescriptor(m_name.c_str())) {
 
-            CFeature x = CDescriptorAggregator<Array>::CopyFeature(*it);
+            imfeature x = CDescriptorAggregator<Array>::CopyFeature(*it);
 
             // copy properties of reference feature
             x.m_scale = x0.m_scale;
@@ -291,7 +282,7 @@ template <class Array>
 void CMeanAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
 
     // access the first descriptor
-    list<CFeature>::iterator it = tracklet->begin();
+    list<imfeature>::iterator it = tracklet->begin();
 
     shared_ptr<CDescriptor<Array> > pdesc;
     if(it->HasDescriptor(m_name.c_str()))
@@ -323,8 +314,9 @@ void CMeanAggregator<Array>::AggregateTracklet(CTracklet* tracklet) {
         mean.Scale(1.0d/(double)counter);
 
     // create new feature/descriptor pair
-    CFeature x0 = *tracklet->begin();
-    CFeature result(x0.GetLocation(),x0.GetScale(),x0.GetQuality());
+    imfeature x0 = *tracklet->begin();
+    vec2f loc = x0.GetLocation();
+    imfeature result(loc,x0.GetScale(),x0.GetQuality());
     shared_ptr<CDescriptor<matf> > desc = shared_ptr<CDescriptor<matf> >(new CDescriptor<matf>(mean));
     result.AttachDescriptor(m_name.c_str(),desc);
     m_aggregate.push_back(result);
@@ -348,7 +340,7 @@ void CSplineInterpolationAggregator<Array>::AggregateTracklet(CTracklet* trackle
         return;
 
     // access the first descriptor
-    list<CFeature>::iterator it = tracklet->begin();
+    list<imfeature>::iterator it = tracklet->begin();
 
     shared_ptr<CDescriptor<Array> > pdesc;
     if(it->HasDescriptor(m_name.c_str()))
@@ -460,8 +452,9 @@ void CSplineInterpolationAggregator<Array>::AggregateTracklet(CTracklet* trackle
     }
 
     // create new feature/descriptor pair
-    CFeature x0 = *tracklet->begin();
-    CFeature result(x0.GetLocation(),x0.GetScale(),x0.GetQuality());
+    imfeature x0 = *tracklet->begin();
+    vec2f loc = x0.GetLocation();
+    imfeature result(loc,x0.GetScale(),x0.GetQuality());
     shared_ptr<CDescriptor<matf> > desc = shared_ptr<CDescriptor<matf> >(new CDescriptor<matf>(cv));
     result.AttachDescriptor(m_name.c_str(),desc);
     m_aggregate.push_back(result);
