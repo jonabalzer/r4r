@@ -7,7 +7,6 @@ SUBDIRS += \
     mv_descriptor_learning \
     scratch \
     r4r_hardware \
-    iotest \
     clam
 
 QMAKE_CXXFLAGS += -std=c++0x

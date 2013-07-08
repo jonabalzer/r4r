@@ -28,14 +28,13 @@
 #include "trafo.h"
 #include "interp.h"
 
-
 #include <fstream>
 
 using namespace cv;
 
 namespace R4R {
 
-CMotionTracker::CMotionTracker(CParameters* params, CPinholeCam cam):
+CMotionTracker::CMotionTracker(CParameters* params, CPinholeCam& cam):
         CSimpleTracker(params),
         m_cam(cam),
         m_motion() {
@@ -846,10 +845,6 @@ vec CMagicSfM::ComputeDispersion(const vec& r) {
 
 }
 
-
-
-
-
 //CSfMTrackerUpdate::CSfMTrackerUpdate(CCam cam, vector<CTracklet*> map, cv::Mat& img0, cv::Mat& img1, size_t hsize):
 //	CLeastSquaresProblem(map.size()*(2*hsize+1)*(2*hsize+1),6),
 //	m_cam(cam),
@@ -857,7 +852,6 @@ vec CMagicSfM::ComputeDispersion(const vec& r) {
 //	m_img0(img0),
 //	m_img1(img1),
 //	m_hsize(hsize) {
-
 
 //}
 

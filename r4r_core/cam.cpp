@@ -84,19 +84,26 @@ vector<vec3f> CAbstractCam::Normalize(const vector<vec2f>& u) const {
 
 CPinholeCam::CPinholeCam() {
 
-    m_size[0] = 0;
-    m_size[1] = 0;
-    m_f[0] = 0;
-    m_f[1] = 0;
-    m_c[0] = 0;
-    m_c[1] = 0;
-
-    for(size_t i=0;i<5;i++)
-        m_k[i]=0;
-
+    fill_n(m_size,2,0);
+    fill_n(m_f,2,0);
+    fill_n(m_c,2,0);
+    fill_n(m_k,5,0);
     m_alpha = 0;
 
 }
+
+CPinholeCam::CPinholeCam(double fu, double fv, double cu, double cv) {
+
+    fill_n(m_size,2,0);
+    m_f[0] = fu;
+    m_f[1] = fv;
+    m_c[0] = cu;
+    m_c[1] = cv;
+    fill_n(m_k,5,0);
+    m_alpha = 0;
+
+}
+
 
 CPinholeCam::CPinholeCam(size_t w, size_t h) {
 

@@ -90,11 +90,12 @@ string CParameters::GetStringParameter(const char* name) {
 	}
 	catch(const char* str) {
 
-		cout << "ERROR: Parameter " << str << " was not loaded. Enter it now: ";
+        cout << "ERROR: Parameter " << str << " was not loaded." << endl; // Enter it now: ";
 
-		cin >> param;
+        //cin >> param;
+        param = string("-1");
 
-		Set(name,param.c_str());
+        Set(name,param.c_str());
 
 	}
 
@@ -116,9 +117,10 @@ int CParameters::GetIntParameter(const char* name) {
 	}
 	catch(const char* str) {
 
-		cout << "ERROR: Parameter " << str << " was not loaded. Enter it now: ";
+        cout << "ERROR: Parameter " << str << " was not loaded." << endl; // Enter it now: ";
 
-		cin >> param;
+        //cin >> param;
+        param = -1;
 
 		Set(name,param);
 
@@ -142,11 +144,10 @@ double CParameters::GetDoubleParameter(const char* name) {
 	}
 	catch(const char* str) {
 
-		cout << "ERROR: Parameter " << str << " was not loaded. Enter it now: ";
+        cout << "ERROR: Parameter " << str << " was not loaded." << endl; // Enter it now: ";
 
-
-
-		cin >> param;
+        //cin >> param;
+        param = -1;
 
 		Set(name,param);
 
@@ -171,10 +172,10 @@ vector<int> CParameters::GetIntsParameter(const char* name) {
     }
     catch(const char* str) {
 
-        cout << "ERROR: Parameter " << str << " was not loaded.";
-        cout << "Enter list of integers. Stop input by entering -1:" << endl;
+        cout << "ERROR: Parameter " << str << " was not loaded." << endl;
+        //cout << "Enter list of integers. Stop input by entering -1:" << endl;
 
-        int input;
+        /*int input;
 
         while(true) {
 
@@ -185,7 +186,9 @@ vector<int> CParameters::GetIntsParameter(const char* name) {
             else
               param.push_back(input);
 
-        }
+        }*/
+
+        param.push_back(-1);
 
         Set(name,param);
 

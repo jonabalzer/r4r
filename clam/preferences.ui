@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>628</width>
+    <width>627</width>
     <height>423</height>
    </rect>
   </property>
@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -354,7 +354,7 @@
       <rect>
        <x>20</x>
        <y>10</y>
-       <width>361</width>
+       <width>321</width>
        <height>231</height>
       </rect>
      </property>
@@ -366,106 +366,343 @@
        <rect>
         <x>20</x>
         <y>30</y>
-        <width>331</width>
+        <width>292</width>
         <height>161</height>
        </rect>
       </property>
-      <layout class="QGridLayout" name="rgbLayout_2">
+      <layout class="QGridLayout" name="camLayout">
        <item row="0" column="0">
-        <widget class="QLabel" name="fRgbLabel_2">
+        <widget class="QLabel" name="fLabel">
          <property name="text">
           <string>Focal lengths</string>
          </property>
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="QLineEdit" name="fvRgbEdit_2">
+        <widget class="QLineEdit" name="fvEdit">
          <property name="text">
-          <string>534.51</string>
+          <string>1208.7</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="cuRgbEdit_2">
+        <widget class="QLineEdit" name="cuEdit">
          <property name="text">
-          <string>315.30</string>
+          <string>636.01</string>
          </property>
         </widget>
        </item>
        <item row="4" column="2">
-        <widget class="QLineEdit" name="k3Edit_2">
+        <widget class="QLineEdit" name="k3Edit">
          <property name="text">
-          <string>-0.0002</string>
+          <string>0</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLineEdit" name="fuRgbEdit_2">
+        <widget class="QLineEdit" name="fuEdit">
          <property name="text">
-          <string>533.15</string>
+          <string>1205.62</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
-        <widget class="QLabel" name="radLabel_2">
+        <widget class="QLabel" name="radLabel">
          <property name="text">
           <string>Radial</string>
          </property>
         </widget>
        </item>
        <item row="3" column="2">
-        <widget class="QLineEdit" name="k1Edit_2">
+        <widget class="QLineEdit" name="k1Edit">
          <property name="text">
-          <string>-0.3772</string>
+          <string>0</string>
          </property>
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QLineEdit" name="k0Edit_2">
+        <widget class="QLineEdit" name="k0Edit">
          <property name="text">
-          <string>0.0728</string>
+          <string>0</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="cRgbLabel_2">
+        <widget class="QLabel" name="cLabel">
          <property name="text">
           <string>Principal point</string>
          </property>
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="tanLabel_2">
+        <widget class="QLabel" name="tanLabel">
          <property name="text">
           <string>Tangential</string>
          </property>
         </widget>
        </item>
        <item row="4" column="1">
-        <widget class="QLineEdit" name="k2Edit_2">
+        <widget class="QLineEdit" name="k2Edit">
          <property name="text">
-          <string>0.0060</string>
+          <string>0</string>
          </property>
         </widget>
        </item>
        <item row="3" column="3">
-        <widget class="QLineEdit" name="k4Edit_2">
+        <widget class="QLineEdit" name="k4Edit">
          <property name="text">
-          <string> 0.4652</string>
+          <string>0</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="distLabel_2">
+        <widget class="QLabel" name="distLabel">
          <property name="text">
           <string>Distortion</string>
          </property>
         </widget>
        </item>
        <item row="1" column="2">
-        <widget class="QLineEdit" name="cvRgbEdit_2">
+        <widget class="QLineEdit" name="cvEdit">
          <property name="text">
-          <string>245.98</string>
+          <string>353.35</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="otherGroupBox">
+     <property name="geometry">
+      <rect>
+       <x>350</x>
+       <y>10</y>
+       <width>241</width>
+       <height>91</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Other</string>
+     </property>
+     <widget class="QWidget" name="horizontalLayoutWidget_19">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>30</y>
+        <width>165</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="kfrLayout">
+       <item>
+        <widget class="QLabel" name="kfrLabel">
+         <property name="text">
+          <string>Keyframe rate</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="kfrSpinBox">
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_25">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>60</y>
+        <width>171</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="z0Layout">
+       <item>
+        <widget class="QLabel" name="z0label">
+         <property name="text">
+          <string>Init distance</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="z0Edit">
+         <property name="text">
+          <string>10</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="solverGroupBox">
+     <property name="geometry">
+      <rect>
+       <x>350</x>
+       <y>110</y>
+       <width>251</width>
+       <height>211</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>BA Solver</string>
+     </property>
+     <widget class="QWidget" name="horizontalLayoutWidget_20">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>202</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="cglsNiterLayout">
+       <item>
+        <widget class="QLabel" name="cglsNiterLabel">
+         <property name="text">
+          <string>Max CGLS iterations</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="cglsNiterSpinBox">
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_22">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>90</y>
+        <width>231</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="lmNiterOuterLayout">
+       <item>
+        <widget class="QLabel" name="lmNiterOuterLabel">
+         <property name="text">
+          <string>Max outer LM iterations</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="lmNiterOuterSpinBox">
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="value">
+          <number>200</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_23">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>120</y>
+        <width>226</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="lmNiterInnerLayout">
+       <item>
+        <widget class="QLabel" name="lmNiterInnerLabel">
+         <property name="text">
+          <string>Max inner LM iterations</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="lmNiterInnerSpinBox">
+         <property name="value">
+          <number>2</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_24">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>150</y>
+        <width>151</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="lmEpsLayout">
+       <item>
+        <widget class="QLabel" name="lmEpsLabel">
+         <property name="text">
+          <string>LM Accuracy</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lmEpsEdit">
+         <property name="text">
+          <string>0.1</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_21">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>60</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="cglsEpsLayout">
+       <item>
+        <widget class="QLabel" name="cglsEpsLabel">
+         <property name="text">
+          <string>CGLS accuracy</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="cglsEpsEdit">
+         <property name="text">
+          <string>1e-20</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_26">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>180</y>
+        <width>141</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="lmLambdaLayout">
+       <item>
+        <widget class="QLabel" name="lmLambdaLabel">
+         <property name="text">
+          <string>LM Weight</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lmLambdaEdit">
+         <property name="text">
+          <string>0.1</string>
          </property>
         </widget>
        </item>
