@@ -1,8 +1,10 @@
 #include "preferences.h"
 #include "ui_preferences.h"
 
-#include <iostream>
 #include <QFileDialog>
+
+#include <iostream>
+
 
 Preferences::Preferences(QWidget *parent) :
     QWidget(parent),
@@ -102,6 +104,26 @@ void Preferences::on_loadButton_clicked() {
     params.OpenFromFile(filename.toStdString().c_str());
 
     ui->scaleSpinBox->setValue(params.GetIntParameter("SCALE"));
+    ui->thresholdEdit->setText(QString::number(params.GetDoubleParameter("FEATURE_THRESHOLD")));
+    ui->minFeatEdit->setText(QString::number(params.GetIntParameter("MIN_NO_FEATURES")));
+    ui->trackSizeEdit->setText(QString::number(params.GetIntParameter("TRACKING_HSIZE")));
+    ui->descSizeEdit->setText(QString::number(params.GetIntParameter("DESCRIPTOR_HSIZE")));
+    ui->sigmaEdit->setText(QString::number(params.GetDoubleParameter("GRAD_SMOOTH_SIGMA")));
+    ui->minInitDistEdit->setText(QString::number(params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT")));
+    ui->minDistEdit->setText(QString::number(params.GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN")));
+    ui->hammingEdit->setText(QString::number(params.GetIntParameter("MAX_HAMMING_DISTANCE")));
+    ui->lkLevelSpinBox->setValue(params.GetIntParameter("LK_PYRAMID_LEVEL"));
+    ui->maxIterEdit->setText(QString::number(params.GetIntParameter("MAX_ITER")));
+    ui->accEdit->setText(QString::number(params.GetDoubleParameter("ACCURACY")));
+    ui->lambdaEdit->setText(QString::number(params.GetDoubleParameter("LAMBDA")));
+    ui->alphaEdit->setText(QString::number(params.GetDoubleParameter("ALPHA_GRAD_NORM")));
+    ui->idOnCheckBox->setChecked((bool)params.GetIntParameter("COMPUTE_ID"));
+    ui->idNormComboBox->setCurrentIndex(params.GetIntParameter("NORMALIZE_ID"));
+    ui->gradOnCheckBox->setChecked((bool)params.GetIntParameter("COMPUTE_GRAD"));
+    ui->gradNormComboBox->setCurrentIndex(params.GetIntParameter("NORMALIZE_GRAD"));
+    ui->aggComboBox->setCurrentIndex(params.GetIntParameter("AGGREGATOR"));
+    ui->downSampleEdit->setText(QString::number(params.GetIntParameter("AGG_DS")));
+    ui->hogOnCheckBox->setChecked((bool)params.GetIntParameter("COMPUTE_HOG"));
 
 }
 

@@ -9,8 +9,6 @@ SUBDIRS += \
     r4r_hardware \
     clam
 
-
-
 QMAKE_CXXFLAGS += -std=c++0x
 
 # doxygen target

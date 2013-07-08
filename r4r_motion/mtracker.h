@@ -42,7 +42,7 @@ class CMotionTracker: public CSimpleTracker {
 public:
 
     //! Constructor.
-    CMotionTracker(CParameters* params, CPinholeCam cam);
+    CMotionTracker(CParameters* params, CPinholeCam& cam);
 
     /*! \copybrief CTracker::Update(cv::Mat&,cv::Mat&)
      *
@@ -114,7 +114,7 @@ public:
 
 protected:
 
-    CPinholeCam m_cam;													//!< intrinsic camera parameters
+    CPinholeCam& m_cam;													//!< intrinsic camera parameters
     std::vector<std::pair<vec2f,vec2f> >& m_corri2i;    				//!< image-to-image correspondences
     std::vector<std::pair<vec3f,vec2f> >& m_corrs2i;					//!< scene-to-image correspondences
     CRigidMotion<float,3> m_F0inv;										//!< transformation from first frame of image pair to world coordinates

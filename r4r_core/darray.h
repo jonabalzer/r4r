@@ -365,6 +365,38 @@ protected:
 
 };
 
+/*! \brief convenience class for creating vectors of length \f$n\f$
+ *
+ *
+ *
+ */
+template<class T, int n>
+class CNVector: public CDenseVector<T> {
+
+public:
+
+    //! Constructor.
+    CNVector():CDenseVector<T>(n) {};
+
+};
+
+/*! \brief convenience class for creating vectors of length \f$3\f$
+ *
+ * \todo What about operators in base class?
+ *
+ */
+template<class T>
+class CNVector<T,3>:public CDenseVector<T> {
+
+public:
+
+    // constructor
+    CNVector():CDenseVector<T>(3) {};
+
+    // constructor
+    CNVector(T x, T y, T z):CDenseVector<T>(3) {};
+
+};
 
 /*! \brief dense symmetric 2d matrix/array
  *

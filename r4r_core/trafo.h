@@ -32,7 +32,7 @@ namespace R4R {
 
 /*! \brief transformation
  *
- *
+ * \todo Introduce template parameter for data type.
  *
  */
 template<typename T,u_int n>

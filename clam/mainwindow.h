@@ -47,6 +47,12 @@ private slots:
 
     void on_showMemoryUsage_triggered();
 
+    void set_params(CParameters params);
+
+    void on_actionSave_Motion_triggered();
+
+    void on_actionSave_Map_triggered();
+
 signals:
 
     void show_memoryUsage();
@@ -61,6 +67,7 @@ private:
     QTimer m_timer;
     CParameters m_params;
     CTracker* m_tracker;
+    CPinholeCam m_cam;
 
     void show_image(const QImage& qimg);
 

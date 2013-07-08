@@ -111,6 +111,9 @@ public:
     //! Constructor.
     CPinholeCam(size_t w, size_t h);
 
+    //! Constructor.
+    CPinholeCam(double fu, double fv, double cu, double cv);
+
     //! \copydoc CAbstractCamera::Project(const vec3&) const
     vec2 Project(const vec3& x) const;
     vec2f Project(const vec3f& x) const;

@@ -19,7 +19,8 @@ MainWindow::MainWindow(QWidget* parent) :
     m_pyramid(),
     m_timer(this),
     m_params(),
-    m_tracker() {
+    m_tracker(),
+    m_cam() {
 
     ui->setupUi(this);
     this->setFixedSize(this->width(),this->height());
@@ -27,6 +28,10 @@ MainWindow::MainWindow(QWidget* parent) :
     // connect signals and slots
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     connect(this,SIGNAL(show_memoryUsage()),this,SLOT(on_showMemoryUsage_triggered()));
+    connect(m_preferences,SIGNAL(params_changed(CParameters)),this,SLOT(set_params(CParameters)));
+
+    // set parameters
+    m_preferences->on_applyButton_clicked();
 
 }
 
@@ -35,6 +40,16 @@ MainWindow::~MainWindow() {
     delete m_tracker;
     m_cap.release();
     delete ui;
+
+}
+
+void MainWindow::set_params(CParameters params) {
+
+    m_params = params;
+    m_cam = CPinholeCam(m_params.GetDoubleParameter("FU"),
+                        m_params.GetDoubleParameter("FV"),
+                        m_params.GetDoubleParameter("CU"),
+                        m_params.GetDoubleParameter("CV"));
 
 }
 
@@ -93,7 +108,7 @@ void MainWindow::on_stepButton_clicked()
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
     // start measuring time
-    /*double t0, t1;
+    double t0, t1;
     t0 = omp_get_wtime();
 
     // update motion estimates
@@ -114,11 +129,11 @@ void MainWindow::on_stepButton_clicked()
     // compute and display framerate
     t1 = omp_get_wtime();
     double fps = 1.0/(t1-t0);
-    ui->speedLcdNumber->display(fps);*/
+    ui->speedLcdNumber->display(fps);
 
     // draw trails
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    //m_tracker->Draw(qimg,5);
+    m_tracker->Draw(qimg,5);
     show_image(qimg);
 
     // display frame no and mem usage
@@ -157,7 +172,7 @@ void MainWindow::on_actionOpen_triggered()
     QString filename = QFileDialog::getOpenFileName(this,
                                                     "Open video file...",
                                                     ".",
-                                                    "(*.mp4);;(*.avi);;(*.mov);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
+                                                    "(*.mp4);;(*.avi);;(*.mov)");
 
 
     // check if it is an image or video
@@ -192,17 +207,17 @@ void MainWindow::on_actionOpen_triggered()
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
     // init tracker
-    /*m_tracker = new CSimpleTracker(&m_params);
+    m_tracker = new CMotionTracker(&m_params,m_cam);
 
     // initial detection
     m_tracker->Init(m_pyramid);
 
     // initinialization of descriptors
-    m_tracker->UpdateDescriptors(m_pyramid);*/
+    m_tracker->UpdateDescriptors(m_pyramid);
 
     // draw
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    //m_tracker->Draw(qimg,1);
+    m_tracker->Draw(qimg,1);
 
     // display
     show_image(qimg);
@@ -219,3 +234,27 @@ void MainWindow::on_showMemoryUsage_triggered() {
 
 }
 
+
+void MainWindow::on_actionSave_Motion_triggered() {
+
+    QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
+                               ".",
+                               tr("(*.txt)"));
+
+    CMotionTracker* tracker = static_cast<CMotionTracker*>(m_tracker);
+
+    tracker->SaveMotion(filename.toStdString().c_str());
+
+}
+
+void MainWindow::on_actionSave_Map_triggered() {
+
+    QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
+                               ".",
+                               tr("(*.txt)"));
+
+    CMotionTracker* tracker = static_cast<CMotionTracker*>(m_tracker);
+
+    tracker->SaveMap(filename.toStdString().c_str());
+
+}
