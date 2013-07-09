@@ -175,7 +175,7 @@ void CPinholeCam::Project(const vec3& x, vec2& u, mat& J) const {
     J(0,0) = m_f[0]/x.Get(2);
     J(0,2) = -(u.Get(0)-m_c[0])/x.Get(2);
     J(1,1) = m_f[1]/x.Get(2);
-    J(1,2) = -(u(1)-m_c[1])/x.Get(2);
+    J(1,2) = -(u.Get(1)-m_c[1])/x.Get(2);
 
 }
 
@@ -186,9 +186,40 @@ void CPinholeCam::Project(const vec3f& x, vec2f& u, matf& J) const {
     J(0,0) = m_f[0]/x.Get(2);
     J(0,2) = -(u.Get(0)-m_c[0])/x.Get(2);
     J(1,1) = m_f[1]/x.Get(2);
-    J(1,2) = -(u(1)-m_c[1])/x.Get(2);
+    J(1,2) = -(u.Get(1)-m_c[1])/x.Get(2);
 
 }
+
+vec2 CPinholeCam::Flow(const vec3& x, const vec3& dx) const {
+
+    vec2 u = Project(x);
+
+    double J00 = m_f[0]/x.Get(2);
+    double J02 = -(u.Get(0)-m_c[0])/x.Get(2);
+    double J11 = m_f[1]/x.Get(2);
+    double J12 = -(u(1)-m_c[1])/x.Get(2);
+
+    vec2 du = { J00*dx.Get(0) + J02*dx.Get(2), J11*dx.Get(1) + J12*dx.Get(2) };
+
+    return du;
+
+}
+
+vec2f CPinholeCam::Flow(const vec3f& x, const vec3f& dx) const {
+
+    vec2f u = Project(x);
+
+    float J00 = m_f[0]/x.Get(2);
+    float J02 = -(u.Get(0)-m_c[0])/x.Get(2);
+    float J11 = m_f[1]/x.Get(2);
+    float J12 = -(u(1)-m_c[1])/x.Get(2);
+
+    vec2f du = { J00*dx.Get(0) + J02*dx.Get(2), J11*dx.Get(1) + J12*dx.Get(2) };
+
+    return du;
+
+}
+
 
 vec3 CPinholeCam::Normalize(const vec2& u) const {
 
@@ -270,6 +301,32 @@ istream& operator >> (istream& is, CPinholeCam& x) {
 
 }
 
+bool CPinholeCam::operator==(CAbstractCam& cam) {
+
+    CPinholeCam* pcam = dynamic_cast<CPinholeCam*>(&cam);
+
+    bool result = (m_size[0]==pcam->m_size[0] &&
+                   m_size[1]==pcam->m_size[1] &&
+                   m_f[0]==pcam->m_f[0] &&
+                   m_f[1]==pcam->m_f[1] &&
+                   m_c[0]==pcam->m_c[0] &&
+                   m_c[1]==pcam->m_c[1] &&
+                   m_k[0]==pcam->m_k[0] &&
+                   m_k[1]==pcam->m_k[1] &&
+                   m_k[2]==pcam->m_k[2] &&
+                   m_k[3]==pcam->m_k[3] &&
+                   m_k[4]==pcam->m_k[4]);
+
+    return result;
+
+}
+
+template<typename T>
+CView<T>::CView(CAbstractCam& cam):
+    m_cam(cam),
+    m_F(),
+    m_Finv() {}
+
 template<typename T>
 CView<T>::CView(CAbstractCam& cam, const CRigidMotion<T,3> &F):
     m_cam(cam),
@@ -280,6 +337,28 @@ CView<T>::CView(CAbstractCam& cam, const CRigidMotion<T,3> &F):
 
 }
 
+template<typename T>
+CView<T>::CView(const CView<T>& view):
+    m_cam(view.m_cam),
+    m_F(view.m_F),
+    m_Finv(view.m_Finv) {
+
+}
+
+template<typename T>
+CView<T> CView<T>::operator=(const CView<T>& view) {
+
+    if(!(m_cam==view.m_cam && m_F==view.m_F && m_Finv==view.m_Finv)) {
+
+        m_cam = view.m_cam;
+        m_F = view.m_F;
+        m_Finv = view.m_Finv;
+
+    }
+
+    return *this;
+
+}
 
 template<typename T>
 CVector<T,2> CView<T>::Project(const CVector<T,3>& x) {
@@ -391,6 +470,8 @@ ostream& operator << (ostream& os, const CView<U>& x) {
 
 template class CView<float>;
 template class CView<double>;
+template ostream& operator << (ostream& os, const CView<float>& x);
+template ostream& operator << (ostream& os, const CView<double>& x);
 
 CCam::CCam():
     m_F(4,4),

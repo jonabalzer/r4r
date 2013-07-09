@@ -52,6 +52,8 @@ void Preferences::on_saveButton_clicked() {
     params.Set("LM_EPS",ui->lmEpsEdit->text().toDouble());
     params.Set("LM_LAMBDA",ui->lmLambdaEdit->text().toDouble());
     params.Set("INIT_DISTANCE",ui->z0Edit->text().toDouble());
+    params.Set("OUTLIER_REJECTION_THRESHOLD_DEPTH",ui->outlierDepthEdit->text().toDouble());
+    params.Set("OUTLIER_REJECTION_THRESHOLD_MOTION",ui->outlierMotionEdit->text().toDouble());
     params.Set("FU",ui->fuEdit->text().toDouble());
     params.Set("FV",ui->fvEdit->text().toDouble());
     params.Set("CU",ui->cuEdit->text().toDouble());
@@ -108,6 +110,8 @@ void Preferences::on_loadButton_clicked() {
     ui->lmEpsEdit->setText(QString::number(params.GetDoubleParameter("LM_EPS")));
     ui->lmLambdaEdit->setText(QString::number(params.GetDoubleParameter("LM_LAMBDA")));
     ui->z0Edit->setText(QString::number(params.GetDoubleParameter("INIT_DISTANCE")));
+    ui->outlierDepthEdit->setText(QString::number(params.GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_DEPTH")));
+    ui->outlierMotionEdit->setText(QString::number(params.GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_MOTION")));
     ui->fuEdit->setText(QString::number(params.GetDoubleParameter("FU")));
     ui->fvEdit->setText(QString::number(params.GetDoubleParameter("FV")));
     ui->cuEdit->setText(QString::number(params.GetDoubleParameter("CU")));
@@ -155,6 +159,8 @@ void Preferences::on_applyButton_clicked() {
     params.Set("LM_EPS",ui->lmEpsEdit->text().toDouble());
     params.Set("LM_LAMBDA",ui->lmLambdaEdit->text().toDouble());
     params.Set("INIT_DISTANCE",ui->z0Edit->text().toDouble());
+    params.Set("OUTLIER_REJECTION_THRESHOLD_DEPTH",ui->outlierDepthEdit->text().toDouble());
+    params.Set("OUTLIER_REJECTION_THRESHOLD_MOTION",ui->outlierMotionEdit->text().toDouble());
     params.Set("FU",ui->fuEdit->text().toDouble());
     params.Set("FV",ui->fvEdit->text().toDouble());
     params.Set("CU",ui->cuEdit->text().toDouble());

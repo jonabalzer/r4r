@@ -164,11 +164,8 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     float result;
 
-
     for(size_t k=0; k<notests; k++)
         result = kernel->Evaluate(x,y);
-
-
 
 #ifdef _OPENMP
     t1 = omp_get_wtime();
@@ -269,7 +266,6 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 #endif
 
     delete kernel;
-
 
 }
 

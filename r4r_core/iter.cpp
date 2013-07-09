@@ -134,7 +134,6 @@ Scalar CIterativeSolver<Matrix,Vector,Scalar>::CGLS(Matrix& A, Vector& b, Vector
 	Vector rnormal = A*r;   // residual of the normal equation
 	A.Transpose();
 
-
 	// preconditioning
 	Vector z(rnormal);
 	m_M.Solve(z,rnormal);

@@ -22,20 +22,17 @@ bool rw_descriptors();
 int main()
 {
 
-    mat M(3,4);
+
+    matf M(2,3);
     M.Rand(0,1);
 
+    vec3f x = {1,2,2};
+
+    //CVector<float,2> result= M*x;
+
     cout << M << endl;
-    CRigidMotion<double,3> F(M);
 
-    mat R = F.GetJacobian();
-    cout << R << endl;
 
-    CVector<double,3> t=F.GetTranslation();
-    cout << t << endl;
-
-    vec t2(t);
-    cout << "t2" << t2 << endl;
 
    /* CPinholeCam cam;
     CView myview(cam,F);

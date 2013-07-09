@@ -1099,7 +1099,7 @@ CDenseVector<T> CDenseArray<T>::operator*(const CDenseVector<T>& vector) const {
 template<class T>
 template <u_int n> CVector<T,n> CDenseArray<T>::operator*(const CVector<T,n>& vector) const {
 
-    assert(m_ncols==n);
+    assert(m_ncols==n && m_nrows==n);
 
     CVector<T,n> result;
 
@@ -1256,7 +1256,6 @@ template CVector<double,2> CDenseArray<double>::operator*(const CVector<double,2
 template CVector<double,3> CDenseArray<double>::operator*(const CVector<double,3>& vector) const;
 template CVector<float,2> CDenseArray<float>::operator*(const CVector<float,2>& vector) const;
 template CVector<float,3> CDenseArray<float>::operator*(const CVector<float,3>& vector) const;
-
 
 template <class T>
 CDenseVector<T>::CDenseVector():

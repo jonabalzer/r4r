@@ -44,7 +44,7 @@ public:
 	CPreconditioner(Matrix& A);
 
 	//! Performs preconditioning.
-	virtual void Solve(Vector& x, Vector& y) { x = y; };
+    virtual void Solve(Vector& x, Vector& y) { x = y; }
 
 protected:
 

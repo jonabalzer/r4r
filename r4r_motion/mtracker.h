@@ -90,7 +90,6 @@ private:
      */
     vec3f Triangulate(vec3f o0, vec3f d0, vec3f o1, vec3f d1, float eps);
 
-
     //! \brief Epipolar image correspondence search.
     vec2f EpipolarSearch(vec2f& ub, vec2f& d, cv::Mat& img0, cv::Mat& img1, size_t hsize, size_t nsteps, float eps);
 

@@ -195,16 +195,7 @@ inline CVector<T,n> operator*(const CVector<T,n>& x, const U& s) {
 
 //! Pre-multiplies a vector by a scalar.
 template <typename T,u_int n,typename U>
-inline CVector<T,n> operator*(const U& s, const CVector<T,n>& x) {
-
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i)*(T)s;
-
-    return result;
-
-}
+CVector<T,n> operator*(const U& s, const CVector<T,n>& x);
 
 //! Post-divides a vector by a scalar.
 template <typename T,u_int n, typename U>

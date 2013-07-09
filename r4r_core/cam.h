@@ -85,11 +85,24 @@ public:
     std::vector<vec3> Normalize(const std::vector<vec2>& u) const;
     std::vector<vec3f> Normalize(const std::vector<vec2f>& u) const;
 
+    /*! \brief Projects differential motion to optical flow vector.
+     *
+     * \param[in] x point in camera coordinates
+     * \param[in] dx differential motion vector in 3d
+     * \returns direction vectors
+     *
+     */
+    virtual vec2 Flow(const vec3& x, const vec3& dx) const = 0;
+    virtual vec2f Flow(const vec3f& x, const vec3f& dx) const = 0;
+
     //! Writes the camera parameters to a stream.
     virtual void Write(std::ostream& os) const = 0;
 
     //! Reads the camera parameters from a stream.
     virtual void Read(std::istream& is) = 0;
+
+    //! Checks if two cameras are the same.
+    virtual bool operator==(CAbstractCam& cam) = 0;
 
 protected:
 
@@ -126,6 +139,10 @@ public:
     vec3 Normalize(const vec2& u) const;
     vec3f Normalize(const vec2f& u) const;
 
+    //! \copydoc CAbstractCamera::Flow(const vec3&,const vec3&) const
+    vec2 Flow(const vec3& x, const vec3& dx) const;
+    vec2f Flow(const vec3f& x, const vec3f& dx) const;
+
     //! \copydoc CAbstractCamera::Write(std::ostream&) const
     void Write(std::ostream& os) const { os << *this; }
 
@@ -137,6 +154,9 @@ public:
 
     //! Reads the camera parameters from a stream.
     friend std::istream& operator >> (std::istream& is, CPinholeCam& x);
+
+    //! Checks if two cameras are the same.
+    bool operator==(CAbstractCam& cam);
 
 private:
 
@@ -268,7 +288,16 @@ class CView {
 public:
 
     //! Constructor.
+    CView(CAbstractCam& cam);
+
+    //! Constructor.
     CView(CAbstractCam& cam, const CRigidMotion<T,3>& F);
+
+    //! Copy constructor.
+    CView(const CView<T>& view);
+
+    //! Assignment operator.
+    CView<T> operator=(const CView<T>& view);
 
     /*! \brief Projects a point into the image plane.
      *
@@ -332,7 +361,7 @@ public:
 
 protected:
 
-    CAbstractCam& m_cam;                    //!< intrinsic parameters
+    CAbstractCam& m_cam;               //!< intrinsic parameters
     CRigidMotion<T,3> m_F;             //!< extrinsic parameters
     CRigidMotion<T,3> m_Finv;          //!< inverse extrinsic parameters
 

@@ -287,6 +287,19 @@ CVector<T,n> CTransformation<T,n>::GetTranslation() {
 
 }
 
+template <typename T,u_int n>
+bool CTransformation<T,n>::operator ==(const CTransformation<T,n>& x) {
+
+    bool result = true;
+
+    for(size_t i=0; i<n*(n+1); i++)
+        result *= (m_F[i]==x.m_F[i]);
+
+    return result;
+
+}
+
+
 template class CTransformation<double,2>;
 template class CTransformation<float,2>;
 template class CTransformation<double,3>;

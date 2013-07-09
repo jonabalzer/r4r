@@ -85,6 +85,9 @@ public:
     //! Access to translation vector.
     CVector<T,n> GetTranslation();
 
+    //! Checks if two transformations are equal.
+    bool operator==(const CTransformation<T,n>& x);
+
 protected:
 
     T m_F[n*(n+1)];               //!< container for data
@@ -236,6 +239,9 @@ public:
 
     //! Constructor.
     CRigidMotion(const CDenseArray<T>& x):CTransformation<T,n>(x) {}
+
+    //! Checks if two transformations are equal.
+    bool operator==(CRigidMotion<T,n>& x) { return CTransformation<T,n>::operator ==(x); }
 
 protected:
 

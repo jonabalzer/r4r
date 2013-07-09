@@ -251,7 +251,7 @@ void MainWindow::on_actionSave_Map_triggered() {
 
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
-                               tr("(*.txt)"));
+                               tr("(*.ply)"));
 
     CMotionTracker* tracker = static_cast<CMotionTracker*>(m_tracker);
 

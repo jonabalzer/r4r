@@ -80,6 +80,12 @@ map<CTracklet*,vec> CMotionTracker::GetMap() {
             ptcolor(4) = color.Get(1);
             ptcolor(5) = color.Get(2);
 
+        } else {
+
+            ptcolor(3) = 255;
+            ptcolor(4) = 255;
+            ptcolor(5) = 255;
+
         }
 
         // only attach if it has at least a point
@@ -87,8 +93,6 @@ map<CTracklet*,vec> CMotionTracker::GetMap() {
             pts.insert(pair<CTracklet*,vec>((*it).get(),ptcolor));
 
     }
-
-
 
     return pts;
 
@@ -418,9 +422,8 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // get pointer to initial feature
-                imfeature feat = trackletsi2i[i]->front();
                 shared_ptr<CAbstractDescriptor> descx(new CDescriptor<vecf>(vecf(pt)));
-                feat.AttachDescriptor("3DPOINT",descx);
+                trackletsi2i[i]->front().AttachDescriptor("3DPOINT",descx);
 
                 // also store initial depths for descriptor canonization
                 /*vec z(1);
@@ -599,9 +602,8 @@ bool CMotionTracker::ColorMap(cv::Mat& img) {
                 color(1) = (float)img.at<Vec3b>(row,col)[1];
                 color(2) = (float)img.at<Vec3b>(row,col)[0];
 
-                imfeature feat = (*it)->front();
                 shared_ptr<CAbstractDescriptor> desc(new CDescriptor<vecf>(color));
-                feat.AttachDescriptor("COLOR",desc);
+                (*it)->front().AttachDescriptor("COLOR",desc);
 
             }
 
@@ -643,7 +645,7 @@ void CMagicSfM::ComputeResidual(vec& r) {
 
 		// estimate of the scene point x0 in camera system of first frame
         vec3f x0h = m_cam.Normalize(p0);
-        vec3f x0 = x0h*m_model(i);
+        vec3f x0 = x0h*m_model.Get(i);
         x0 = m_F0inv.Transform(x0);
 
 		// point transformed from world to local camera system of second frame
@@ -703,9 +705,9 @@ void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
 
     // derivatives of rotations
     matf DRx(3,3), DRy(3,3), DRz(3,3);
-    CDifferentialRotation<float,3>::Rodrigues(m_corri2i.size()+3,           // careful with order
-                                              m_corri2i.size()+4,
-                                              m_corri2i.size()+5,
+    CDifferentialRotation<float,3>::Rodrigues(m_model.Get(m_corri2i.size()+3),           // careful with order
+                                              m_model.Get(m_corri2i.size()+4),
+                                              m_model.Get(m_corri2i.size()+5),
                                               nullptr,
                                               DRx.Data().get(),
                                               DRy.Data().get(),
@@ -721,7 +723,7 @@ void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
 
         // estimate of the scene point x0
         vec3f x0h = m_cam.Normalize(p0);
-        vec3f x0 = x0h*(float)m_model(i);
+        vec3f x0 = x0h*(float)m_model.Get(i);
         x0 = m_F0inv.Transform(x0);       // x0 in world coordinates
         x0h = R0inv*x0h;                  // viewing direction in world coordinates
 
@@ -741,21 +743,27 @@ void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
         r(m+i) = dp.Get(1);
 
         // depth derivatives
-        vec3f dz = Jpi*(R1*x0h);
-        J(i,i) = dz(0);
-        J(m+i,i) = dz(1);
+        vec3f dz = R1*x0h;
+        J(i,i) = Jpi.Get(0,0)*dz.Get(0) + Jpi.Get(0,2)*dz.Get(2);
+        J(m+i,i) = Jpi.Get(1,1)*dz.Get(1) + Jpi.Get(1,2)*dz.Get(2);
 
         // translational derivative
         J(i,m) = Jpi(0,0); 		J(i,m+1) = Jpi(0,1);	J(i,m+2) = Jpi(0,2);
         J(m+i,m) = Jpi(1,0); 	J(m+i,m+1) = Jpi(1,1); 	J(m+i,m+2) = Jpi(1,2);
 
         // rotational derivatives.
-        vec3f do1 = Jpi*(DRx*x0);
-        vec3f do2 = Jpi*(DRy*x0);
-        vec3f do3 = Jpi*(DRz*x0);
+        vec3f do1 = DRx*x0;
+        vec3f do2 = DRy*x0;
+        vec3f do3 = DRz*x0;
 
-        J(i,m+3) = do1(0); 		J(i,m+4) = do2(0); 		J(i,m+5) = do3(0);
-        J(m+i,m+3) = do1(1); 	J(m+i,m+4) = do2(1);	J(m+i,m+5) = do3(1);
+        J(i,m+3) = Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2);
+        J(m+i,m+3) = Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2);
+
+        J(i,m+4) = Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2);
+        J(m+i,m+4) = Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2);
+
+        J(i,m+5) = Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2);
+        J(m+i,m+5) = Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2);
 
     }
 
@@ -782,16 +790,22 @@ void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
         r(2*m+n+i) = dp.Get(1);
 
         // translational derivative
-        J(2*m+i,m) = Jpi(0,0); 	J(2*m+i,m+1) = Jpi(0,1);		J(2*m+i,m+2) = Jpi(0,2);
-        J(2*m+n+i,m) = Jpi(1,0); 	J(2*m+n+i,m+1) = Jpi(1,1); 	J(2*m+n+i,m+2) = Jpi(1,2);
+        J(2*m+i,m) = Jpi(0,0);      J(2*m+i,m+1) = Jpi(0,1);		J(2*m+i,m+2) = Jpi(0,2);
+        J(2*m+n+i,m) = Jpi(1,0); 	J(2*m+n+i,m+1) = Jpi(1,1);      J(2*m+n+i,m+2) = Jpi(1,2);
 
         // rotational derivatives.
-        vec3f do1 = Jpi*(DRx*x0);
-        vec3f do2 = Jpi*(DRy*x0);
-        vec3f do3 = Jpi*(DRz*x0);
+        vec3f do1 = DRx*x0;
+        vec3f do2 = DRy*x0;
+        vec3f do3 = DRz*x0;
 
-        J(2*m+i,m+3) = do1(0); 		J(2*m+i,m+4) = do2(0);		J(2*m+i,m+5) = do3(0);
-        J(2*m+n+i,m+3) = do1(1);	J(2*m+n+i,m+4) = do2(1); 	J(2*m+n+i,m+5) = do3(1);
+        J(2*m+i,m+3) = Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2);;
+        J(2*m+n+i,m+3) = Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2);
+
+        J(2*m+i,m+4) = Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2);
+        J(2*m+n+i,m+4) = Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2);
+
+        J(2*m+i,m+5) = Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2);
+        J(2*m+n+i,m+5) = Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2);;
 
     }
 
