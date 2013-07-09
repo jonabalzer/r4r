@@ -256,14 +256,14 @@ ostream& operator<< (ostream& os, const CDenseArray<U>& x) {
 
 		for(size_t j=0; j<x.m_ncols-1; j++) {
 
-			os << (float)x.Get(i,j) << " ";
+            os << x.Get(i,j) << " ";
 
 		}
 
 		if(i<x.m_nrows-1)
-			os << (float)x.Get(i,x.m_ncols-1) << endl;
+            os << x.Get(i,x.m_ncols-1) << endl;
 		else
-			os << (float)x.Get(i,x.m_ncols-1);
+            os << x.Get(i,x.m_ncols-1);
 
 	}
 
@@ -738,7 +738,27 @@ double CDenseArray<T>::Norm(double p) const {
     T* pdata = m_data.get();
 
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
-        sum += pow(fabs((double)pdata[i]),p);
+        sum += pow(fabs(pdata[i]),p);
+
+    return pow(sum,1/p);
+
+}
+
+template <>
+double CDenseArray<rgb>::Norm(double p) const {
+
+    assert(p>0);
+
+    double sum = 0;
+
+    rgb* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            sum += pow(fabs(pdata[i].Get(j)),p);
+
+    }
 
     return pow(sum,1/p);
 
@@ -769,6 +789,14 @@ void CDenseArray<T>::Abs() {
 
 }
 
+template <>
+void CDenseArray<rgb>::Abs() {
+
+    // unsigned char are positive already, so do nothing
+    return;
+
+}
+
 
 template <class T>
 T CDenseArray<T>::Get(size_t i, size_t j) const {
@@ -781,6 +809,39 @@ T CDenseArray<T>::Get(size_t i, size_t j) const {
         return pdata[m_nrows*j + i];
 	else
         return pdata[m_ncols*i + j];
+
+}
+
+template <>
+double CDenseArray<rgb>::InterpolateBilinearly(double u, double v) const {
+
+    // this is just a method stump because the return type is not supported
+    return -1;
+
+}
+
+
+template <class T>
+double CDenseArray<T>::InterpolateBilinearly(double u, double v) const {
+
+    if(u<0 || u>=(double)(NRows()-1) || v<0 || v>=(double)(NCols()-1))
+        return T();
+
+    int i = (int)(v + 0.5);
+    int j = (int)(u + 0.5);
+
+    double vd = v - i;
+    double ud = u - j;
+
+    double A00, A01, A10, A11, A0, A1;
+    A00 = (double)Get(i,j);
+    A01 = (double)Get(i,j+1);
+    A10 = (double)Get(i+1,j);
+    A11 = (double)Get(i+1,j+1);
+    A0 = A00*(1-ud) + A01*ud;
+    A1 = A10*(1-ud) + A11*ud;
+
+    return A0*(1-vd) + A1*vd;
 
 }
 
@@ -1193,6 +1254,27 @@ T CDenseArray<T>::MAD() {
 
 }
 
+template <>
+rgb CDenseArray<rgb>::MAD() {
+
+    rgb median = Median();
+
+    CDenseArray<rgb> temp = this->Clone();
+
+    rgb* pdata = temp.m_data.get();
+    rgb* pthisdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            pdata[i](j) = (unsigned char)fabs(pthisdata[i].Get(j)-median.Get(j));
+
+    }
+
+    return temp.Median();
+
+}
+
 template <class T>
 T CDenseArray<T>::Min() const {
 
@@ -1208,6 +1290,28 @@ T CDenseArray<T>::Min() const {
 	}
 
 	return min;
+
+}
+
+template <>
+rgb CDenseArray<rgb>::Min() const {
+
+    rgb min = { 0, 0, 0 };
+    rgb* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++) {
+
+            // find the minimum of every channel
+            if(pdata[i].Get(j)<=min.Get(j))
+                min(j) = pdata[i].Get(j);
+
+        }
+
+    }
+
+    return min;
 
 }
 
@@ -1229,13 +1333,34 @@ T CDenseArray<T>::Max() const {
 
 }
 
+template <>
+rgb CDenseArray<rgb>::Max() const {
+
+    rgb max = { 255, 255, 255 };
+    rgb* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++) {
+
+            // find the minimum of every channel
+            if(pdata[i].Get(j)>=max.Get(j))
+                max(j) = pdata[i].Get(j);
+
+        }
+
+    }
+
+    return max;
+
+}
 
 template class CDenseArray<float>;
 template class CDenseArray<double>;
 template class CDenseArray<int>;
 template class CDenseArray<size_t>;
 template class CDenseArray<bool>;
-//template class CDenseArray<rgb>;
+template class CDenseArray<rgb>;
 
 template ostream& operator<< (ostream& os, const CDenseArray<double>& x);
 template istream& operator>> (istream& is, CDenseArray<double>& x);
@@ -1252,6 +1377,7 @@ template ifstream& operator>> (ifstream& is, CDenseArray<size_t>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<bool>& x);
 template istream& operator>> (istream& is, CDenseArray<bool>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<bool>& x);
+template ostream& operator<< (ostream& os, const CDenseArray<rgb>& x);
 template CVector<double,2> CDenseArray<double>::operator*(const CVector<double,2>& vector) const;
 template CVector<double,3> CDenseArray<double>::operator*(const CVector<double,3>& vector) const;
 template CVector<float,2> CDenseArray<float>::operator*(const CVector<float,2>& vector) const;

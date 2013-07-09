@@ -21,7 +21,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "kernels.h"
 #include <math.h>
 #include <algorithm>
 
@@ -34,6 +33,10 @@
 #include <omp.h>
 #endif
 
+#include "kernels.h"
+#include "types.h"
+
+
 namespace R4R {
 
 using namespace std;
@@ -45,6 +48,18 @@ double CMercerKernel<T>::Evaluate(T *x, T *y) {
 
     for(size_t i=0; i<m_n; i++)
         result += (double)x[i]*(double)y[i];
+
+    return result;
+
+}
+
+template <>
+double CMercerKernel<rgb>::Evaluate(rgb* x, rgb* y) {
+
+    double result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += InnerProduct(x[i],y[i]);
 
     return result;
 
@@ -450,6 +465,25 @@ double CHellingerKernel<T>::Evaluate(T* x, T* y) {
         yi = (double)y[i];
 
         result += sqrt(xi*yi);
+
+    }
+
+    return result;
+
+}
+
+template <>
+double CHellingerKernel<rgb>::Evaluate(rgb* x, rgb* y) {
+
+    double result = 0;
+    double xi, yi;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        rgb xy = x[i]*y[i];
+
+        for(size_t j=0; j<3; j++)
+            result += sqrt(xy.Get(j));
 
     }
 

@@ -195,7 +195,7 @@ inline CVector<T,n> operator*(const CVector<T,n>& x, const U& s) {
 
 //! Pre-multiplies a vector by a scalar.
 template <typename T,u_int n,typename U>
-CVector<T,n> operator*(const U& s, const CVector<T,n>& x);
+CVector<U,n> operator*(const U& s, const CVector<T,n>& x);
 
 //! Post-divides a vector by a scalar.
 template <typename T,u_int n, typename U>
@@ -270,6 +270,19 @@ inline bool operator==(const CVector<T,n>& x, const CVector<T,n>& y) {
 
     for(u_int i=0; i<n; i++)
         result = result && (x.Get(i)==y.Get(i));
+
+    return result;
+
+}
+
+//! Checks two vectors for inequality.
+template <typename T,u_int n>
+inline bool operator<(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+    bool result = true;
+
+    for(u_int i=0; i<n; i++)
+        result = result && (x.Get(i)<y.Get(i));
 
     return result;
 

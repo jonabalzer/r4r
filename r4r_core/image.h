@@ -24,7 +24,12 @@
 #ifndef R4RIMAGE_H
 #define R4RIMAGE_H
 
+#ifdef QT_GUI_LIB
+#include <QImage>
+#endif
+
 #include "types.h"
+
 
 namespace R4R {
 
@@ -38,7 +43,7 @@ class CImage: public CDenseArray<unsigned char> {
 public:
 
     //! Constructor.
-    CImage();
+    CImage():CDenseArray<unsigned char>(){}
 
     //! Constructor.
     CImage(size_t w, size_t h):CDenseArray<unsigned char>(h,w){}
@@ -59,10 +64,31 @@ public:
     CRGBImage();
 
     //! \copydoc CDenseArray(size_t,size_t,std::shared_ptr<T>)
-    CRGBImage(size_t w, size_t h, std::shared_ptr<rgb> data):CDenseArray<rgb>(w,h,data) {}
+    CRGBImage(size_t w, size_t h, std::shared_ptr<rgb> data):CDenseArray<rgb>(h,w,data) {}
 
     //! Constructor.
     CRGBImage(size_t w, size_t h):CDenseArray<rgb>::CDenseArray(h,w){}
+
+    //! Constructor.
+    CRGBImage(size_t w, size_t h, unsigned char* data);
+
+
+#ifdef QT_GUI_LIB
+
+    //! Construct from QT image.
+    CRGBImage(const QImage& img);
+
+    //! Cast to a QT image.
+    operator QImage() const;
+
+
+#endif
+
+    //! Access using bilinear interpolation.
+    template<typename T> CVector<T,3> Get(const CVector<T,2>& p);
+
+    //! Compute gradient with centered differences.
+    template<typename T> CVector<T,3> Gradient(const CVector<T,2>& p, bool dir);
 
 };
 

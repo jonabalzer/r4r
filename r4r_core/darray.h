@@ -278,6 +278,9 @@ public:
     //! Returns the numerical type.
     ETYPE GetType();
 
+    //! Bilinear interpolation.
+    double InterpolateBilinearly(double u, double v) const;
+
 protected:
 
 	size_t m_nrows;				//!< number of rows

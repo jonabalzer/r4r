@@ -95,6 +95,10 @@ public:
     virtual vec2 Flow(const vec3& x, const vec3& dx) const = 0;
     virtual vec2f Flow(const vec3f& x, const vec3f& dx) const = 0;
 
+    //! Batch computation of optical flow.
+    std::vector<vec2> Flow(const std::vector<vec3>& x, const std::vector<vec3>& dx) const;
+    std::vector<vec2f> Flow(const std::vector<vec3f>& x, const std::vector<vec3f>& dx) const;
+
     //! Writes the camera parameters to a stream.
     virtual void Write(std::ostream& os) const = 0;
 
@@ -341,6 +345,12 @@ public:
      *
      */
     std::vector<CVector<T,3> > Normalize(const std::vector<CVector<T,2> >& u);
+
+    //! Computes flow from differential motion in world coordinates.
+    CVector<T,2> Flow(const CVector<T,3>& x, const CVector<T,3>& dx);
+
+    //! Computes flow from differential motion in world coordinates.
+    std::vector<CVector<T,2> > Flow(const std::vector<CVector<T,3> >& x,const std::vector<CVector<T,3> >& dx);
 
     /*! \brief Reads a intrisic/extrinsic parameters from a file.
      *

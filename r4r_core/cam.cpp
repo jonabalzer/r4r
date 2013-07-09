@@ -82,6 +82,30 @@ vector<vec3f> CAbstractCam::Normalize(const vector<vec2f>& u) const {
 
 }
 
+vector<vec2> CAbstractCam::Flow(const std::vector<vec3>& x, const std::vector<vec3>& dx) const {
+
+    vector<vec2> result(x.size());
+
+#pragma omp parallel for
+    for(size_t i=0; i<x.size(); i++)
+        result[i] = Flow(x[i],dx[i]);
+
+    return result;
+
+}
+
+vector<vec2f> CAbstractCam::Flow(const std::vector<vec3f>& x, const std::vector<vec3f>& dx) const {
+
+    vector<vec2f> result(x.size());
+
+#pragma omp parallel for
+    for(size_t i=0; i<x.size(); i++)
+        result[i] = Flow(x[i],dx[i]);
+
+    return result;
+
+}
+
 CPinholeCam::CPinholeCam() {
 
     fill_n(m_size,2,0);
@@ -379,6 +403,16 @@ void CView<T>::Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J
 }
 
 template<typename T>
+CVector<T,2> CView<T>::Flow(const CVector<T,3>& x, const CVector<T,3>& dx) {
+
+    CVector<T,3> dxc = m_F.DifferentialTransform(dx);
+    CVector<T,3> xc = m_F.Transform(x);
+
+    return m_cam.Flow(xc,dxc);
+
+}
+
+template<typename T>
 vector<CVector<T,2> > CView<T>::Project(const std::vector<CVector<T,3> >& x) {
 
     vector<CVector<T,3> > xc = m_F.Transform(x);
@@ -402,6 +436,16 @@ vector<CVector<T,3> > CView<T>::Normalize(const std::vector<CVector<T,2> >& u) {
     vector<CVector<T,3> > xc = m_cam.Normalize(u);
 
     return m_Finv.Transform(xc);
+
+}
+
+template<typename T>
+vector<CVector<T,2> > CView<T>::Flow(const vector<CVector<T,3> >& x, const vector<CVector<T,3> >& dx) {
+
+     vector<CVector<T,3> > dxc = m_F.DifferentialTransform(dx);
+     vector<CVector<T,3> > xc = m_F.Transform(x);
+
+     return m_cam.Flow(xc,dxc);
 
 }
 

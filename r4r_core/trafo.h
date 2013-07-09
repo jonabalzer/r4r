@@ -58,6 +58,9 @@ public:
     //! Forward transformation.
     CVector<T,n> Transform(const CVector<T,n>& x);
 
+    //! Transform a direction.
+    CVector<T,n> DifferentialTransform(const CVector<T,n>& x);
+
     //! Forward transformation.
     CVector<T,n> Transform(const T* x);
 
@@ -78,6 +81,9 @@ public:
 
     //! Parallelized mass transformation.
     std::vector<CVector<T,n> > Transform(const std::vector<CVector<T,n> >& x);
+
+    //! Parallelized mass transformation.
+    std::vector<CVector<T,n> > DifferentialTransform(const std::vector<CVector<T,n> >& x);
 
     //! Returns Jacobian of the transformation, i.e., its linear part.
     CDenseArray<T> GetJacobian();

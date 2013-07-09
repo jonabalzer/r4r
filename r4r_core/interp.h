@@ -92,7 +92,8 @@ public:
 
 
 	//! Interpolates a matrix bilinearly.
-	static inline double Bilinear(mat& A, double u, double v) {
+    template<typename T=double>
+    static inline T Bilinear(CDenseArray<T>& A, double u, double v) {
 
 		if(u<0 || u>=(double)(A.NRows()-1) || v<0 || v>=(double)(A.NCols()-1))
 			return 0;
@@ -103,13 +104,13 @@ public:
 		double vd = v - i;
 		double ud = u - j;
 
-		double A00, A01, A10, A11, A0, A1;
+        T A00, A01, A10, A11, A0, A1;
 		A00 = A.Get(i,j);
 		A01 = A.Get(i,j+1);
 		A10 = A.Get(i+1,j);
 		A11 = A.Get(i+1,j+1);
-		A0 = (1-ud)*A00 + ud*A01;
-		A1 = (1-ud)*A10 + ud*A11;
+        A0 = A00*(1-ud) + A01*ud;
+        A1 = A10*(1-ud) + A11*ud;
 
 		return (1-vd)*A0 + vd*A1;
 

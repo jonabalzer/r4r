@@ -130,6 +130,22 @@ CVector<T,n> CTransformation<T,n>::Transform(const CVector<T, n>& x) {
 }
 
 template <typename T,u_int n>
+CVector<T,n> CTransformation<T,n>::DifferentialTransform(const CVector<T,n>& x) {
+
+    CVector<T,n> result;
+
+    for(u_int i=0; i<n; i++) {
+
+        for(u_int j=0; j<n; j++)
+            result(i) += m_F[n*j+i]*x.Get(j);
+
+    }
+
+    return result;
+
+}
+
+template <typename T,u_int n>
 CVector<T,n> CTransformation<T,n>::Transform(const T* x) {
 
     CVector<T,n> result;
@@ -159,6 +175,20 @@ vector<CVector<T,n> > CTransformation<T,n>::Transform(const vector<CVector<T,n> 
     return result;
 
 }
+
+template <typename T,u_int n>
+vector<CVector<T,n> > CTransformation<T,n>::DifferentialTransform(const vector<CVector<T,n> >& x) {
+
+    vector<CVector<T,n> > result(x.size());
+
+#pragma omp parallel for
+    for(size_t i=0; i<x.size(); i++)
+        result[i] = DifferentialTransform(x[i]);
+
+    return result;
+
+}
+
 
 template <class U,u_int m>
 ostream& operator << (ostream& os, const CTransformation<U,m>& x) {

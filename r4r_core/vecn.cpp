@@ -150,10 +150,12 @@ bool CVector<T,n>::Normalize() {
 template <class U, u_int m>
 ostream& operator << (ostream& os, const CVector<U,m>& x) {
 
-    for(u_int i=0; i<m-1; i++)
-        os << (double)x.Get(i) << " ";
+    os << " [ ";
 
-    os << (double)x.Get(m-1);
+    for(u_int i=0; i<m-1; i++)
+        os << (float)x.Get(i) << " ";
+
+    os << (float)x.Get(m-1) << " ] ";
 
     return os;
 
@@ -170,12 +172,12 @@ istream& operator >> (istream& is, CVector<U,m>& x) {
 }
 
 template <typename T,u_int n,typename U>
-CVector<T,n> operator*(const U& s, const CVector<T,n>& x) {
+CVector<U,n> operator*(const U& s, const CVector<T,n>& x) {
 
-    CVector<T,n> result;
+    CVector<U,n> result;
 
     for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i)*(T)s;
+        result(i) = (U)x.Get(i)*s;
 
     return result;
 
@@ -205,5 +207,7 @@ template CVector<double,2> operator*(const double& s, const CVector<double,2>& x
 template CVector<double,3> operator*(const double& s, const CVector<double,3>& x);
 template CVector<float,2> operator*(const float& s, const CVector<float,2>& x);
 template CVector<float,3> operator*(const float& s, const CVector<float,3>& x);
+template CVector<double,3> operator*(const double& s, const CVector<unsigned char,3>& x);
+template CVector<double,2> operator*(const double& s, const CVector<unsigned char,2>& x);
 
 }

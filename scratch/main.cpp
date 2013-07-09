@@ -26,11 +26,13 @@ int main()
     matf M(2,3);
     M.Rand(0,1);
 
-    vec3f x = {1,2,2};
+    rgb x = {1,2,2};
+
+    cout << x << endl;
 
     //CVector<float,2> result= M*x;
 
-    cout << M << endl;
+ //   cout << M << endl;
 
 
 
