@@ -6,7 +6,8 @@ message(STATUS "FFTW3_LIBRARIES: ${FFTW3_LIBRARIES}")
 
 set(CMAKE_CXX_FLAGS "-Wall -std=c++0x ${CMAKE_CXX_FLAGS} -fopenmp -O3") 
 
-set(SOURCES_Hbasic.h
+set(SOURCES_H
+    basic.h
     dagg.h
     descriptor.h
     descspecial.h
@@ -33,3 +34,6 @@ set(SOURCES_CPP
     
 add_library(r4r_motion SHARED ${SOURCES_CPP})
 target_link_libraries(r4r_motion ${FFTW3_LIBRARIES})
+install(DIRECTORY DESTINATION include/r4r/r4r_motion)
+install(FILES ${SOURCES_H} DESTINATION include/r4r/r4r_motion/)
+install(TARGETS r4r_motion LIBRARY DESTINATION lib)

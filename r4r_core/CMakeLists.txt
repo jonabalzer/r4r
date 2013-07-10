@@ -8,6 +8,7 @@ set(SOURCES_H
     interp.h
     intimg.h
     iter.h
+    kernels.h
     kfilter.h
     lm.h
     params.h
@@ -17,7 +18,8 @@ set(SOURCES_H
     sarray.h
     trafo.h
     types.h
-    rutils.h)
+    rutils.h
+    vecn.h)
     
 set(SOURCES_CPP
     cam.cpp
@@ -26,6 +28,7 @@ set(SOURCES_CPP
     interp.cpp
     intimg.cpp
     iter.cpp
+    kernels.cpp
     kfilter.cpp
     lm.cpp
     params.cpp
@@ -34,6 +37,10 @@ set(SOURCES_CPP
     rect.cpp
     sarray.cpp
     trafo.cpp
-    rutils.cpp)
+    rutils.cpp
+    vecn.cpp)
     
 add_library(r4r_core SHARED ${SOURCES_CPP})
+install(DIRECTORY DESTINATION include/r4r/r4r_core)
+install(FILES ${SOURCES_H} DESTINATION include/r4r/r4r_core/)
+install(TARGETS r4r_core LIBRARY DESTINATION lib)
