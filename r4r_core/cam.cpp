@@ -349,8 +349,8 @@ mat CPinholeCam::GetProjectionMatrix() {
 
     mat P(3,3);
 
-    P(0,0) = 1/m_f[0];
-    P(1,1) = 1/m_f[1];
+    P(0,0) = m_f[0];
+    P(1,1) = m_f[1];
     P(0,2) = m_c[0];
     P(1,2) = m_c[1];
     P(2,2) = 1;
