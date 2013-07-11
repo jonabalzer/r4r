@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 
         mat M(0,0);
         CPreconditioner<mat,vec,double> precond = CPreconditioner<mat,vec,double>(M);
-        CIterativeSolver<mat,vec,double> solver = CIterativeSolver<mat,vec,double>(precond,2,1e-12,true);
+        CIterativeSolver<mat,vec,double> solver = CIterativeSolver<mat,vec,double>(precond,10,1e-20,true);
 
         CRosenbrockFunction problem = CRosenbrockFunction();
         CLevenbergMarquardt<mat> lms(problem,solver,0);
@@ -24,6 +24,10 @@ int main(int argc, char *argv[]) {
         vec& model = problem.Get();
         model(0) = -2.1;
         model(1) = 1;
+
+        // x0
+        cout << "Starting point: " << endl;
+        cout <<  model << endl;
 
         // iterate
         lms.Iterate(100,1e-10,1e-10,false);
@@ -42,7 +46,7 @@ int main(int argc, char *argv[]) {
 
         mat M(0,0);
         CPreconditioner<mat,vec,double> precond = CPreconditioner<mat,vec,double>(M);
-        CIterativeSolver<mat,vec,double> solver = CIterativeSolver<mat,vec,double>(precond,5,1e-12,true);
+        CIterativeSolver<mat,vec,double> solver = CIterativeSolver<mat,vec,double>(precond,20,1e-20,true);
 
         COsbourneFunction problem = COsbourneFunction();
         problem.DisturbSamplePoints(10,1);
@@ -52,30 +56,36 @@ int main(int argc, char *argv[]) {
         // init
         vec& model = problem.Get();
         model(0) = 0.5;
-        model(1) = 1.5;
-        model(2) = -1;
+        model(1) = 2;
+        model(2) = 0;
         model(3) = 0.01;
         model(4) = 0.02;
 
-        lms.Iterate(500,4,1e-15,false,true);
+        lms.Iterate(1000,4,1e-20,false,true);
 
         cout << "Error RWLS:" << endl;
-        cout << model - problem.GetGroundTruth() << endl;
+        vec error = model - problem.GetGroundTruth();
+
+        for(size_t i=0; i<error.NElems(); i++)
+            cout << error.Get(i)/problem.GetGroundTruth().Get(i) << endl;
 
         // compare with standard LM
         vec& weights = problem.GetWeights();
         weights.Ones();
 
         model(0) = 0.5;
-        model(1) = 1.5;
-        model(2) = -1;
+        model(1) = 2;
+        model(2) = 0;
         model(3) = 0.01;
         model(4) = 0.02;
 
-        lms.Iterate(2000,1e-10,1e-10,true);
+        lms.Iterate(1000,1e-15,1e-15,false);
 
-        cout << "Error LS:" << endl;
-        cout << model - problem.GetGroundTruth() << endl;
+        cout << "Relative error LS:" << endl;
+        error = model - problem.GetGroundTruth();
+
+        for(size_t i=0; i<error.NElems(); i++)
+            cout << error.Get(i)/problem.GetGroundTruth().Get(i) << endl;
 
     }
     else

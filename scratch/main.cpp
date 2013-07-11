@@ -5,11 +5,14 @@
 #include "feature.h"
 #include <omp.h>
 #include <stdio.h>
+#include "iter.h"
 #include "splinecurve.h"
 #include "factor.h"
 #include "types.h"
 #include "trafo.h"
 #include "cam.h"
+#include "image.h"
+#include <QImage>
 
 using namespace std;
 using namespace R4R;
@@ -22,13 +25,39 @@ bool rw_descriptors();
 int main()
 {
 
+//    mat M(0,0);
+//    CPreconditioner<mat,vec,double> precond = CPreconditioner<mat,vec,double>(M);
+//    CIterativeSolver<mat,vec,double> solver = CIterativeSolver<mat,vec,double>(precond,50,1e-10,false);
 
-    matf M(2,3);
-    M.Rand(0,1);
+//    mat A;
+//    vec b;
+//    vec x(10);
+//    A.ReadFromFile("A.txt");
+//    b.ReadFromFile("b.txt");
 
-    rgb x = {1,2,2};
+        smat M(0,0);
+        CPreconditioner<smat,vec,double> precond = CPreconditioner<smat,vec,double>(M);
+        CIterativeSolver<smat,vec,double> solver = CIterativeSolver<smat,vec,double>(precond,50,1e-10,false);
 
-    cout << x << endl;
+
+        smat A(10,10);
+        A.Rand(50);
+        A.SaveToFile("As.txt");
+        cout << A << endl;
+        vec b(10);
+        b.Rand(0,1);
+        b.WriteToFile("bs.txt");
+        cout << b << endl;
+
+
+
+        vec x(10);
+
+        solver.CGLS(A,b,x);
+        cout << x << endl;
+
+
+
 
     //CVector<float,2> result= M*x;
 

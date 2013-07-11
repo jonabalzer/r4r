@@ -90,8 +90,7 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 
 	// initial residual, Jacobian
 	vec r(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters());
-
-	Matrix J(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters(),m_problem.GetNumberOfModelParameters());
+    Matrix J(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters(),m_problem.GetNumberOfModelParameters());
 	m_problem.ComputeResidualAndJacobian(r,J);
 
 	// initial value for lambda, FIXME: do this depending on trace of J'*J
@@ -101,9 +100,9 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 		J(m_problem.GetNumberOfDataPoints()+i,i) = sqrt(m_lambda);
 
 	// get copies as temporary variables
-	Matrix Jt(J);
-	vec xold(x);
-	vec rt(r);
+    //Matrix Jt(J);
+    //vec xold = x.Clone();
+    //vec rt = r.Clone();
 
 	// residual norm
 	double res = r.Norm2();
@@ -131,22 +130,24 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 
 	while(true) {
 
-		// save old state
-		xold = x;
-
 		// fill in regularization part
 		for(size_t i=0; i<m_problem.GetNumberOfModelParameters(); i++)
 			J(m_problem.GetNumberOfDataPoints()+i,i) = sqrt(m_lambda);
 
 		// solve linear system
-		vec step(m_problem.GetNumberOfModelParameters());
-		m_solver.CGLS(J,r,step);
+        vec step(m_problem.GetNumberOfModelParameters());
+        m_solver.CGLS(J,r,step);
 
-		// tentative point
-		x = x - step;
+        // save old state before advancing
+        vec xold = x.Clone();
 
-		// test new residual
-		m_problem.ComputeResidualAndJacobian(rt,Jt);
+        // tentative point, everything is allocated so changing pointer is ok
+        x = x - step;
+
+        // compute tentative residual
+        vec rt(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters());
+        Matrix Jt(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters(),m_problem.GetNumberOfModelParameters());
+        m_problem.ComputeResidualAndJacobian(rt,Jt);
 		res = rt.Norm2();
 
 		// compute rho
@@ -157,42 +158,44 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 		dlres = 0.5*(normstep*normstep*m_lambda - descent);
 		rho = dres/dlres;
 
+        //cout << "Rho: " << rho << endl;
+
 		// check step size criterion (lambda going to infinity)
 		if(normstep<epsilon2*xold.Norm2())
-			break;
+            break;
 
 		// update state if a descent direction is found
-		if(rho>0) {
+        if(rho>0) {
 
 			// it ok now to store the residual norm
 			m_residuals.push_back(res);
 
-			// keep Jacobian and residual
-			r = rt;
-			J = Jt;
+            // keep Jacobian and residual, should be ok to move pointers
+            r = rt;
+            J = Jt;
 
 			// update gradient norm
-			J.Transpose();
-			grad = J*r;
-			J.Transpose();
+            J.Transpose();
+            grad = J*r;
+            J.Transpose();
 			normgrad = grad.Norm2();
 
 			// push lambda towards Gauss-Newton step
 			nu = m_params[2];
 			double factor = max(m_params[3],1-(m_params[2]-1)*pow(2*rho-1,m_params[5]));
-			m_lambda *= factor;
+            m_lambda *= factor;
 
 			k++;
 
 			// print out current state of optimization
 			if(!silent)
-				cout << k << "\t" << res << "\t" << normgrad << "\t" << normstep << "\t" << m_lambda << endl;
+                cout << k << "\t" << res << "\t" << normgrad << "\t" << normstep << "\t" << m_lambda << endl;
 
 			// check convergence criteria
 			if(normgrad<epsilon1 || k==n )
 				break;
 
-		}
+        }
 		else {
 
 			// push towards gradient descent
@@ -204,9 +207,9 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 			nu *= 2;
 
 			// restore state because step was unsuccessful
-			x = xold;
+            x = xold;
 
-		}
+        }
 
 	}
 
@@ -244,6 +247,8 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t nouter, size_t ninner, double ep
 		// compute weight function from unweighted residual vector residual
 		weights.Ones();
 		m_problem.ComputeResidual(r);
+
+        // update weights used in inner iteration
 		sigma = BiSquareWeightFunction(r,weights);
 
 		// save norm of residual
@@ -262,6 +267,7 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t nouter, size_t ninner, double ep
 
 	}
 
+    // express residual in numbers of variance
 	for(size_t i=0;i<r.NElems();i++)
 		r(i)=r.Get(i)*sigma.Get(i);
 

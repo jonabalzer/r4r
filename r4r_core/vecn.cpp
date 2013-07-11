@@ -209,5 +209,7 @@ template CVector<float,2> operator*(const float& s, const CVector<float,2>& x);
 template CVector<float,3> operator*(const float& s, const CVector<float,3>& x);
 template CVector<double,3> operator*(const double& s, const CVector<unsigned char,3>& x);
 template CVector<double,2> operator*(const double& s, const CVector<unsigned char,2>& x);
+template CVector<double,3> operator*(const double& s, const CVector<float,3>& x);
+template CVector<double,2> operator*(const double& s, const CVector<float,2>& x);
 
 }

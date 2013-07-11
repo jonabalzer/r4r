@@ -378,76 +378,77 @@ T CSparseArray<T>::InnerProduct(CSparseArray<T>& x, CSparseArray<T>& y) {
 template <class T>
 template<class Matrix> Matrix CSparseArray<T>::operator*(Matrix& array) {
 
-#ifdef _OPENMP
-	assert(m_ncols==array.NRows());
+/*#ifdef _OPENMP
+    assert(m_ncols==array.NRows());
 
-	Matrix result(m_nrows,array.NCols());;
+    Matrix result(m_nrows,array.NCols());;
 
-	if(!m_transpose) {
+    if(!m_transpose) {
 
-		typename map<size_t,T>::iterator it_col;
+        typename map<size_t,T>::iterator it_col;
 
 #pragma omp parallel for private(it_col), shared(result)
-		for(size_t i=0; i<m_nrows; i++) {
+        for(size_t i=0; i<m_nrows; i++) {
 
-			for(size_t j=0; j<array.NCols(); j++) {
+            for(size_t j=0; j<array.NCols(); j++) {
 
-				if(m_data[i].size()>0) {
+                if(m_data[i].size()>0) {
 
-					T sum = 0;
+                    T sum = 0;
 
-					for(it_col=m_data[i].begin(); it_col!=m_data[i].end(); it_col++)
-						sum+= (it_col->second)*array.Get(it_col->first,j);
+                    for(it_col=m_data[i].begin(); it_col!=m_data[i].end(); it_col++)
+                        sum+= (it_col->second)*array.Get(it_col->first,j);
 
-					if(sum!=0)
-						result(i,j) = sum;
+                    if(sum!=0)
+                        result(i,j) = sum;
 
-				}
+                }
 
-			}
+            }
 
-		}
+        }
 
-	}
-	else {
+    }
+    else {
 
-		typename map<size_t,T>::iterator it_row;
+        typename map<size_t,T>::iterator it_row;
 
-		for(size_t j=0; j<array.NCols(); j++) {
+        for(size_t j=0; j<array.NCols(); j++) {
 
 #pragma omp parallel for private(it_row), shared(result)
-			for(size_t i=0; i<m_ncols; i++) {
+            for(size_t i=0; i<m_ncols; i++) {
 
 
-				if(m_data[i].size()>0) {
+                if(m_data[i].size()>0) {
 
-					for(it_row=m_data[i].begin(); it_row!=m_data[i].end(); it_row++) {
+                    for(it_row=m_data[i].begin(); it_row!=m_data[i].end(); it_row++) {
 
 
 
 
 #pragma omp critical
-						{
-						T val = it_row->second*array.Get(i,j);
+                        {
+                        T val = it_row->second*array.Get(i,j);
 
-						// check this to avoid fill-in
-						if(val!=0)
-							result(it_row->first,j) += val;
+                        // check this to avoid fill-in
+                        if(val!=0)
+                            result(it_row->first,j) += val;
 
-						}
+                        }
 
-					}
+                    }
 
-				}
+                }
 
-			}
+            }
 
-		}
+        }
 
-	}
+    }
 
-	return result;
-#else
+    return result;
+#else*/
+
 
 	assert(m_ncols==array.NRows());
 
@@ -500,65 +501,65 @@ template<class Matrix> Matrix CSparseArray<T>::operator*(Matrix& array) {
 	}
 
 	return result;
-#endif
+//#endif
 
 }
 
 template <class T>
 CDenseVector<T> CSparseArray<T>::operator*(const CDenseVector<T>& vector) {
 
-#ifdef _OPENMP
-	assert(m_ncols==vector.NRows());
+/*#ifdef _OPENMP
+    assert(m_ncols==vector.NRows());
 
-	CDenseVector<T> result = CDenseVector<T>(m_nrows);
+    CDenseVector<T> result = CDenseVector<T>(m_nrows);
 
-	if(!m_transpose) {
+    if(!m_transpose) {
 
-		typename map<size_t,T>::iterator it_col;
+        typename map<size_t,T>::iterator it_col;
 
 #pragma omp parallel for private(it_col), shared(result,vector)
-		for(size_t i=0; i<m_nrows; i++) {
+        for(size_t i=0; i<m_nrows; i++) {
 
-			if(m_data[i].size()>0) {
+            if(m_data[i].size()>0) {
 
-				T sum = 0;
+                T sum = 0;
 
-				for(it_col=m_data[i].begin(); it_col!=m_data[i].end(); it_col++)
-					sum+= (it_col->second)*vector.Get(it_col->first);
+                for(it_col=m_data[i].begin(); it_col!=m_data[i].end(); it_col++)
+                    sum+= (it_col->second)*vector.Get(it_col->first);
 
-				result(i) = sum;
+                result(i) = sum;
 
-			}
+            }
 
-		}
+        }
 
-	}
-	else {
+    }
+    else {
 
-		typename map<size_t,T>::iterator it_row;
+        typename map<size_t,T>::iterator it_row;
 
 #pragma omp parallel for private(it_row), shared(result,vector)
-		for(size_t i=0; i<m_ncols; i++) {
+        for(size_t i=0; i<m_ncols; i++) {
 
-			if(m_data[i].size()>0) {
+            if(m_data[i].size()>0) {
 
-				for(it_row=m_data[i].begin(); it_row!=m_data[i].end(); it_row++) {
+                for(it_row=m_data[i].begin(); it_row!=m_data[i].end(); it_row++) {
 
 #pragma omp critical
-					result(it_row->first) += it_row->second*vector.Get(i);				// protect this
+                    result(it_row->first) += it_row->second*vector.Get(i);				// protect this
 
-				}
+                }
 
-			}
+            }
 
-		}
+        }
 
-	}
+    }
 
-	return result;
-#else
+    return result;
+#else*/
 
-	assert(m_ncols==vector.NRows());
+    assert(m_ncols==vector.NRows());
 
 	CDenseVector<T> result = CDenseVector<T>(m_nrows);
 
@@ -594,7 +595,7 @@ CDenseVector<T> CSparseArray<T>::operator*(const CDenseVector<T>& vector) {
 	}
 
 	return result;
-#endif
+//#endif
 
 }
 

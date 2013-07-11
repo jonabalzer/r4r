@@ -52,10 +52,10 @@ public:
 	CIterativeSolver(CPreconditioner<Matrix,Vector,Scalar>& M, size_t n, Scalar eps, bool silent = true);
 
 	//! Access to accuracy.
-	void SetEps(Scalar eps) { m_eps = eps; };
+    void SetEps(Scalar eps) { m_eps = eps; }
 
 	//! Access to maximum number of iterations.
-	void SetN(size_t n) { m_n = n; };
+    void SetN(size_t n) { m_n = n; }
 
 	/*! \brief Conjugate gradient method.
 	 *

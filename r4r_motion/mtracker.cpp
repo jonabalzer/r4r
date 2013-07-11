@@ -658,8 +658,8 @@ void CMagicSfM::ComputeResidual(vec& r) {
         vec2f dp = p1p - p1;
 
         // set residual
-        r(i) = dp.Get(0);
-        r(m_corri2i.size()+i) = dp.Get(1);
+        r(i) = m_weights.Get(i)*dp.Get(0);
+        r(m_corri2i.size()+i) = m_weights.Get(m_corri2i.size()+i)*dp.Get(1);
 
 	}
 
@@ -679,8 +679,8 @@ void CMagicSfM::ComputeResidual(vec& r) {
         vec2f dp = p1p - p1;
 
 		// set residual
-        r(2*m_corri2i.size()+i) = dp.Get(0);
-        r(2*m_corri2i.size()+m_corrs2i.size()+i) = dp.Get(1);
+        r(2*m_corri2i.size()+i) = m_weights.Get(2*m_corri2i.size()+i)*dp.Get(0);
+        r(2*m_corri2i.size()+m_corrs2i.size()+i) = m_weights.Get(2*m_corri2i.size()+m_corrs2i.size()+i)*dp.Get(1);
 
 	}
 
@@ -716,6 +716,10 @@ void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
     // projection error for image-to-image correspondences
     for(size_t i=0; i<m; i++) {
 
+        double wi, wim;
+        wi = m_weights.Get(i);
+        wim = m_weights.Get(m+i);
+
         // pixel in img 0 and 1
         vec2f p0, p1;
         p0 = m_corri2i[i].first;
@@ -739,37 +743,41 @@ void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
         vec2f dp = p1p - p1;
 
         // set residual
-        r(i) = dp.Get(0);
-        r(m+i) = dp.Get(1);
+        r(i) = wi*dp.Get(0);
+        r(m+i) = wim*dp.Get(1);
 
         // depth derivatives
         vec3f dz = R1*x0h;
-        J(i,i) = Jpi.Get(0,0)*dz.Get(0) + Jpi.Get(0,2)*dz.Get(2);
-        J(m+i,i) = Jpi.Get(1,1)*dz.Get(1) + Jpi.Get(1,2)*dz.Get(2);
+        J(i,i) = wi*(Jpi.Get(0,0)*dz.Get(0) + Jpi.Get(0,2)*dz.Get(2));
+        J(m+i,i) = wim*(Jpi.Get(1,1)*dz.Get(1) + Jpi.Get(1,2)*dz.Get(2));
 
         // translational derivative
-        J(i,m) = Jpi(0,0); 		J(i,m+1) = Jpi(0,1);	J(i,m+2) = Jpi(0,2);
-        J(m+i,m) = Jpi(1,0); 	J(m+i,m+1) = Jpi(1,1); 	J(m+i,m+2) = Jpi(1,2);
+        J(i,m) = wi*Jpi(0,0); 		J(i,m+1) = wi*Jpi(0,1);	J(i,m+2) = wi*Jpi(0,2);
+        J(m+i,m) = wim*Jpi(1,0); 	J(m+i,m+1) = wim*Jpi(1,1); 	J(m+i,m+2) = wim*Jpi(1,2);
+
 
         // rotational derivatives.
         vec3f do1 = DRx*x0;
         vec3f do2 = DRy*x0;
         vec3f do3 = DRz*x0;
 
-        J(i,m+3) = Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2);
-        J(m+i,m+3) = Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2);
+        J(i,m+3) = wi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2));
+        J(m+i,m+3) = wim*(Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2));
 
-        J(i,m+4) = Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2);
-        J(m+i,m+4) = Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2);
+        J(i,m+4) = wi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2));
+        J(m+i,m+4) = wim*(Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2));
 
-        J(i,m+5) = Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2);
-        J(m+i,m+5) = Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2);
+        J(i,m+5) = wi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2));
+        J(m+i,m+5) = wim*(Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2));
 
     }
 
-
     // projection error for scene-to-image correspondences
     for(size_t i=0; i<n; i++) {
+
+        double w2mi, w2min;
+        w2mi = m_weights.Get(2*m+i);
+        w2min = m_weights.Get(2*m+n+i);
 
         vec3f x0 = m_corrs2i[i].first;		// scene point in world coordinates
         vec2f p1 = m_corrs2i[i].second;		// projection into second image
@@ -786,26 +794,26 @@ void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
         vec2f dp = p1p - p1;
 
         // set residual
-        r(2*m+i) = dp.Get(0);
-        r(2*m+n+i) = dp.Get(1);
+        r(2*m+i) = w2mi*dp.Get(0);
+        r(2*m+n+i) = w2min*dp.Get(1);
 
         // translational derivative
-        J(2*m+i,m) = Jpi(0,0);      J(2*m+i,m+1) = Jpi(0,1);		J(2*m+i,m+2) = Jpi(0,2);
-        J(2*m+n+i,m) = Jpi(1,0); 	J(2*m+n+i,m+1) = Jpi(1,1);      J(2*m+n+i,m+2) = Jpi(1,2);
+        J(2*m+i,m) = w2mi*Jpi(0,0);      J(2*m+i,m+1) = w2mi*Jpi(0,1);		J(2*m+i,m+2) = w2mi*Jpi(0,2);
+        J(2*m+n+i,m) = w2min*Jpi(1,0); 	J(2*m+n+i,m+1) = w2min*Jpi(1,1);      J(2*m+n+i,m+2) = w2min*Jpi(1,2);
 
         // rotational derivatives.
         vec3f do1 = DRx*x0;
         vec3f do2 = DRy*x0;
         vec3f do3 = DRz*x0;
 
-        J(2*m+i,m+3) = Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2);;
-        J(2*m+n+i,m+3) = Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2);
+        J(2*m+i,m+3) = w2mi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2));
+        J(2*m+n+i,m+3) = w2min*(Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2));
 
-        J(2*m+i,m+4) = Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2);
-        J(2*m+n+i,m+4) = Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2);
+        J(2*m+i,m+4) = w2mi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2));
+        J(2*m+n+i,m+4) = w2min*(Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2));
 
-        J(2*m+i,m+5) = Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2);
-        J(2*m+n+i,m+5) = Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2);;
+        J(2*m+i,m+5) = w2mi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2));
+        J(2*m+n+i,m+5) = w2min*(Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2));
 
     }
 

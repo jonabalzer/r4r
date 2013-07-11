@@ -135,11 +135,11 @@ Scalar CIterativeSolver<Matrix,Vector,Scalar>::CGLS(Matrix& A, Vector& b, Vector
 	A.Transpose();
 
 	// preconditioning
-	Vector z(rnormal);
+    Vector z = rnormal.Clone();
 	m_M.Solve(z,rnormal);
 
 	// descent direction
-	Vector p = z;
+    Vector p = z.Clone();
 
 	Scalar deltao = CDenseArray<Scalar>::InnerProduct(z,rnormal);  // numerator: z\dot rnormal
 

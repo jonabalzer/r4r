@@ -44,11 +44,11 @@ CVector<T,3> CRGBImage::Get(const CVector<T,2>& p) {
     u = p.Get(0);
     v = p.Get(1);
 
-    if(u<0 || u>=(double)(NRows()-1) || v<0 || v>=(double)(NCols()-1))
-        return vec3();
-
     int i = (int)floor(v);
     int j = (int)floor(u);
+
+    if(i<0 || i>=NRows()-1 || j<0 || j>=NCols()-1)
+        return vec3();
 
     double vd = v - i;
     double ud = u - j;
@@ -58,6 +58,7 @@ CVector<T,3> CRGBImage::Get(const CVector<T,2>& p) {
     A01 = vec3(CDenseArray<rgb>::Get(i,j+1));
     A10 = vec3(CDenseArray<rgb>::Get(i+1,j));
     A11 = vec3(CDenseArray<rgb>::Get(i+1,j+1));
+
     A0 = A00*(1-ud) + A01*ud;
     A1 = A10*(1-ud) + A11*ud;
 
@@ -74,15 +75,15 @@ CVector<T,3> CRGBImage::Gradient(const CVector<T,2>& p, bool dir) {
     CVector<T,2> dp;
 
     if(dir)
-        dp = { 1, 0 };
-    else
         dp = { 0, 1 };
+    else
+        dp = { 1, 0 };
 
     CVector<T,3> I0, I1;
     I1 = Get(p+dp);
     I0 = Get(p-dp);
 
-    return (I1-I0)*0.5;
+    return 0.5*(I1-I0);
 
 }
 
