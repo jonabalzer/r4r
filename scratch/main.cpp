@@ -19,80 +19,22 @@ using namespace R4R;
 using namespace cv;
 
 bool rw_descriptors();
+bool solve_linear_system();
+bool gradients(const char* filename);
+bool projection(const char* filename);
 
 #include <opennurbs/opennurbs.h>
 
 int main()
 {
 
-//    mat M(0,0);
-//    CPreconditioner<mat,vec,double> precond = CPreconditioner<mat,vec,double>(M);
-//    CIterativeSolver<mat,vec,double> solver = CIterativeSolver<mat,vec,double>(precond,50,1e-10,false);
-
-//    mat A;
-//    vec b;
-//    vec x(10);
-//    A.ReadFromFile("A.txt");
-//    b.ReadFromFile("b.txt");
-
-        smat M(0,0);
-        CPreconditioner<smat,vec,double> precond = CPreconditioner<smat,vec,double>(M);
-        CIterativeSolver<smat,vec,double> solver = CIterativeSolver<smat,vec,double>(precond,50,1e-10,false);
 
 
-        smat A(10,10);
-        A.Rand(50);
-        A.SaveToFile("As.txt");
-        cout << A << endl;
-        vec b(10);
-        b.Rand(0,1);
-        b.WriteToFile("bs.txt");
-        cout << b << endl;
-
-
-
-        vec x(10);
-
-        solver.CGLS(A,b,x);
-        cout << x << endl;
+    projection("/home/jbalzer/Data/mvs/synth/jesus/left_cam.txt");
 
 
 
 
-    //CVector<float,2> result= M*x;
-
- //   cout << M << endl;
-
-
-
-   /* CPinholeCam cam;
-    CView myview(cam,F);
-    myview.OpenFromFile("camtest.txt");
-
-
-    cout << myview << endl;
-
-    vec3 x={1,4,2};
-
-    vec2 y = myview.Project(x);
-    cout << y << endl;
-
-    vector<vec3> in;
-    for(size_t i=0; i<1000000; i++)
-        in.push_back(x);
-
-    double t0 = omp_get_wtime();
-    vector<vec2> out = myview.Project(in);
-    double t1 = omp_get_wtime();
-    cout << t1-t0 << endl;
-
-    cout << out[0] << endl;*/
-
-
-
-
-    //rw_descriptors();
-    //cout << "Returned" << endl;
 
 //    ON::Begin();
 
@@ -292,3 +234,90 @@ bool rw_descriptors() {
 }
 
 
+bool solve_linear_system() {
+
+    mat M(0,0);
+    CPreconditioner<mat,vec,double> precond = CPreconditioner<mat,vec,double>(M);
+    CIterativeSolver<mat,vec,double> solver = CIterativeSolver<mat,vec,double>(precond,50,1e-10,false);
+
+    mat A(10,10);
+    vec b(10);
+    vec x(10);
+    A.Rand(0,1);
+    b.Rand(0,1);
+
+    solver.CGLS(A,b,x);
+    cout << x << endl;
+
+    return 0;
+
+}
+
+bool gradients(const char* filename) {
+
+    QImage qimg;
+    qimg.load(QString(filename));
+
+    CRGBImage img(qimg);
+
+    mat Iu(img.NRows(),img.NCols()), Iv(img.NRows(),img.NCols());
+
+    for(size_t i=0; i<Iu.NRows(); i++) {
+
+        for(size_t j=0; j<Iv.NCols(); j++) {
+
+            vec2 p = {(double)j,(double)i};
+            vec3 gradu = img.Gradient(p,0);
+            vec3 gradv = img.Gradient(p,1);
+
+            Iu(i,j) = gradu.Get(0);
+            Iv(i,j) = gradv.Get(0);
+
+
+        }
+
+    }
+
+    Iu.WriteToFile("Iu.txt");
+    Iv.WriteToFile("Iv.txt");
+
+    return 0;
+
+}
+
+bool projection(const char* filename) {
+
+    CRigidMotion<double,3> F;
+    CPinholeCam cam;
+
+    CView<double> myview(cam,F);
+    myview.OpenFromFile(filename);
+    cout << myview << endl;
+
+    CRigidMotion<double,3>& Fr = myview.GetTransformation();
+    mat M = mat(Fr);
+    cout << M << endl;
+
+    CVector<size_t,2> sizes = cam.GetSize();
+    cout << sizes.Get(0) << " " << sizes.Get(1) << endl;
+    mat K = cam.GetProjectionMatrix();
+    cout << K << endl;
+
+    vec3 x={1,4,2};
+    vec2 y = myview.Project(x);
+    cout << y << endl;
+
+    vector<vec3> in;
+    for(size_t i=0; i<1000000; i++)
+        in.push_back(x);
+
+    double t0 = omp_get_wtime();
+    vector<vec2> out = myview.Project(in);
+    double t1 = omp_get_wtime();
+    cout << "Wall clock time elapsed: " << t1-t0 << " s" << endl;
+
+    cout << out[0] << endl;
+
+    return 0;
+
+}

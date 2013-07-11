@@ -162,6 +162,12 @@ public:
     //! Checks if two cameras are the same.
     bool operator==(CAbstractCam& cam);
 
+    //! Access to image size.
+    CVector<size_t,2> GetSize() {  return { m_size[0], m_size[1] }; }
+
+    //! Projection matrix.
+    mat GetProjectionMatrix();
+
 private:
 
     size_t m_size[2];			//!< pixel size
@@ -368,6 +374,9 @@ public:
 
     //! Writes the viewpoint parameters to a stream.
     template<typename U> friend std::ostream& operator << (std::ostream& os, const CView<U>& x);
+
+    //! Access to the transformation.
+    CRigidMotion<T,3>& GetTransformation() { return m_F; }
 
 protected:
 
