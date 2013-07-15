@@ -410,6 +410,7 @@ template class  CIterativeSolver<CDenseArray<float>,CDenseVector<float>,float>;
 template class  CIterativeSolver<CSparseBandedArray<double>,CDenseArray<double>,double>;
 template class  CIterativeSolver<CSparseArray<double>,CDenseArray<double>,double>;
 template class  CIterativeSolver<CSparseArray<double>,CDenseVector<double>,double>;
-
+template class  CIterativeSolver<CSparseArray<float>,CDenseArray<float>,float>;
+template class  CIterativeSolver<CSparseArray<float>,CDenseVector<float>,float>;
 
 }

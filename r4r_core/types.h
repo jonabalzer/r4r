@@ -38,6 +38,7 @@ typedef CDenseArray<double> mat;
 typedef CDenseArray<float> matf;
 typedef CDenseArray<unsigned char> mmat;
 typedef CSparseArray<double> smat;
+typedef CSparseArray<float> smatf;
 typedef CSparseBandedArray<double> sbmat;
 typedef CVector<double,3> vec3;
 typedef CVector<float,3> vec3f;

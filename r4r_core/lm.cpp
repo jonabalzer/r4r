@@ -68,6 +68,7 @@ vec CLeastSquaresProblem<Matrix>::ComputeDispersion(vec& r) {
 
 template class CLeastSquaresProblem<mat>;
 template class CLeastSquaresProblem<smat>;
+template class CLeastSquaresProblem<smatf>;
 
 template <class Matrix>
 const double CLevenbergMarquardt<Matrix>::m_params[5] = { 0.25, 0.75 , 2, 1.0/3.0, 3.0 };
@@ -324,6 +325,7 @@ vec CLevenbergMarquardt<Matrix>::HuberWeightFunction(vec& r, vec& w) {
 
 template class CLevenbergMarquardt<mat>;
 template class CLevenbergMarquardt<smat>;
+template class CLevenbergMarquardt<smatf>;
 
 }
 

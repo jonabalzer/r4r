@@ -41,6 +41,9 @@ template class CPreconditioner<CDenseArray<double>,CDenseArray<double>,double>;
 template class CPreconditioner<CDenseArray<double>,CDenseVector<double>,double>;
 template class CPreconditioner<CDenseArray<float>,CDenseVector<float>,float>;
 template class CPreconditioner<CSparseArray<double>,CDenseVector<double>,double>;
+template class CPreconditioner<CSparseArray<float>,CDenseVector<float>,float>;
+template class CPreconditioner<CSparseArray<float>,CDenseArray<float>,float>;
+
 
 template<class Matrix,class Vector,class Scalar>
 CSSORPreconditioner<Matrix,Vector,Scalar>::CSSORPreconditioner(Matrix& A, Scalar omega, bool lower):

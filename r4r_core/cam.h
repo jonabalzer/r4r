@@ -378,6 +378,14 @@ public:
     //! Access to the transformation.
     CRigidMotion<T,3>& GetTransformation() { return m_F; }
 
+    //! Access to the inverse transformation.
+    CRigidMotion<T,3>& GetInverseTransformation() { return m_Finv; }
+
+    //! Access to the cam.
+    CAbstractCam& GetCam() { return m_cam; }
+
+
+
 protected:
 
     CAbstractCam& m_cam;               //!< intrinsic parameters
