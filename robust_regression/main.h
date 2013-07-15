@@ -11,7 +11,7 @@
 using namespace std;
 using namespace R4R;
 
-class CRosenbrockFunction:public CLeastSquaresProblem<mat> {
+class CRosenbrockFunction:public CLeastSquaresProblem<mat,double> {
 
 public:
 
@@ -31,7 +31,7 @@ private:
 
 };
 
-class COsbourneFunction:public CLeastSquaresProblem<mat> {
+class COsbourneFunction:public CLeastSquaresProblem<mat,double> {
 
 public:
 

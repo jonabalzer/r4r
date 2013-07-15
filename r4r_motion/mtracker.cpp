@@ -381,7 +381,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         CMagicSfM problem(m_cam,corri2i,corrs2i,F0inv);
 
         // set up LM method
-        CLevenbergMarquardt<smat> lms(problem,solver,m_params->GetDoubleParameter("LM_LAMBDA"));
+        CLevenbergMarquardt<smat,double> lms(problem,solver,m_params->GetDoubleParameter("LM_LAMBDA"));
 
         // initialize
         vec& x = problem.Get();
@@ -617,7 +617,7 @@ bool CMotionTracker::ColorMap(cv::Mat& img) {
 
 
 CMagicSfM::CMagicSfM(CPinholeCam cam, vector<pair<vec2f,vec2f> >& corri2i, vector<pair<vec3f,vec2f> >& corrs2i, CRigidMotion<float,3> F0inv):
-	CLeastSquaresProblem<smat>::CLeastSquaresProblem(2*(corri2i.size()+corrs2i.size()),corri2i.size()+6),
+    CLeastSquaresProblem<smat,double>::CLeastSquaresProblem(2*(corri2i.size()+corrs2i.size()),corri2i.size()+6),
 	m_cam(cam),
 	m_corri2i(corri2i),
 	m_corrs2i(corrs2i),

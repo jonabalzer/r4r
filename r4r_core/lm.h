@@ -37,7 +37,7 @@ namespace R4R {
  *
  *
  */
-template<class Matrix>
+template<class Matrix,typename T>
 class CLeastSquaresProblem {
 
 public:
@@ -54,16 +54,16 @@ public:
 	CLeastSquaresProblem(size_t nopts, size_t noparams);
 
 	//! \brief Jointly computes the residual vector and Jacobian of the least-squares objective function.
-    virtual void ComputeResidualAndJacobian(vec& r, Matrix& J) = 0;
+    virtual void ComputeResidualAndJacobian(CDenseVector<T>& r, Matrix& J) = 0;
 
 	//! Computes the residual vector of a weighted least-squares objective function.
-    virtual void ComputeResidual(vec& r) = 0;
+    virtual void ComputeResidual(CDenseVector<T>& r) = 0;
 
 	//! Access to the model parameters.
-    vec& Get() { return m_model; }
+    CDenseVector<T>& Get() { return m_model; }
 
 	//! Access to the weights.
-    vec& GetWeights() { return m_weights; }
+    CDenseVector<T>& GetWeights() { return m_weights; }
 
 	//! Access to #m_nopts.
     size_t GetNumberOfDataPoints() { return m_nopts; }
@@ -78,14 +78,14 @@ public:
 	 * overload this with implementation of e.g. techniques such as the Donoho-Stahel or Minimum Covariance Determinant
 	 * (MCD) estimator.
 	 */
-    virtual vec ComputeDispersion(vec &r);
+    virtual CDenseVector<T> ComputeDispersion(CDenseVector<T>& r);
 
 protected:
 
 	size_t m_nopts;								//!< number of data points
 	size_t m_noparams;							//!< number of unknown model parameters
-	vec m_model;								//!< unknown model parameters
-	vec m_weights;								//!< weights
+    CDenseVector<T> m_model;					//!< unknown model parameters
+    CDenseVector<T> m_weights;					//!< weights
 
 };
 
@@ -98,34 +98,34 @@ protected:
  * - Huber: \f$w_i(r_i)=\frac{1}{\max(1,|r_i|)}\f$
  *
  */
-template<class Matrix>
+template<class Matrix,typename T>
 class CLevenbergMarquardt {
 
 public:
 
 	//! Constructor.
-	CLevenbergMarquardt(CLeastSquaresProblem<Matrix>& problem, CIterativeSolver<Matrix,vec,double>& solver, double tau = 1.0);
+    CLevenbergMarquardt(CLeastSquaresProblem<Matrix,T>& problem, CIterativeSolver<Matrix,CDenseVector<T>,T>& solver, T tau = 1.0);
 
 	//! Triggers execution of Levenberg-Marquardt steps.
-	vec Iterate(size_t n, double epsilon1, double epsilon2, bool silent = true);
+    CDenseVector<T> Iterate(size_t n, T epsilon1, T epsilon2, bool silent = true);
 
 	//! Starts robust re-weighted Levenberg-Marquardt algorithm.
-	vec Iterate(size_t nouter, size_t ninner, double epsilon, bool silentinner, bool silentouter);
+    CDenseVector<T> Iterate(size_t nouter, size_t ninner, T epsilon, bool silentinner, bool silentouter);
 
 protected:
 
-	CLeastSquaresProblem<Matrix>& m_problem;						//!< least-squares problem
-	CIterativeSolver<Matrix,vec,double>& m_solver;					//!< linear solver
-	double m_tau;													//!< initial damping parameter weight
-	double m_lambda;												//!< damping parameter
-	std::vector<double> m_residuals;								//!< residuals
-	static const double m_params[5];								//!< parameters \f$\rho_1,\rho_2,\beta,\frac{1}{\gamma},\tau,p\f$, cf. [Nielsen1999]
+    CLeastSquaresProblem<Matrix,T>& m_problem;						//!< least-squares problem
+    CIterativeSolver<Matrix,CDenseVector<T>,T>& m_solver;			//!< linear solver
+    T m_tau;        												//!< initial damping parameter weight
+    T m_lambda;             										//!< damping parameter
+    std::vector<T> m_residuals;     								//!< residuals
+    static const T m_params[5];                                     //!< parameters \f$\rho_1,\rho_2,\beta,\frac{1}{\gamma},\tau,p\f$, cf. [Nielsen1999]
 
 	//! Computes weights based on bi-square function.
-    vec BiSquareWeightFunction(vec &r, vec& w);
+    CDenseVector<T> BiSquareWeightFunction(CDenseVector<T>& r, CDenseVector<T>& w);
 
 	//! Computes weights based on Huber function.
-    vec HuberWeightFunction(vec &r, vec& w);
+    CDenseVector<T> HuberWeightFunction(CDenseVector<T>& r, CDenseVector<T>& w);
 
 };
 

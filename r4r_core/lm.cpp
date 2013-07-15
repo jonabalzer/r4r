@@ -30,8 +30,8 @@ using namespace std;
 namespace R4R {
 
 
-template <class Matrix>
-CLeastSquaresProblem<Matrix>::CLeastSquaresProblem():
+template <class Matrix,typename T>
+CLeastSquaresProblem<Matrix,T>::CLeastSquaresProblem():
 	m_nopts(0),
 	m_noparams(0),
 	m_model(0),
@@ -40,8 +40,8 @@ CLeastSquaresProblem<Matrix>::CLeastSquaresProblem():
 
 }
 
-template <class Matrix>
-CLeastSquaresProblem<Matrix>::CLeastSquaresProblem(size_t nopts, size_t noparams):
+template <class Matrix,typename T>
+CLeastSquaresProblem<Matrix,T>::CLeastSquaresProblem(size_t nopts, size_t noparams):
 	m_nopts(nopts),
 	m_noparams(noparams),
 	m_model(noparams),
@@ -51,14 +51,14 @@ CLeastSquaresProblem<Matrix>::CLeastSquaresProblem(size_t nopts, size_t noparams
 
 }
 
-template <class Matrix>
-vec CLeastSquaresProblem<Matrix>::ComputeDispersion(vec& r) {
+template <class Matrix,typename T>
+CDenseVector<T> CLeastSquaresProblem<Matrix,T>::ComputeDispersion(CDenseVector<T>& r) {
 
-	double fac = (1.0/1.4826);
+    T fac = (1.0/1.4826);
 
-    double s = fac/r.MAD(); // FIXME: Is this correct????
+    T s = fac/r.MAD(); // FIXME: Is this correct????
 
-	vec sigma(r.NElems());
+    CDenseVector<T> sigma(r.NElems());
 	sigma.Ones();
 	sigma.Scale(s);
 
@@ -66,15 +66,15 @@ vec CLeastSquaresProblem<Matrix>::ComputeDispersion(vec& r) {
 
 }
 
-template class CLeastSquaresProblem<mat>;
-template class CLeastSquaresProblem<smat>;
-template class CLeastSquaresProblem<smatf>;
+template class CLeastSquaresProblem<mat,double>;
+template class CLeastSquaresProblem<smat,double>;
+template class CLeastSquaresProblem<smatf,float>;
 
-template <class Matrix>
-const double CLevenbergMarquardt<Matrix>::m_params[5] = { 0.25, 0.75 , 2, 1.0/3.0, 3.0 };
+template <class Matrix,typename T>
+const T CLevenbergMarquardt<Matrix,T>::m_params[5] = { 0.25, 0.75 , 2, 1.0/3.0, 3.0 };
 
-template <class Matrix>
-CLevenbergMarquardt<Matrix>::CLevenbergMarquardt(CLeastSquaresProblem<Matrix>& problem, CIterativeSolver<Matrix,vec,double>& solver, double tau):
+template <class Matrix,typename T>
+CLevenbergMarquardt<Matrix,T>::CLevenbergMarquardt(CLeastSquaresProblem<Matrix,T>& problem, CIterativeSolver<Matrix,CDenseVector<T>,T>& solver, T tau):
 	m_problem(problem),
 	m_solver(solver),
 	m_tau(tau),
@@ -83,14 +83,14 @@ CLevenbergMarquardt<Matrix>::CLevenbergMarquardt(CLeastSquaresProblem<Matrix>& p
 
 }
 
-template <class Matrix>
-vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsilon2, bool silent) {
+template <class Matrix,typename T>
+CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T epsilon2, bool silent) {
 
 	// access to state
-	vec& x = m_problem.Get();
+    CDenseVector<T>& x = m_problem.Get();
 
 	// initial residual, Jacobian
-	vec r(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters());
+    CDenseVector<T> r(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters());
     Matrix J(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters(),m_problem.GetNumberOfModelParameters());
 	m_problem.ComputeResidualAndJacobian(r,J);
 
@@ -100,23 +100,18 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 	for(size_t i=0; i<m_problem.GetNumberOfModelParameters(); i++)
 		J(m_problem.GetNumberOfDataPoints()+i,i) = sqrt(m_lambda);
 
-	// get copies as temporary variables
-    //Matrix Jt(J);
-    //vec xold = x.Clone();
-    //vec rt = r.Clone();
-
 	// residual norm
-	double res = r.Norm2();
+    T res = r.Norm2();
 	m_residuals.push_back(res);
 
 	// gradient norm
 	J.Transpose();
-	vec grad = J*r;
+    CDenseVector<T> grad = J*r;
 	J.Transpose();
-	double normgrad = grad.Norm2();
+    T normgrad = grad.Norm2();
 
 	// init other quantities
-	double nu = m_params[2];
+    T nu = m_params[2];
 	size_t k = 0;
 
 	// in verbose mode, print out initial residual, etc.
@@ -136,30 +131,28 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 			J(m_problem.GetNumberOfDataPoints()+i,i) = sqrt(m_lambda);
 
 		// solve linear system
-        vec step(m_problem.GetNumberOfModelParameters());
+        CDenseVector<T> step(m_problem.GetNumberOfModelParameters());
         m_solver.CGLS(J,r,step);
 
         // save old state before advancing
-        vec xold = x.Clone();
+        CDenseVector<T> xold = x.Clone();
 
         // tentative point, everything is allocated so changing pointer is ok
         x = x - step;
 
         // compute tentative residual
-        vec rt(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters());
+        CDenseVector<T> rt(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters());
         Matrix Jt(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters(),m_problem.GetNumberOfModelParameters());
         m_problem.ComputeResidualAndJacobian(rt,Jt);
 		res = rt.Norm2();
 
 		// compute rho
-		double normstep, descent, dres, dlres, rho;
+        T normstep, descent, dres, dlres, rho;
 		dres = m_residuals.back() - res;
-		normstep = sqrt(vec::InnerProduct(step,step));
-		descent = -vec::InnerProduct(step,grad);
+        normstep = sqrt(CDenseVector<T>::InnerProduct(step,step));
+        descent = -CDenseVector<T>::InnerProduct(step,grad);
 		dlres = 0.5*(normstep*normstep*m_lambda - descent);
 		rho = dres/dlres;
-
-        //cout << "Rho: " << rho << endl;
 
 		// check step size criterion (lambda going to infinity)
 		if(normstep<epsilon2*xold.Norm2())
@@ -183,7 +176,7 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 
 			// push lambda towards Gauss-Newton step
 			nu = m_params[2];
-			double factor = max(m_params[3],1-(m_params[2]-1)*pow(2*rho-1,m_params[5]));
+            T factor = max(m_params[3],1-(m_params[2]-1)*pow(2*rho-1,m_params[5]));
             m_lambda *= factor;
 
 			k++;
@@ -218,19 +211,19 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t n, double epsilon1, double epsil
 
 }
 
-template <class Matrix>
-vec CLevenbergMarquardt<Matrix>::Iterate(size_t nouter, size_t ninner, double epsilon, bool silentouter, bool silentinner) {
+template <class Matrix,typename T>
+CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t nouter, size_t ninner, T epsilon, bool silentouter, bool silentinner) {
 
-	vector<double> residuals;
+    vector<T> residuals;
 
-	vec& weights = m_problem.GetWeights();
-	vec r(m_problem.GetNumberOfDataPoints());
+    CDenseVector<T>& weights = m_problem.GetWeights();
+    CDenseVector<T> r(m_problem.GetNumberOfDataPoints());
 	m_problem.ComputeResidual(r);
 
-	double res = r.Norm2();
+    T res = r.Norm2();
 	residuals.push_back(res);
 
-	vec sigma; // = 1;
+    CDenseVector<T> sigma; // = 1;
 
 	size_t k = 0;
 
@@ -277,19 +270,18 @@ vec CLevenbergMarquardt<Matrix>::Iterate(size_t nouter, size_t ninner, double ep
 
 }
 
-
-template <class Matrix>
-vec CLevenbergMarquardt<Matrix>::BiSquareWeightFunction(vec& r, vec& w) {
+template <class Matrix,typename T>
+CDenseVector<T> CLevenbergMarquardt<Matrix,T>::BiSquareWeightFunction(CDenseVector<T>& r, CDenseVector<T>& w) {
 
 	// estimate standard deviation for normalization of residuals
-	vec sigma = m_problem.ComputeDispersion(r);
+    CDenseVector<T> sigma = m_problem.ComputeDispersion(r);
 
 	// tuning factor from literature
-	double tune = 4.685;
+    T tune = 4.685;
 
 	for(size_t i=0; i<m_problem.GetNumberOfDataPoints(); i++) {
 
-		double x = (r.Get(i)*sigma.Get(i))/tune;
+        T x = (r.Get(i)*sigma.Get(i))/tune;
 
 		if(x>=-1 && x<=1)
 			w(i) = sqrt((1-x*x)*(1-x*x));
@@ -302,20 +294,20 @@ vec CLevenbergMarquardt<Matrix>::BiSquareWeightFunction(vec& r, vec& w) {
 
 }
 
-template <class Matrix>
-vec CLevenbergMarquardt<Matrix>::HuberWeightFunction(vec& r, vec& w) {
+template <class Matrix,typename T>
+CDenseVector<T> CLevenbergMarquardt<Matrix,T>::HuberWeightFunction(CDenseVector<T>& r, CDenseVector<T>& w) {
 
 	// estimate standard deviation for normalization of residuals
-	vec sigma = m_problem.ComputeDispersion(r);
+    CDenseVector<T> sigma = m_problem.ComputeDispersion(r);
 
 	// tuning factor from literature
-	double tune = 1.345;
+    T tune = 1.345;
 
 	for(size_t i=0; i<m_problem.GetNumberOfDataPoints(); i++) {
 
-		double x = (r.Get(i)*sigma.Get(i))/tune;
+        T x = (r.Get(i)*sigma.Get(i))/tune;
 
-		w(i) = 1/max(1.0,fabs(x));
+        w(i) = 1/max(1.0,(double)fabs(x));
 
 	}
 
@@ -323,9 +315,9 @@ vec CLevenbergMarquardt<Matrix>::HuberWeightFunction(vec& r, vec& w) {
 
 }
 
-template class CLevenbergMarquardt<mat>;
-template class CLevenbergMarquardt<smat>;
-template class CLevenbergMarquardt<smatf>;
+template class CLevenbergMarquardt<mat,double>;
+template class CLevenbergMarquardt<smat,double>;
+template class CLevenbergMarquardt<smatf,float>;
 
 }
 

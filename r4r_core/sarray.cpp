@@ -895,6 +895,9 @@ template class CSparseArray<int>;
 template CDenseArray<double> CSparseArray<double>::operator *(CDenseArray<double>& x);
 template CDenseVector<double> CSparseArray<double>::operator *(CDenseVector<double>& x);
 template CSparseArray<double> CSparseArray<double>::operator *(CSparseArray<double>& x);
+template CDenseArray<float> CSparseArray<float>::operator *(CDenseArray<float>& x);
+template CDenseVector<float> CSparseArray<float>::operator *(CDenseVector<float>& x);
+template CSparseArray<float> CSparseArray<float>::operator *(CSparseArray<float>& x);
 
 
 template ostream& operator<< (ostream& os, CSparseArray<double>& x);

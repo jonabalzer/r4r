@@ -95,7 +95,7 @@ private:
 
 };
 
-class CMagicSfM:public CLeastSquaresProblem<smat> {
+class CMagicSfM:public CLeastSquaresProblem<smat,double> {
 
 public:
 

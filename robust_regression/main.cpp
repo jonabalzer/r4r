@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
         CIterativeSolver<mat,vec,double> solver = CIterativeSolver<mat,vec,double>(precond,10,1e-20,true);
 
         CRosenbrockFunction problem = CRosenbrockFunction();
-        CLevenbergMarquardt<mat> lms(problem,solver,0);
+        CLevenbergMarquardt<mat,double> lms(problem,solver,0);
 
         // access solution vector
         vec& model = problem.Get();
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
         COsbourneFunction problem = COsbourneFunction();
         problem.DisturbSamplePoints(10,1);
 
-        CLevenbergMarquardt<mat> lms(problem,solver,1e-8);
+        CLevenbergMarquardt<mat,double> lms(problem,solver,1e-8);
 
         // init
         vec& model = problem.Get();
