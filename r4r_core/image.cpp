@@ -92,7 +92,6 @@ template CVector<float,3> CRGBImage::Gradient<float>(const CVector<float,2>& p, 
 
 
 #ifdef QT_GUI_LIB
-
 CRGBImage::CRGBImage(const QImage& img):
     CDenseArray<rgb>::CDenseArray(img.height(),img.width()) {
 
@@ -133,8 +132,54 @@ CRGBImage::operator QImage() const {
     return qimg;
 
 }
-
 #endif
 
+/*CRGBImage CRGBImage::Clone(CRectangle<int> roi) {
+
+    CRGBImage result(roi.Width(),roi.Height());
+
+    CVector<size_t,2> tl, br;
+    tl = roi.TopLeft();
+    br = roi.BottomRight();
+
+    for(int i=tl.Get(1); i<=br.Get(1); i++) {
+
+        for(int j=tl.Get(0); j<=br.Get(0); j++) {
+
+            if(i>=0 && i<Height() && j>=0 && j<Width())
+                result(i-tl.Get(1),j-tl.Get(0)) = CDenseArray<rgb>::Get(i,j);
+
+        }
+
+    }
+
+    return result;
+
 }
+
+
+template<typename T>
+CRGBImage CRGBImage::Clone(CRectangle<T> roi) {
+
+
+    // round width and height
+    size_t w, h;
+    w = (size_t)(fabs(roi.Width())+0.5);
+    h = (size_t)(fabs(roi.Height())+0.5);
+
+    CRGBImage result(width,height);
+
+
+    CVector<T,2> tl, br;
+    tl = roi.TopLeft();
+    br = roi.BottomRight();
+
+
+
+    // PROBLEM here is the signed-ness of the width/height of the rectangle!
+    // TODO: fix this!
+
+}*/
+
+} // end of namespace
 

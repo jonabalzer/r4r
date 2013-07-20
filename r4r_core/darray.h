@@ -31,6 +31,7 @@
 
 #ifdef __SSE4_1__
 #include <xmmintrin.h>
+#include <pmmintrin.h>
 #include <malloc.h>
 #endif
 
@@ -281,6 +282,9 @@ public:
     //! Bilinear interpolation.
     double InterpolateBilinearly(double u, double v) const;
 
+    //! Matrix inversion.
+    bool Invert();
+
 protected:
 
 	size_t m_nrows;				//!< number of rows
@@ -365,39 +369,6 @@ protected:
 	using CDenseArray<T>::m_nrows;
 	using CDenseArray<T>::m_transpose;
 	using CDenseArray<T>::m_data;
-
-};
-
-/*! \brief convenience class for creating vectors of length \f$n\f$
- *
- *
- *
- */
-template<class T, int n>
-class CNVector: public CDenseVector<T> {
-
-public:
-
-    //! Constructor.
-    CNVector():CDenseVector<T>(n) {};
-
-};
-
-/*! \brief convenience class for creating vectors of length \f$3\f$
- *
- * \todo What about operators in base class?
- *
- */
-template<class T>
-class CNVector<T,3>:public CDenseVector<T> {
-
-public:
-
-    // constructor
-    CNVector():CDenseVector<T>(3) {};
-
-    // constructor
-    CNVector(T x, T y, T z):CDenseVector<T>(3) {};
 
 };
 

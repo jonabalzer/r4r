@@ -679,6 +679,85 @@ T CDenseArray<T>::Determinant() const {
 
 }
 
+template <class T>
+bool CDenseArray<T>::Invert() {
+
+    cerr << "General matrix inversion not implemented, yet." << endl;
+
+    return false;
+
+}
+
+template <>
+bool CDenseArray<double>::Invert() {
+
+    if(m_nrows!=m_ncols)
+        return 1;
+
+    double* pdata = m_data.get();
+    double* temp = new double[m_nrows*m_ncols];
+    memcpy(temp,pdata,m_nrows*m_ncols*sizeof(double));
+
+    if(m_nrows==2) {
+
+        double det = temp[0]*temp[3]-temp[1]*temp[2];
+
+        if(det==0) {
+
+            delete [] temp;
+            return 1;
+
+        }
+
+        double deti = 1/det;
+
+        // first linear part
+        pdata[0] = deti*temp[3];
+        pdata[1] = -deti*temp[1];
+        pdata[2] = -deti*temp[2];
+        pdata[3] = deti*temp[0];
+
+    }
+    else if(m_nrows==3) {
+
+        // inverse of det
+        double det = temp[0]*(temp[4]*temp[8] - temp[5]*temp[7])
+                   - temp[3]*(temp[8]*temp[1] - temp[2]*temp[7])
+                   + temp[6]*(temp[1]*temp[5] - temp[2]*temp[4]);
+
+        if(det==0) {
+
+            delete [] temp;
+            return 1;
+
+        }
+
+        double deti = 1.0/det;
+
+        // first linear part
+        pdata[0] = deti*(temp[4]*temp[8] - temp[5]*temp[7]);
+        pdata[1] = -deti*(temp[1]*temp[8] - temp[2]*temp[7]);
+        pdata[2] = deti*(temp[1]*temp[5] - temp[2]*temp[4]);
+        pdata[3] = -deti*(temp[3]*temp[8] - temp[5]*temp[6]);
+        pdata[4] = deti*(temp[0]*temp[8] - temp[2]*temp[6]);
+        pdata[5] = -deti*(temp[0]*temp[5] - temp[2]*temp[3]);
+        pdata[6] = deti*(temp[3]*temp[7] - temp[4]*temp[6]);
+        pdata[7] = -deti*(temp[0]*temp[7] - temp[1]*temp[6]);
+        pdata[8] = deti*(temp[0]*temp[4] - temp[1]*temp[3]);
+
+    }
+    else {
+
+        delete [] temp;
+        return 1;
+
+    }
+
+    delete [] temp;
+
+    return 0;
+
+}
 
 template <class T>
 void CDenseArray<T>::Transpose() {
@@ -1517,6 +1596,78 @@ void CDenseVector<T>::Add(const CDenseVector<T>& vector) {
 
     for(size_t i=0; i<m_nrows*m_ncols; i++)
         px[i] += py[i];
+
+}
+
+template <>
+CDenseVector<float> CDenseVector<float>::operator+(const CDenseVector<float>& vector) const {
+
+    assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
+
+    CDenseVector<float> result(m_nrows,m_ncols);
+
+    float* px = m_data.get();
+    float* py = vector.m_data.get();
+    float* pz = result.m_data.get();
+
+//#ifndef __SSE4_1__
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pz[i] = px[i] + py[i];
+/*#else
+    size_t n = m_nrows*m_ncols;
+
+    size_t offset = n - n%4;    // #m_n - #m_n%4
+
+    __m128* pxs = (__m128*)px;
+    __m128* pys = (__m128*)py;
+    __m128* pzs = (__m128*)pz;
+
+    for(size_t i=0; i<offset/4; i++)
+        pzs[i] = _mm_hadd_ps(pxs[i],pys[i]);
+
+
+    // add offset
+    for(size_t i=offset; i<n; i++)
+        pz[i] = px[i] + py[i];
+#endif*/
+
+    return result;
+
+}
+
+template <>
+CDenseVector<float> CDenseVector<float>::operator-(const CDenseVector<float>& vector) const {
+
+    assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
+
+    CDenseVector<float> result(m_nrows,m_ncols);
+
+    float* px = m_data.get();
+    float* py = vector.m_data.get();
+    float* pz = result.m_data.get();
+
+//#ifndef __SSE4_1__
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pz[i] = px[i] - py[i];
+/*#else
+    size_t n = m_nrows*m_ncols;
+
+    size_t offset = n - n%4;    // #m_n - #m_n%4
+
+    __m128* pxs = (__m128*)px;
+    __m128* pys = (__m128*)py;
+    __m128* pzs = (__m128*)pz;
+
+    for(size_t i=0; i<offset/4; i++)
+        pzs[i] = _mm_hsub_ps(pxs[i],pys[i]);
+
+
+    // add offset
+    for(size_t i=offset; i<n; i++)
+        pz[i] = px[i] - py[i];
+#endif*/
+
+    return result;
 
 }
 

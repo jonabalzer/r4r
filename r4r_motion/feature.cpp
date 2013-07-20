@@ -855,7 +855,17 @@ template<typename U,u_int m>
 ofstream& operator<<(ofstream& os, CInterestPoint<U,m>& x) {
 
     // location, scale, and quality
-    os << x.m_location << endl;
+    for(uint i=0; i<m; i++) {
+
+        os << x.m_location.Get(i);
+
+        if(i<m-1)
+            os << " ";
+        else
+            os << endl;
+
+    }
+
     os << x.m_scale << endl;
     os << x.m_quality << endl;
 

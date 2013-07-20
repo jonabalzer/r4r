@@ -140,9 +140,6 @@ public:
     //! Constructor.
     CNeighborhoodDescriptor(const Array& container, const Rect& roi);
 
-	//! \copydoc CDescriptor::Draw(cv::Mat& img,cv::Scalar)
-    virtual void Draw(cv::Mat& img, cv::Scalar color) { m_roi.Draw(img,color); }
-
     //! Access to the region of interest.
     Rect GetRoI() const { return m_roi; }
 

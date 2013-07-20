@@ -47,7 +47,7 @@ CRectangle<T>::CRectangle() {
 
 
 template <class T>
-CRectangle<T>::CRectangle(T tx, T ty, T sx, T sy, double phi) {
+CRectangle<T>::CRectangle(T tx, T ty, T sx, T sy, T phi) {
 
 	m_t[0] = tx;
 	m_t[1] = ty;
@@ -58,9 +58,9 @@ CRectangle<T>::CRectangle(T tx, T ty, T sx, T sy, double phi) {
 }
 
 template <class T>
-CDenseVector<T> CRectangle<T>::TransformFrom(T x, T y) {
+CVector<T,2> CRectangle<T>::TransformFrom(T x, T y) {
 
-	CDenseVector<T> result(2);
+    CVector<T,2> result;
 
 	if(m_phi!=0) {
 
@@ -83,73 +83,30 @@ CDenseVector<T> CRectangle<T>::TransformFrom(T x, T y) {
 
 
 template <class T>
-CDenseVector<T> CRectangle<T>::Barycenter() {
+CVector<T,2> CRectangle<T>::Barycenter() {
 
-	CDenseVector<T> result(2);
-
-	result(0) = m_t[0];
-	result(1) = m_t[1];
-
-	return result;
+    return  { m_t[0], m_t[1] };
 
 }
-
-template <class T>
-void CRectangle<T>::Draw(cv::Mat& img, cv::Scalar color) {
-
-	if(m_phi!=0) {
-
-		CDenseVector<T> tl = TopLeft();
-		CDenseVector<T> bl = BottomLeft();
-		CDenseVector<T> br = BottomRight();
-		CDenseVector<T> tr = TopRight();
-
-		line(img,Point2f(tl(0),tl(1)),Point2f(bl(0),bl(1)),color);
-		line(img,Point2f(bl(0),bl(1)),Point2f(br(0),br(1)),color);
-		line(img,Point2f(br(0),br(1)),Point2f(tr(0),tr(1)),color);
-		line(img,Point2f(tr(0),tr(1)),Point2f(tl(0),tl(1)),color);
-
-	}
-	else {
-
-		CDenseVector<T> tl = TopLeft();
-		CDenseVector<T> br = BottomRight();
-
-		rectangle(img,Point2f(tl(0),tl(1)),Point2f(br(0),br(1)),color);
-
-
-	}
-
-
-}
-
 
 template <class U>
 ostream& operator<<(ostream& os, CRectangle<U>& x) {
 
-	vec tl = x.TopLeft();
-	vec bl = x.BottomLeft();
-	vec br = x.BottomRight();
-	vec tr = x.TopRight();
-
-	tl.Transpose();
-	bl.Transpose();
-	br.Transpose();
-	tr.Transpose();
-
-	os << tl << endl;
-	os << bl << endl;
-	os << br << endl;
-	os << tr << endl;
+    os << "[ ";
+    os << x.TopLeft() << endl;
+    os << x.BottomLeft() << endl;
+    os << x.BottomRight() << endl;
+    os << x.TopRight() << endl;
+    os << " ]";
 
 	return os;
 
 }
 
-
-template class CRectangle<size_t>;
 template class CRectangle<float>;
 template class CRectangle<double>;
+template class CRectangle<int>;              // this does not make sense for unsigned values!!!
 template ostream& operator<< (ostream& os, CRectangle<double>& x);
+template ostream& operator<< (ostream& os, CRectangle<float>& x);
 
 }

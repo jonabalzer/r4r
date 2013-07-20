@@ -1,7 +1,7 @@
 TEMPLATE = app
 CONFIG += console
 #CONFIG -= qt
-QMAKE_CXXFLAGS += -std=c++0x -fopenmp -msse4
+QMAKE_CXXFLAGS += -std=c++0x -fopenmp #-msse4 -O3
 
 SOURCES += main.cpp
 

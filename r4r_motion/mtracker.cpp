@@ -34,12 +34,12 @@ using namespace cv;
 
 namespace R4R {
 
-CMotionTracker::CMotionTracker(CParameters* params, CPinholeCam& cam):
+CMotionTracker::CMotionTracker(CParameters* params, CPinholeCam &cam):
         CSimpleTracker(params),
         m_cam(cam),
         m_motion() {
 
-        m_motion.push_back(vec(6));
+    m_motion.push_back(vecf(6));
 
 }
 
@@ -98,162 +98,6 @@ map<CTracklet*,vec> CMotionTracker::GetMap() {
 
 }
 
-bool CMotionTracker::SaveMotion(const char* filename) {
-
-    ofstream out(filename);
-
-    if(!out) {
-
-        cout << "ERROR: Could not open file " << filename << "." << endl;
-        return 1;
-
-     }
-
-    list<vec>::iterator it;
-
-    for(it=m_motion.begin(); it!=m_motion.end(); it++) {
-
-        vec m = (*it);
-        m.Transpose();
-        out << m << endl;
-
-    }
-
-    out.close();
-
-    return 0;
-
-}
-
-bool CMotionTracker::SaveMap(const char* filename) {
-
-    map<CTracklet*,vec> pts = GetMap();
-    map<CTracklet*,vec>::iterator it;
-
-    ofstream out(filename);
-
-    if(!out) {
-
-        cout << "ERROR: Could not open file " << filename << "." << endl;
-        return 1;
-
-     }
-
-    out << "ply" << endl;
-    out <<  "format ascii 1.0" << endl;
-    out <<  "comment" << endl;
-    out << "element vertex " << pts.size() << endl;
-    out << "property float32 x" << endl;
-    out << "property float32 y" << endl;
-    out << "property float32 z" << endl;
-    out << "property uchar red" << endl;
-    out << "property uchar green" << endl;
-    out << "property uchar blue" << endl;
-    out << "end_header" << endl;
-
-    for(it=pts.begin(); it!=pts.end(); it++) {
-
-        vec cpt = it->second;
-
-        out << cpt.Get(0) << " " << cpt.Get(1) << " " << cpt.Get(2) << " " << (unsigned int)cpt.Get(3) << " " <<  (unsigned int)cpt.Get(4) << " " <<  (unsigned int)cpt.Get(5) << endl;
-
-    }
-
-    out.close();
-
-    return 0;
-
-}
-
-vec3f CMotionTracker::Triangulate(vec3f o0, vec3f d0, vec3f o1, vec3f d1, float eps) {
-
-    vec3f result;
-
-    vec3f z = o0 - o1;
-
-    double ab, aa, bb, az, bz;
-
-    ab = InnerProduct(d0,d1);
-    aa = InnerProduct(d0,d0);
-    bb = InnerProduct(d1,d1);
-    az = InnerProduct(d0,z);
-    bz = InnerProduct(d1,z);
-
-    double lambda = (ab*bz-bb*az)/(aa*bb-ab*ab);
-    double mu = -(ab*az-aa*bz)/(aa*bb-ab*ab);
-
-    vec3f x0s = o0 + d0*lambda;
-    vec3f x1s = o1 + d1*mu;
-    double dist = (x1s - x0s).Norm2();
-
-    if(lambda>0 && mu>0 && dist<eps)
-        result = (x0s + x1s)*0.5;
-
-    return result;
-
-}
-
-vec2f CMotionTracker::EpipolarSearch(vec2f& ub, vec2f& d, cv::Mat& img0, cv::Mat& img1, size_t hsize, size_t nsteps, float eps) {
-
-    size_t w = 2*hsize + 1;
-    size_t n = w*w;
-
-    vecf r(n);
-    vecf J(n);
-
-    float rold, rnew, lambda;
-
-    rnew = 0;
-    lambda = 0;
-
-    vec2f u1;
-
-    for(size_t k=0; k<nsteps; k++) {
-
-        // predict new target point location
-        u1 = ub + d*lambda;
-
-        for(int i=-(int)hsize; i<=(int)hsize; i++) {
-
-            for(int j=-(int)hsize; j<=(int)hsize; j++) {
-
-                // compute row index
-                int row = w*(i+(int)hsize)+(int)hsize+j;
-
-                // interpolated intensities and gradients
-                double I0, I1, I1u, I1v;
-                I0 = CImageInterpolation::Bilinear(img0,ub(0)+i,ub(1)+j);			// FIXME: this does not have to be recomputed everytime!!!!
-                I1 = CImageInterpolation::Bilinear(img1,u1(0)+i,u1(1)+j);
-                I1u = CImageInterpolation::Gradient(img1,u1(0)+i,u1(1)+j,true);
-                I1v = CImageInterpolation::Gradient(img1,u1(0)+i,u1(1)+j,false);
-
-                // residual
-                r(row) = I1 - I0;
-                J(row) = I1u*d(0) + I1v*d(1);
-
-            }
-
-        }
-
-        // save old residual norm and compute new one
-        rold = rnew;
-        rnew = r.Norm2();
-
-        // break if there is no more change
-        if(fabs(rnew-rold)<eps)
-            break;
-
-        // GN step
-        double dlambda = -vecf::InnerProduct(J,r)/vecf::InnerProduct(J,J);
-        lambda = lambda + dlambda;
-
-    }
-
-    return u1;
-
-}
-
-
 bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
     // do LK tracking at every time instance, FIXME: how to do descriptor aggregation with 3d info
@@ -263,24 +107,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
     if(m_global_t>0 && (m_global_t)%kfr==0) {
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//		stringstream no;
-//		no.fill('0');
-//		no.width(4);
-//		no << m_global_t;
-//
-//		string prefix0("/home/jbalzer/Dump/corri2i");
-//		string prefix1("/home/jbalzer/Dump/corrs2i");
-//		stringstream filename0, filename1;
-//		filename0 << prefix0 << no.str() << ".txt";
-//		filename1 << prefix1 << no.str() << ".txt";
-//
-//		mat corr0, corr1;
-
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        vec m0 = m_motion.back();
+        vecf m0 = m_motion.back();
         CRigidMotion<float,3> F0inv(m0.Get(3),    // careful with order
                                     m0.Get(4),
                                     m0.Get(5),
@@ -321,70 +148,44 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
         }
 
-        /*if(m_global_t/kfr==1) {
 
-            mat E = CLinearAlgebra::CalibratedNPoint(corri2i,m_cam);
-            mat F = CLinearAlgebra::FactorEssentialMatrix(E);
+// try 8-point initilialization
+//        if(m_global_t/kfr==1) {
 
-            minit(0) = F(0,3);
-            minit(1) = F(1,3);
-            minit(2) = F(2,3);
+//            mat E = CLinearAlgebra::CalibratedNPoint(corri2i,m_cam);
+//            mat F = CLinearAlgebra::FactorEssentialMatrix(E);
 
-            CTransformation<3> T = CTransformation<3>(F);
+//            minit(0) = F(0,3);
+//            minit(1) = F(1,3);
+//            minit(2) = F(2,3);
 
-            mat R = T.GetLinearPart();
+//            CTransformation<3> T = CTransformation<3>(F);
 
-            vec omega = CRotation<3>::Log(R);
+//            mat R = T.GetLinearPart();
 
-            minit(3) = omega(0);
-            minit(4) = omega(1);
-            minit(5) = omega(2);
-        }*/
+//            vec omega = CRotation<3>::Log(R);
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-//		corr0 = mat(corri2i.size(),9); // correspondence, two residuals, new 3d point
-//		corr1 = mat(corrs2i.size(),6); // correspondence, two residuals
-//
-//		for(size_t i=0; i<corri2i.size(); i++) {
-//
-//			corr0(i,0) = corri2i[i].first.Get(0);
-//			corr0(i,1) = corri2i[i].first.Get(1);
-//			corr0(i,2) = corri2i[i].second.Get(0);
-//			corr0(i,3) = corri2i[i].second.Get(1);
-//
-//
-//		}
-//
-//		for(size_t i=0; i<corrs2i.size(); i++) {
-//
-//			corr1(i,0) = corrs2i[i].first.Get(0);
-//			corr1(i,1) = corrs2i[i].first.Get(1);
-//			corr1(i,2) = corrs2i[i].second.Get(0);
-//			corr1(i,3) = corrs2i[i].second.Get(1);
-//
-//		}
-
-
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//            minit(3) = omega(0);
+//            minit(4) = omega(1);
+//            minit(5) = omega(2);
+//        }
 
         cout << "No of correspondences (2d-2d/3d-2d): " << corri2i.size() << " " << corrs2i.size() << endl;
 
         // init linear solver
-        smat M(0,0);
-        CPreconditioner<smat,vec,double> precond = CPreconditioner<smat,vec,double>(M);
-        CIterativeSolver<smat,vec,double> solver = CIterativeSolver<smat,vec,double>(precond,
+        smatf M(0,0);
+        CPreconditioner<smatf,vecf,float> precond = CPreconditioner<smatf,vecf,float>(M);
+        CIterativeSolver<smatf,vecf,float> solver = CIterativeSolver<smatf,vecf,float>(precond,
                                                                                      m_params->GetIntParameter("CGLS_NITER"),
                                                                                      m_params->GetDoubleParameter("CGLS_EPS"),                                                                                     true);
         // init least-squares problem
         CMagicSfM problem(m_cam,corri2i,corrs2i,F0inv);
 
         // set up LM method
-        CLevenbergMarquardt<smat,double> lms(problem,solver,m_params->GetDoubleParameter("LM_LAMBDA"));
+        CLevenbergMarquardt<smatf,float> lms(problem,solver,m_params->GetDoubleParameter("LM_LAMBDA"));
 
         // initialize
-        vec& x = problem.Get();
+        vecf& x = problem.Get();
 
         for(size_t i=0; i<corri2i.size(); i++)
             x(i) = m_params->GetDoubleParameter("INIT_DISTANCE");
@@ -393,11 +194,11 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
             x(corri2i.size()+i) = m0(i);
 
         // iterate
-        vec r = lms.Iterate(m_params->GetIntParameter("LM_NITER_OUTER"),
-                            m_params->GetIntParameter("LM_NITER_INNER"),
-                            m_params->GetDoubleParameter("LM_EPS"),
-                            false,
-                            true);
+        vecf r = lms.Iterate(m_params->GetIntParameter("LM_NITER_OUTER"),
+                             m_params->GetIntParameter("LM_NITER_INNER"),
+                             m_params->GetDoubleParameter("LM_EPS"),
+                             false,
+                             true);
 
         // add new points to the map
         double threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_DEPTH");
@@ -411,25 +212,15 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
                 vec3f pt = x0h*x(i);
                 pt = F0inv.Transform(pt);
 
-                ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                //corr0(i,4) = r.Get(i);
-                //corr0(i,5) = r.Get(corri2i.size()+i);
-                //corr0(i,6) = pt(0);
-                //corr0(i,7) = pt(1);
-                //corr0(i,8) = pt(2);
-
-                ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
                 // get pointer to initial feature
                 shared_ptr<CAbstractDescriptor> descx(new CDescriptor<vecf>(vecf(pt)));
                 trackletsi2i[i]->front().AttachDescriptor("3DPOINT",descx);
 
                 // also store initial depths for descriptor canonization
-                /*vec z(1);
-                z(0) = x(i);
-                shared_ptr<CDescriptor> descz(new CDescriptor<vec>(z));
-                feat->AttachDescriptor("INITDEPTH",descz);*/
+//                vec z(1);
+//                z(0) = x(i);
+//                shared_ptr<CDescriptor> descz(new CDescriptor<vec>(z));
+//                feat->AttachDescriptor("INITDEPTH",descz);
 
             }
             else
@@ -440,7 +231,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         // process motion
         threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_MOTION");
 
-        vec m1(6);
+        vecf m1(6);
         for(size_t i=0; i<6; i++)
             m1(i) = x(corri2i.size()+i);
 
@@ -452,25 +243,10 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
             if(fabs(r.Get(2*corri2i.size()+i))>threshold || fabs(r.Get(2*corri2i.size()+corrs2i.size()+i))>threshold)
                 trackletss2i[i]->SetStatus(false);
 
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            //corr1(i,4) = r.Get(corri2i.size()+i);
-            //corr1(i,5) = r.Get(2*corri2i.size()+corrs2i.size()+i);
-
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        }
-
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        //corr0.SaveToFile(filename0.str().c_str());
-        //corr1.SaveToFile(filename1.str().c_str());
-
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                }
 
 
     }
-
 
     return 0;
 
@@ -617,7 +393,7 @@ bool CMotionTracker::ColorMap(cv::Mat& img) {
 
 
 CMagicSfM::CMagicSfM(CPinholeCam cam, vector<pair<vec2f,vec2f> >& corri2i, vector<pair<vec3f,vec2f> >& corrs2i, CRigidMotion<float,3> F0inv):
-    CLeastSquaresProblem<smat,double>::CLeastSquaresProblem(2*(corri2i.size()+corrs2i.size()),corri2i.size()+6),
+    CLeastSquaresProblem<smatf,float>::CLeastSquaresProblem(2*(corri2i.size()+corrs2i.size()),corri2i.size()+6),
 	m_cam(cam),
 	m_corri2i(corri2i),
 	m_corrs2i(corrs2i),
@@ -625,7 +401,7 @@ CMagicSfM::CMagicSfM(CPinholeCam cam, vector<pair<vec2f,vec2f> >& corri2i, vecto
 
 }
 
-void CMagicSfM::ComputeResidual(vec& r) {
+void CMagicSfM::ComputeResidual(vecf& r) {
 
     // actual transformation from world to second frame
     CRigidMotion<float,3> F1(m_model.Get(m_corri2i.size()+3),           // careful with order
@@ -686,7 +462,7 @@ void CMagicSfM::ComputeResidual(vec& r) {
 
 }
 
-void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
+void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
 
     size_t m = m_corri2i.size();
     size_t n = m_corrs2i.size();
@@ -819,35 +595,26 @@ void CMagicSfM::ComputeResidualAndJacobian(vec& r, smat& J) {
 
 }
 
-vec CMagicSfM::ComputeDispersion(const vec& r) {
+vecf CMagicSfM::ComputeDispersion(const vecf& r) {
 
-    vec sigma(r.NElems());
+    vecf sigma(r.NElems());
 
     size_t m = m_corri2i.size();
     size_t n = m_corrs2i.size();
 
     // get pointer to the data
-    double* rdata = r.Data().get();
+    float* rdata = r.Data().get();
 
     // copy into subarrays (one for each dimension and part of the functional)
-    vec ri2iu(m,shared_ptr<double>(&rdata[0]));
-    vec ri2iv(m,shared_ptr<double>(&rdata[m]));
-    vec rs2iu(n,shared_ptr<double>(&rdata[2*m]));
-    vec rs2iv(n,shared_ptr<double>(&rdata[2*m+n]));
+    vecf ri2iu(m,shared_ptr<float>(&rdata[0]));
+    vecf ri2iv(m,shared_ptr<float>(&rdata[m]));
+    vecf rs2iu(n,shared_ptr<float>(&rdata[2*m]));
+    vecf rs2iv(n,shared_ptr<float>(&rdata[2*m+n]));
 
-    // get a robust estimate of the mean
-/*
-    vec medi2i(2), meds2i(2);
-    medi2i(0) = ri2iu.Median();
-    medi2i(1) = ri2iv.Median();
-    meds2i(0) = rs2iu.Median();
-    meds2i(1) = rs2iv.Median();
-*/
-
-    double si2iu = 1.0/(1.4826*CLinearAlgebra::MedianAbsoluteDeviation(ri2iu));
-    double si2iv = 1.0/(1.4826*CLinearAlgebra::MedianAbsoluteDeviation(ri2iv));
-    double ss2iu = 1.0/(1.4826*CLinearAlgebra::MedianAbsoluteDeviation(rs2iu));
-    double ss2iv = 1.0/(1.4826*CLinearAlgebra::MedianAbsoluteDeviation(rs2iv));
+    float si2iu = 1.0/(1.4826*ri2iu.MAD());
+    float si2iv = 1.0/(1.4826*ri2iv.MAD());
+    float ss2iu = 1.0/(1.4826*rs2iu.MAD());
+    float ss2iv = 1.0/(1.4826*rs2iv.MAD());
 
     for(size_t i=0; i<m; i++) {
 

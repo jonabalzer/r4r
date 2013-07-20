@@ -53,6 +53,8 @@ private slots:
 
     void on_actionSave_Map_triggered();
 
+    void on_actionSave_Tracks_triggered();
+
 signals:
 
     void show_memoryUsage();

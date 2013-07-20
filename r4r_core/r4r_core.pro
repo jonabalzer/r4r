@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QMAKE_CXXFLAGS += -std=c++0x -fopenmp -msse4 -O3
+QMAKE_CXXFLAGS += -std=c++0x -fopenmp -O3 -msse4
 
 TARGET = r4r_core
 TEMPLATE = lib

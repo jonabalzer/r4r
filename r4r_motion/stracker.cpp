@@ -40,6 +40,7 @@ CSimpleTracker::CSimpleTracker(CParameters* params):
 
 	// generate sample points for tests performed in BRIEF descriptor
     CBRIEF::GenerateSamplePoints();
+    //CBRIEF::PrintSamplePoints();
 
 }
 

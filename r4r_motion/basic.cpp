@@ -43,9 +43,9 @@ bool CIdentityDescriptor::Compute(cv::Mat& img) {
 
 		for(size_t j=0; j<m_container.NCols(); j++) {
 
-			vec pt = m_roi.TransformFrom(-1.0+j*dx,-1.0+i*dy);
+            vec2 pt = m_roi.TransformFrom(-1.0+j*dx,-1.0+i*dy);
 
-			m_container(i,j) = CImageInterpolation::Bilinear(img,pt(0),pt(1));
+            m_container(i,j) = CImageInterpolation::Bilinear(img,pt.Get(0),pt.Get(1));
 
 		}
 
@@ -130,10 +130,10 @@ bool CIdentityGradientDescriptor::Compute(cv::Mat& img) {
 
 		for(size_t j=0; j<m_container.NCols(); j++) {
 
-			vec pt = m_roi.TransformFrom(-1.0+j*dx,-1.0+i*dy);
+            vec2 pt = m_roi.TransformFrom(-1.0+j*dx,-1.0+i*dy);
 
-			m_container(i,j) = CImageInterpolation::Gradient(img,pt(0),pt(1),0);
-			m_container(h+i,j) = CImageInterpolation::Gradient(img,pt(0),pt(1),1);
+            m_container(i,j) = CImageInterpolation::Gradient(img,pt.Get(0),pt.Get(1),0);
+            m_container(h+i,j) = CImageInterpolation::Gradient(img,pt.Get(0),pt.Get(1),1);
 
 		}
 
@@ -262,12 +262,9 @@ double CCurvatureDescriptor::Distance(const CCurvatureDescriptor& desc) const {
 
 }
 
+vec2 CBRIEF::m_pts_0[BITSET_LENGTH] = {};
 
-
-double CBRIEF::m_x[2*BITSET_LENGTH] = {};
-
-double CBRIEF::m_y[2*BITSET_LENGTH] = {};
-
+vec2 CBRIEF::m_pts_1[BITSET_LENGTH] = {};
 
 CBRIEF::CBRIEF(CRectangle<double> roi):
     CNeighborhoodDescriptor(CDenseVector<bool>(BITSET_LENGTH),roi)
@@ -280,6 +277,10 @@ void CBRIEF::GenerateSamplePoints() {
     sigma.Eye();
     sigma.Scale(2.0/5.0);
 
+    mat x0(BITSET_LENGTH,2), x1(BITSET_LENGTH,2);
+    x0.Rand(0,1);
+    x1.Rand(0,1);
+
     // loop through number of samples
     for(size_t i=0; i<BITSET_LENGTH; i++) {
 
@@ -287,33 +288,27 @@ void CBRIEF::GenerateSamplePoints() {
         for(size_t j=0; j<2; j++) {
 
             // Box-Muller transform
-            double x, y;
-            x = rand()/double(RAND_MAX);
-            y = rand()/double(RAND_MAX);
+            vec2 uniform;
+            if(j==0) {
 
-            double r = sqrt(-2*log(x));
+                vec2 uniform = { x0(i,0), x0(i,1) };
 
-            vec z(2);
-            z(0) = r*cos(2*M_PI*y);
-            z(1) = r*sin(2*M_PI*y);
+                double r = sqrt(-2*log(uniform.Get(0)));
+                vec2 z = { r*cos(2*M_PI*uniform.Get(1)), r*sin(2*M_PI*uniform.Get(1)) };
+                vec2 p = sigma*z;
 
-            vec p = sigma*z;
+                CBRIEF::m_pts_0[i] = p;
 
-            switch(j) {
+            }
+            else {
 
-            case 0:
+                vec2 uniform = { x1(i,0), x1(i,1) };
 
-                CBRIEF::m_x[i] = p(0);
-                CBRIEF::m_x[BITSET_LENGTH+i] = p(1);
+                double r = sqrt(-2*log(uniform.Get(0)));
+                vec2 z = { r*cos(2*M_PI*uniform.Get(1)), r*sin(2*M_PI*uniform.Get(1)) };
+                vec2 p = sigma*z;
 
-                break;
-
-            case 1:
-
-                CBRIEF::m_y[i] = p(0);
-                CBRIEF::m_y[BITSET_LENGTH+i] = p(1);
-
-                break;
+                CBRIEF::m_pts_1[i] = p;
 
             }
 
@@ -332,11 +327,9 @@ bool CBRIEF::Compute(cv::Mat& img) {
     for(size_t i=0; i<m_container.NElems(); i++) {
 
         // get sample points from static member
-        vec x(2), y(2);
-        x(0) = CBRIEF::m_x[i];
-        x(1) = CBRIEF::m_x[BITSET_LENGTH+i];
-        y(0) = CBRIEF::m_y[i];
-        y(1) = CBRIEF::m_y[BITSET_LENGTH+i];
+        vec2 x, y;
+        x = CBRIEF::m_pts_0[i];
+        y = CBRIEF::m_pts_1[i];
 
         // transform to image coordinates
         x = m_roi.TransformFrom(x);
@@ -344,8 +337,8 @@ bool CBRIEF::Compute(cv::Mat& img) {
 
         // interpolate image
         double Ix, Iy;
-        Ix = CImageInterpolation::Bilinear(img,x(0),x(1));
-        Iy = CImageInterpolation::Bilinear(img,y(0),y(1));
+        Ix = CImageInterpolation::Bilinear(img,x.Get(0),x.Get(1));
+        Iy = CImageInterpolation::Bilinear(img,y.Get(0),y.Get(1));
 
         // perform binary test
         m_container(i) = (Iy>Ix);
@@ -361,6 +354,13 @@ double CBRIEF::Distance(const CBRIEF& desc) const {
     CDenseVector<bool> diff = m_container - desc.m_container;
 
     return diff.HammingNorm();
+
+}
+
+void CBRIEF::PrintSamplePoints() {
+
+    for(size_t i=0; i<BITSET_LENGTH; i++)
+        cout << m_pts_0[i] << " " << m_pts_1[i] << endl;
 
 }
 

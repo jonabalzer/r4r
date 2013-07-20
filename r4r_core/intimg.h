@@ -104,7 +104,7 @@ protected:
 	size_t m_computed;						//!< counts how many times CIntegralImage::Compute() has been called
 
 	//! Maps a point that is out of bounds to its closest points on the boundary.
-	void ProjectToBoundary(double& x, double& y);
+    void ProjectToBoundary(double& x, double& y);
 
 	//! Checks whether a point is in bounds.
 	bool InBounds(const double& x, const double& y);

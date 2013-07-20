@@ -157,6 +157,7 @@
     <addaction name="separator"/>
     <addaction name="actionSave_Motion"/>
     <addaction name="actionSave_Map"/>
+    <addaction name="actionSave_Tracks"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
     <addaction name="actionQuit"/>
@@ -187,6 +188,11 @@
   <action name="actionSave_Motion">
    <property name="text">
     <string>Save Motion</string>
+   </property>
+  </action>
+  <action name="actionSave_Tracks">
+   <property name="text">
+    <string>Save Tracks</string>
    </property>
   </action>
  </widget>

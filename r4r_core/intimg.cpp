@@ -196,7 +196,7 @@ void CIntegralImage<T>::AddDensityFast(double x, double y, T val) {
 
 
 template <class T>
-void CIntegralImage<T>::ProjectToBoundary(double& x, double& y) {
+void CIntegralImage<T>::ProjectToBoundary(double &x, double &y) {
 
 	if(x<0)
 		x = 0;
@@ -268,11 +268,11 @@ T CIntegralImage<T>::EvaluateFast(CRectangle<double> roi) {
 
 	assert(m_computed>0);
 
-	vec tl = roi.TopLeft();
-	vec br = roi.BottomRight();
+    vec2 tl = roi.TopLeft();
+    vec2 br = roi.BottomRight();
 
-	ProjectToBoundary(tl(0),tl(1));
-	ProjectToBoundary(br(0),br(1));
+    ProjectToBoundary(tl(0),tl(1));
+    ProjectToBoundary(br(0),br(1));
 
 	size_t il, jl, iu, ju;
 	il = (size_t)tl(1);
@@ -281,7 +281,6 @@ T CIntegralImage<T>::EvaluateFast(CRectangle<double> roi) {
 	ju = (size_t)br(0);
 
 	return m_data(il,jl) + m_data(iu,ju) - m_data(iu,jl) - m_data(il,ju);
-
 
 }
 

@@ -54,9 +54,11 @@ CLeastSquaresProblem<Matrix,T>::CLeastSquaresProblem(size_t nopts, size_t nopara
 template <class Matrix,typename T>
 CDenseVector<T> CLeastSquaresProblem<Matrix,T>::ComputeDispersion(CDenseVector<T>& r) {
 
+    /* this is ok, actually we are computing the inverse of the covariance
+     * for normalization of the residuals later, which then only requires multiplication*/
     T fac = (1.0/1.4826);
 
-    T s = fac/r.MAD(); // FIXME: Is this correct????
+    T s = fac/r.MAD();
 
     CDenseVector<T> sigma(r.NElems());
 	sigma.Ones();

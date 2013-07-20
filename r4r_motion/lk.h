@@ -34,7 +34,7 @@
 
 namespace R4R {
 
-class CLukasKanade:public CLeastSquaresProblem<mat>  {
+class CLukasKanade:public CLeastSquaresProblem<mat,double>  {
 
 
 /*! \brief Lukas-Kanade motion estimation functional
@@ -51,10 +51,10 @@ public:
 	void ComputeResidualAndJacobian(vec& r, mat& J);
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&, Matrix&, const vec&)
-	void ComputeResidualAndJacobian(vec& r, mat& J, const vec& weights) {};
+    void ComputeResidualAndJacobian(vec& r, mat& J, const vec& weights) {}
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
-	void ComputeResidual(vec& r) {};
+    void ComputeResidual(vec& r) {}
 
 private:
 

@@ -29,7 +29,7 @@
 #endif
 
 #include "types.h"
-
+#include "rect.h"
 
 namespace R4R {
 
@@ -72,16 +72,12 @@ public:
     //! Constructor.
     CRGBImage(size_t w, size_t h, unsigned char* data);
 
-
 #ifdef QT_GUI_LIB
-
     //! Construct from QT image.
     CRGBImage(const QImage& img);
 
     //! Cast to a QT image.
     operator QImage() const;
-
-
 #endif
 
     //! Access using bilinear interpolation.
@@ -89,6 +85,23 @@ public:
 
     //! Compute gradient with centered differences.
     template<typename T> CVector<T,3> Gradient(const CVector<T,2>& p, bool dir);
+
+    //! Get the width of the image.
+    size_t Width() { return NCols(); }
+
+    //! Get the height of the image.
+    size_t Height() { return NRows(); }
+
+    //! Creates a deep copy of a region of interest.
+    //CRGBImage Clone(CRectangle<int> roi);
+
+    //! Creates a deep copy of a region of interest using bilinear interpolation.
+    //template<typename T> CRGBImage Clone(CRectangle<T> roi);
+
+
+
+
+private:
 
 };
 

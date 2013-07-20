@@ -73,10 +73,10 @@ public:
 
 	/*! \brief Computes scattering of residuals to normalize them for re-weighting and/or outlier detection.
 	 *
-	 * \details Implementation of the base class assumes univariate data and returns a vector filled with the median
-	 * absolute deviation (MAD). Multivariate data require more sophisticated scale-location estimation. In that case,
-	 * overload this with implementation of e.g. techniques such as the Donoho-Stahel or Minimum Covariance Determinant
-	 * (MCD) estimator.
+     * \details ComputeDispersion() is actually a misnomer. This function computes the inverse of a robust
+     * estimate of the variance of residuals, which are later brought to the bi-unit interval by
+     * division with \f$\hat{\sigma}$\f (numerically by multiplication.
+     *
 	 */
     virtual CDenseVector<T> ComputeDispersion(CDenseVector<T>& r);
 

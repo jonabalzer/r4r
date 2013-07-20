@@ -161,13 +161,16 @@ public:
     //! Generates sampling points.
     static void GenerateSamplePoints();
 
+    //! Print sampling points.
+    static void PrintSamplePoints();
+
     //! Distance between two BRIEF descriptors.
     double Distance(const CBRIEF& desc) const;
 
 protected:
 
-    static double m_x[2*BITSET_LENGTH];             //! first set of sample points
-    static double m_y[2*BITSET_LENGTH];             //! second set of sample points
+    static vec2 m_pts_0[BITSET_LENGTH];             //! first set of sample points
+    static vec2 m_pts_1[BITSET_LENGTH];             //! second set of sample points
 
 };
 

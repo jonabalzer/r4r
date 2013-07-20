@@ -191,6 +191,7 @@ template class CVector<float,2>;
 template class CVector<double,2>;
 template class CVector<unsigned char,2>;
 template class CVector<size_t,2>;
+template class CVector<int,2>;
 
 template ostream& operator << (ostream& os, const CVector<float,3>& x);
 template ostream& operator << (ostream& os, const CVector<double,3>& x);

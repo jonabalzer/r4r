@@ -164,7 +164,7 @@ public:
      * \todo Renames this into SaveToFiles(), or make lower function part of descriptor aggregation class.
 	 *
 	 */
-	virtual bool SaveToFile(const char* dir, const char* prefix);
+    bool SaveToFile(const char* dir, const char* prefix);
 
 	//! Searches for a tracklet with given initial feature and initial time.
     std::shared_ptr<CTracklet> SearchTracklet(imfeature x0, size_t t0);
@@ -225,7 +225,7 @@ public:
 
 protected:
 
-    CParameters* m_params;					//!< container for user-defined parameters
+    CParameters* m_params;                  //!< container for user-defined parameters
 	size_t m_global_t;						//!< global time variable
     size_t m_n_active_tracks;               //!< number of active tracks
 

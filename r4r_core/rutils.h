@@ -126,12 +126,9 @@ public:
 	static mat GetRotationMatrix(mat& F);
 
 	//! Extracts translational part of transformation.
-	static vec GetTranslationVector(mat& F);
+    static vec GetTranslationVector(mat& F);
 
-	//! Computes the median absolute deviation of vector entries.
-    static double MedianAbsoluteDeviation(vec& x);
-
-	//! Projects a matrix onto SO(3) by Procrustes analysis.
+    //! Projects a matrix onto SO(3) by Procrustes analysis.
 	static mat ProjectToSO3(mat& R);
 
 	/*! \brief Estimates the essential matrix by a DLTN technique.

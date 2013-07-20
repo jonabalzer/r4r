@@ -47,10 +47,10 @@ bool CFourierModulusDescriptor::Compute(Mat& img) {
 
         for(size_t j=0; j<m_container.NCols(); j++) {
 
-            vec pt = m_roi.TransformFrom(-1.0+j*dx,-1.0+i*dy);
+            vec2 pt = m_roi.TransformFrom(-1.0+j*dx,-1.0+i*dy);
 
             // row major
-            fft[i*m_container.NCols() + j][0] = CImageInterpolation::Bilinear(img,pt(0),pt(1));
+            fft[i*m_container.NCols() + j][0] = CImageInterpolation::Bilinear(img,pt.Get(0),pt.Get(1));
             fft[i*m_container.NCols() + j][1] = 0;
 
         }
@@ -128,12 +128,12 @@ bool CHistogramOfGradients::Compute(cv::Mat& img) {
         for(size_t j=0; j<n; j++) {
 
             // interpolate point
-            vec pt = m_roi.TransformFrom(-1.0+j*h,-1.0+i*h);
+            vec2 pt = m_roi.TransformFrom(-1.0+j*h,-1.0+i*h);
 
             // compute gradient
             double Ix, Iy;
-            Ix = CImageInterpolation::Gradient(img,pt(0),pt(1),0);
-            Iy = CImageInterpolation::Gradient(img,pt(0),pt(1),1);
+            Ix = CImageInterpolation::Gradient(img,pt.Get(0),pt.Get(1),0);
+            Iy = CImageInterpolation::Gradient(img,pt.Get(0),pt.Get(1),1);
 
             // compute signed/unsigned orientation
             double ograd = 0;
@@ -224,12 +224,12 @@ bool CFMHoGDescriptor::Compute(cv::Mat& img) {
         for(size_t j=0; j<n; j++) {
 
             // interpolate point
-            vec pt = m_roi.TransformFrom(-1.0+j*h,-1.0+i*h);
+            vec2 pt = m_roi.TransformFrom(-1.0+j*h,-1.0+i*h);
 
             // compute gradient
             double Ix, Iy;
-            Ix = CImageInterpolation::Gradient(img,pt(0),pt(1),0);
-            Iy = CImageInterpolation::Gradient(img,pt(0),pt(1),1);
+            Ix = CImageInterpolation::Gradient(img,pt.Get(0),pt.Get(1),0);
+            Iy = CImageInterpolation::Gradient(img,pt.Get(0),pt.Get(1),1);
 
             // compute signed orientation
             double ograd = atan2(Iy,Ix) + M_PI;

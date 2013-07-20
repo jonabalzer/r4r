@@ -122,6 +122,7 @@ void MainWindow::on_stepButton_clicked()
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
 
+
     // check validity of tracks
     m_tracker->Clean(pyramid,m_pyramid);
     //trackers[i]->DeleteInvalidTracks();
@@ -241,9 +242,30 @@ void MainWindow::on_actionSave_Motion_triggered() {
                                ".",
                                tr("(*.txt)"));
 
-    CMotionTracker* tracker = static_cast<CMotionTracker*>(m_tracker);
+    CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
 
-    tracker->SaveMotion(filename.toStdString().c_str());
+    list<vecf> motion = tracker->GetMotion();
+
+    ofstream out(filename.toStdString().c_str());
+
+    if(!out) {
+
+        QMessageBox::critical(this,"Error","Could not save file.");
+        return;
+
+     }
+
+    list<vecf>::iterator it;
+
+    for(it=motion.begin(); it!=motion.end(); it++) {
+
+        vecf m = (*it);
+        m.Transpose();
+        out << m << endl;
+
+    }
+
+    out.close();
 
 }
 
@@ -253,8 +275,52 @@ void MainWindow::on_actionSave_Map_triggered() {
                                ".",
                                tr("(*.ply)"));
 
-    CMotionTracker* tracker = static_cast<CMotionTracker*>(m_tracker);
+    CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
 
-    tracker->SaveMap(filename.toStdString().c_str());
+    map<CTracklet*,vec> pts = tracker->GetMap();
+    map<CTracklet*,vec>::iterator it;
+
+    ofstream out(filename.toStdString().c_str());
+
+    if(!out) {
+
+        QMessageBox::critical(this,"Error","Could not save file.");
+        return;
+
+     }
+
+    out << "ply" << endl;
+    out <<  "format ascii 1.0" << endl;
+    out <<  "comment" << endl;
+    out << "element vertex " << pts.size() << endl;
+    out << "property float32 x" << endl;
+    out << "property float32 y" << endl;
+    out << "property float32 z" << endl;
+    out << "property uchar red" << endl;
+    out << "property uchar green" << endl;
+    out << "property uchar blue" << endl;
+    out << "end_header" << endl;
+
+    for(it=pts.begin(); it!=pts.end(); it++) {
+
+        vec cpt = it->second;
+
+        out << cpt.Get(0) << " " << cpt.Get(1) << " " << cpt.Get(2) << " " << (unsigned int)cpt.Get(3) << " " <<  (unsigned int)cpt.Get(4) << " " <<  (unsigned int)cpt.Get(5) << endl;
+
+    }
+
+    out.close();
+
+}
+
+void MainWindow::on_actionSave_Tracks_triggered()
+{
+
+    QString dir = QFileDialog::getExistingDirectory(this,tr("Choose directory..."),".",QFileDialog::ShowDirsOnly);
+
+    bool error = m_tracker->SaveToFile(dir.toStdString().c_str(),"/track");
+
+    if(error)
+         QMessageBox::critical(this,"Error","Could not save tracks.");
 
 }

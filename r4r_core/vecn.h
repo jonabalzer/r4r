@@ -289,6 +289,27 @@ inline bool operator<(const CVector<T,n>& x, const CVector<T,n>& y) {
 }
 
 //! Checks two vectors for inequality.
+template <typename T>
+inline bool operator<(const CVector<T,3>& x, const CVector<T,3>& y) {
+
+    if(x.Get(0)<y.Get(0))
+        return true;
+    else if(x.Get(0)>y.Get(0))
+        return false;
+
+    // if we got here, the first components are equal
+    if(x.Get(1)<y.Get(1))
+        return true;
+    else if(x.Get(1)>y.Get(1))
+        return false;
+
+    if(x.Get(2)<y.Get(2))
+        return true;
+
+    return false;
+
+}
+//! Checks two vectors for inequality.
 template <typename T,u_int n>
 inline bool operator!=(const CVector<T,n>& x, const CVector<T,n>& y) {
 

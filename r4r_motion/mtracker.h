@@ -27,7 +27,6 @@
 #define COMPUTE_ID 0
 
 #include "cam.h"
-#include "kfilter.h"
 #include "stracker.h"
 #include "lm.h"
 
@@ -66,36 +65,17 @@ public:
     //! Returns point cloud.
     std::map<CTracklet*,vec> GetMap();
 
-    //! Exports the trajectory to file.
-    bool SaveMotion(const char* filename);
-
-    //! Exports the point cloud to file.
-    bool SaveMap(const char* filename);
+    //! Access to the motion.
+    std::list<vecf> GetMotion() { return m_motion; }
 
 private:
 
-    CPinholeCam m_cam;						//!< camera
-    std::list<vec> m_motion;                //!< motion
-
-
-    /*! \brief Triangulates the depth of a scene point from correspondence between images from fully calibrated cameras.
-     *
-     * \param[in] o0 location of first projection center
-     * \param[in] d0 direction of first viewing ray
-     * \param[in] o1 location of second projection center
-     * \param[in] d1 direction of first viewing ray
-     *
-     * \details All vectors are represented in world coordinates.
-     *
-     */
-    vec3f Triangulate(vec3f o0, vec3f d0, vec3f o1, vec3f d1, float eps);
-
-    //! \brief Epipolar image correspondence search.
-    vec2f EpipolarSearch(vec2f& ub, vec2f& d, cv::Mat& img0, cv::Mat& img1, size_t hsize, size_t nsteps, float eps);
+    CPinholeCam m_cam;                                //!< camera
+    std::list<vecf> m_motion;                         //!< motion
 
 };
 
-class CMagicSfM:public CLeastSquaresProblem<smat,double> {
+class CMagicSfM:public CLeastSquaresProblem<smatf,float> {
 
 public:
 
@@ -103,13 +83,13 @@ public:
     CMagicSfM(CPinholeCam cam, std::vector<std::pair<vec2f,vec2f> >& corri2i, std::vector<std::pair<vec3f,vec2f> >& corrs2i, CRigidMotion<float,3> F0inv);
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
-    void ComputeResidual(vec& r);
+    void ComputeResidual(vecf& r);
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&,Matrix&,const vec&)
-    void ComputeResidualAndJacobian(vec& r, smat& J);
+    void ComputeResidualAndJacobian(vecf& r, smatf& J);
 
 	//! \copydoc CLeastSquaresProblem::ComputeDispersion(vec&)
-    vec ComputeDispersion(const vec& r);
+    vecf ComputeDispersion(const vecf& r);
 
 protected:
 

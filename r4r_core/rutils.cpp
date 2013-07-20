@@ -402,20 +402,6 @@ vec CLinearAlgebra::GetTranslationVector(mat& F) {
 
 }
 
-
-double CLinearAlgebra::MedianAbsoluteDeviation(vec& x) {
-
-	double median = x.Median();
-
-	vec temp(x.NElems());
-
-	for(size_t i=0; i<temp.NElems(); i++)
-		temp(i) = fabs(x.Get(i)-median);
-
-	return temp.Median();
-
-}
-
 mat CLinearAlgebra::ProjectToSO3(mat& R) {
 
 	mat U(R.NRows(),R.NRows());

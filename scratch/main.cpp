@@ -29,10 +29,16 @@ int main()
 {
 
 
+    for(size_t i=0; i<100; i++) {
+        vec u(2);
+        //u.Rand(-1,1);
 
-    projection("/home/jbalzer/Data/mvs/synth/jesus/left_cam.txt");
+        u(0) = (double)rand()/(double)RAND_MAX;
+        u(1) = (double)rand()/(double)RAND_MAX;
 
+        cout << u.Get(0) << " " << u.Get(1) << endl;
 
+    }
 
 
 
