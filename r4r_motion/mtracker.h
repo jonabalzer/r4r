@@ -59,19 +59,26 @@ public:
      */
     bool UpdateDescriptors(std::vector<cv::Mat>& pyramid);
 
-    //! Computes color of map points.
+    //! Computes color of map points. Do this outside.
     bool ColorMap(cv::Mat& img);
 
     //! Returns point cloud.
     std::map<CTracklet*,vec> GetMap();
 
+    //! Returns a reference to the point cloud.
+    //std::list<vec3f>& GetMap() { return m_map; }
+
     //! Access to the motion.
     std::list<vecf> GetMotion() { return m_motion; }
+
+    //! Computes the last view.
+    CView<float> GetLatestView();
 
 private:
 
     CPinholeCam m_cam;                                //!< camera
     std::list<vecf> m_motion;                         //!< motion
+    std::list<vec3f> m_map;                           //!< map
 
 };
 

@@ -269,7 +269,7 @@ public:
     CRigidMotion():CTransformation<T,2>() {}
 
     //! Constructor.
-    CRigidMotion(T o, T t1, T t2);
+    CRigidMotion(T t1, T t2, T o);
 
     //! \copydoc CTransformation<T,n>::Invert()
     virtual bool Invert();
@@ -294,7 +294,10 @@ public:
     CRigidMotion():CTransformation<T,3>() {}
 
     //! Constructor.
-    CRigidMotion(T o1, T o2, T o3, T t1, T t2, T t3);
+    CRigidMotion(T t1, T t2, T t3, T o1, T o2, T o3);
+
+    //! Constructor.
+    CRigidMotion(const CDenseVector<T>& m);
 
     //! Constructor. FIXME: This has to project to SE(3)!
     CRigidMotion(const CDenseArray<T>& x):CTransformation<T,3>(x) {}

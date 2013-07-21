@@ -25,6 +25,17 @@ bool projection(const char* filename);
 
 #include <opennurbs/opennurbs.h>
 
+class Test {
+
+    Test(int no):m_no(no) {}
+    Test():Test(10) {}
+
+private:
+
+    int m_no;
+
+};
+
 int main()
 {
 

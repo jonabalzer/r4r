@@ -584,7 +584,7 @@ template class CDifferentialRotation<double,3>;
 template class CDifferentialRotation<float,3>;
 
 template<typename T>
-CRigidMotion<T,2>::CRigidMotion(T o, T t1, T t2) {
+CRigidMotion<T,2>::CRigidMotion(T t1, T t2, T o) {
 
     m_F[0] = cos(o);
     m_F[1] = sin(o);
@@ -618,12 +618,24 @@ template class CRigidMotion<double,2>;
 template class CRigidMotion<float,2>;
 
 template<typename T>
-CRigidMotion<T,3>::CRigidMotion(T o1, T o2, T o3, T t1, T t2, T t3) {
+CRigidMotion<T,3>::CRigidMotion(T t1, T t2, T t3, T o1, T o2, T o3) {
 
     CRotation<T,3>::Rodrigues(o1,o2,o3,m_F);
     m_F[9] = t1;
     m_F[10] = t2;
     m_F[11] = t3;
+
+}
+
+template<typename T>
+CRigidMotion<T,3>::CRigidMotion(const CDenseVector<T>& m) {
+
+    // since constructor delegation is not yet supported by gcc 4.6
+    m_F[9] = m.Get(0);
+    m_F[10] = m.Get(1);
+    m_F[11] = m.Get(2);
+    CRotation<T,3>::Rodrigues(m.Get(3),m.Get(4),m.Get(5),m_F);
+
 
 }
 

@@ -98,6 +98,19 @@ map<CTracklet*,vec> CMotionTracker::GetMap() {
 
 }
 
+CView<float> CMotionTracker::GetLatestView() {
+
+    vecf m0 = m_motion.back();
+
+    CRigidMotion<float,3> F(m);
+    CView<float> view(m_cam,F);
+
+    return view;
+
+}
+
+
+
 bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
     // do LK tracking at every time instance, FIXME: how to do descriptor aggregation with 3d info
@@ -108,12 +121,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
     if(m_global_t>0 && (m_global_t)%kfr==0) {
 
         vecf m0 = m_motion.back();
-        CRigidMotion<float,3> F0inv(m0.Get(3),    // careful with order
-                                    m0.Get(4),
-                                    m0.Get(5),
-                                    m0.Get(0),
-                                    m0.Get(1),
-                                    m0.Get(2));
+        CRigidMotion<float,3> F0inv(m0);
         F0inv.Invert();
 
         vector<pair<vec3f,vec2f> > corrs2i;
@@ -256,12 +264,7 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
     // get actual pose
     /*vec motion = m_motion.back();
-    CRigidMotion<float,3> F(motion.Get(3),           // careful with order
-                            motion.Get(4),
-                            motion.Get(5),
-                            motion.Get(0),
-                            motion.Get(1),
-                            motion.Get(2));*/
+    CRigidMotion<float,3> F(motion);*/
 
     // smooth image for gradient computation
     vector<Mat> pyrsmooth;
@@ -403,13 +406,28 @@ CMagicSfM::CMagicSfM(CPinholeCam cam, vector<pair<vec2f,vec2f> >& corri2i, vecto
 
 void CMagicSfM::ComputeResidual(vecf& r) {
 
+    // F0inv ist von cam0 nach welt
+    // problem: multiplikation mit z
+    // ersetze durch view?? nein:
+    // eher nicht
+    // normalize parallel
+    // multiplikation (parallel?)
+    //
+    // F1 durch view ersetzen!
+
     // actual transformation from world to second frame
-    CRigidMotion<float,3> F1(m_model.Get(m_corri2i.size()+3),           // careful with order
-                             m_model.Get(m_corri2i.size()+4),
-                             m_model.Get(m_corri2i.size()+5),
-                             m_model.Get(m_corri2i.size()),
+    CRigidMotion<float,3> F1(m_model.Get(m_corri2i.size()),           // careful with order
                              m_model.Get(m_corri2i.size()+1),
-                             m_model.Get(m_corri2i.size()+2));
+                             m_model.Get(m_corri2i.size()+2),
+                             m_model.Get(m_corri2i.size()+3),
+                             m_model.Get(m_corri2i.size()+4),
+                             m_model.Get(m_corri2i.size()+5));
+
+    // precompute normalization
+    // aendere container: pair<vector<>,<>>
+    // concatenat F1*F0inv
+    // transform to second view
+    // was ist mit Jacobian? Flow?
 
 	// projection error for image-to-image correspondences
 	for(size_t i=0; i<m_corri2i.size(); i++) {
@@ -468,12 +486,12 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
     size_t n = m_corrs2i.size();
 
     // actual transformation from world to second frame
-    CRigidMotion<float,3> F1(m_model.Get(m_corri2i.size()+3),           // careful with order
-                             m_model.Get(m_corri2i.size()+4),
-                             m_model.Get(m_corri2i.size()+5),
-                             m_model.Get(m_corri2i.size()),
+    CRigidMotion<float,3> F1(m_model.Get(m_corri2i.size()),           // careful with order
                              m_model.Get(m_corri2i.size()+1),
-                             m_model.Get(m_corri2i.size()+2));
+                             m_model.Get(m_corri2i.size()+2),
+                             m_model.Get(m_corri2i.size()+3),
+                             m_model.Get(m_corri2i.size()+4),
+                             m_model.Get(m_corri2i.size()+5));
 
     // rotational part of the two vantage points
     matf R0inv = m_F0inv.GetJacobian();
@@ -492,7 +510,7 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
     // projection error for image-to-image correspondences
     for(size_t i=0; i<m; i++) {
 
-        double wi, wim;
+        float wi, wim;
         wi = m_weights.Get(i);
         wim = m_weights.Get(m+i);
 
@@ -551,7 +569,7 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
     // projection error for scene-to-image correspondences
     for(size_t i=0; i<n; i++) {
 
-        double w2mi, w2min;
+        float w2mi, w2min;
         w2mi = m_weights.Get(2*m+i);
         w2min = m_weights.Get(2*m+n+i);
 

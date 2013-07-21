@@ -61,7 +61,8 @@ enum class ETYPE {  NA = 0,
                     I4S = 6, I4U = 7,
                     F4S = 8,
                     L8S = 9, L8U = 10,
-                    D8S = 11 };
+                    D8S = 11,
+                    C3U = 12 };
 
 template<class T> class CDenseVector;
 
