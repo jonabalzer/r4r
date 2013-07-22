@@ -376,10 +376,16 @@ public:
     template<typename U> friend std::ostream& operator << (std::ostream& os, const CView<U>& x);
 
     //! Access to the transformation.
-    CRigidMotion<T,3>& GetTransformation() { return m_F; }
+    const CRigidMotion<T,3>& GetTransformation() const { return m_F; }
 
     //! Access to the inverse transformation.
-    CRigidMotion<T,3>& GetInverseTransformation() { return m_Finv; }
+    const CRigidMotion<T,3>& GetInverseTransformation() const { return m_Finv; }
+
+    //! Set transformation.
+    void SetTransformation(const CRigidMotion<T,3>& F) { m_F = F; m_Finv = F; m_Finv.Invert(); }
+
+    //! Set transformation.
+    void SetInverseTransformation(const CRigidMotion<T,3>& Finv) { m_Finv = Finv; m_F = Finv; m_F.Invert(); }
 
     //! Access to the cam.
     CAbstractCam& GetCam() { return m_cam; }

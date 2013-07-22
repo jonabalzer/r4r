@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui opengl
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -15,10 +15,12 @@ QMAKE_CXXFLAGS += -std=c++0x -O3
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    preferences.cpp
+    preferences.cpp \
+    viewer.cpp
 
 HEADERS  += mainwindow.h \
-    preferences.h
+    preferences.h \
+    viewer.h
 
 FORMS    += \
     mainwindow.ui \
@@ -49,3 +51,6 @@ else:unix:!symbian: LIBS += -L$$OUT_PWD/../r4r_motion/ -lr4r_motion
 
 INCLUDEPATH += $$PWD/../r4r_motion
 DEPENDPATH += $$PWD/../r4r_motion
+
+RESOURCES += \
+    clamicon.qrc

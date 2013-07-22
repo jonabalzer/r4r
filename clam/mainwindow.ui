@@ -6,12 +6,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>638</width>
+    <width>1280</width>
     <height>601</height>
    </rect>
   </property>
+  <property name="cursor">
+   <cursorShape>ArrowCursor</cursorShape>
+  </property>
   <property name="windowTitle">
    <string>CLAM</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="clamicon.qrc">
+    <normaloff>:/icons/logo.png</normaloff>:/icons/logo.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QLabel" name="labelImage">
@@ -139,13 +146,39 @@
      </item>
     </layout>
    </widget>
+   <widget class="CViewer" name="openGlWidget" native="true">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>35</y>
+      <width>640</width>
+      <height>480</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="renderCheckBox">
+    <property name="geometry">
+     <rect>
+      <x>1190</x>
+      <y>520</y>
+      <width>81</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Render</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>638</width>
+     <width>1280</width>
      <height>25</height>
     </rect>
    </property>
@@ -197,6 +230,16 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <customwidgets>
+  <customwidget>
+   <class>CViewer</class>
+   <extends>QWidget</extends>
+   <header>viewer.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="clamicon.qrc"/>
+ </resources>
  <connections/>
 </ui>

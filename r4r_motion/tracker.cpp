@@ -246,12 +246,10 @@ void CTracker::SetAllTrackletsActive() {
 
 }
 
-CIntegralImage<size_t> CTracker::ComputeFeatureDensity(size_t width, size_t height, size_t s) {
-
-	// init image
-	CIntegralImage<size_t> img(width,height);
+vector<size_t> CTracker::ComputeFeatureDensity(vector<CIntegralImage<size_t> >& imgs) {
 
     list<shared_ptr<CTracklet> >::iterator it;
+    vector<size_t> n(imgs.size());
 
     for(it=begin(); it!=end(); it++) {
 
@@ -261,19 +259,24 @@ CIntegralImage<size_t> CTracker::ComputeFeatureDensity(size_t width, size_t heig
             // get the current feature
             imfeature f = (*it)->GetLatestState();
 
-            // if it matches the given scale add it to the integral image
-            if(f.GetScale()==s) {
+            // see what scale it is at (possibly with rounding)
+            u_int s = (u_int)(f.GetScale()+0.5);
 
-                vec2f x = f.GetLocation();
-                img.AddDensityFast(x.Get(0),x.Get(1),1.0);
+            // count
+            n[s]++;
 
-            }
+            // set Dirac impulse at location in integral image
+            vec2f x = f.GetLocation();
+
+            // make sure we have an image at that scale
+            if(s<imgs.size())
+                imgs[s].AddDensityFast(x.Get(0),x.Get(1),1.0);
 
         }
 
     }
 
-	return img;
+    return n;
 
 }
 

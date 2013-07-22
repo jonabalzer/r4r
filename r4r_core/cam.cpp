@@ -70,7 +70,7 @@ vector<vec3> CAbstractCam::Normalize(const vector<vec2>& u) const {
 
 }
 
-vector<vec3f> CAbstractCam::Normalize(const vector<vec2f>& u) const {
+vector<vec3f> CAbstractCam::Normalize(const std::vector<vec2f> &u) const {
 
     vector<vec3f> result(u.size());
 

@@ -43,77 +43,20 @@ CMotionTracker::CMotionTracker(CParameters* params, CPinholeCam &cam):
 
 }
 
-map<CTracklet*,vec> CMotionTracker::GetMap() {
-
-    map<CTracklet*,vec> pts;
-    list<shared_ptr<CTracklet> >::iterator it;
-
-    for(it=begin(); it!=end(); it++) {
-
-        vec ptcolor(6);
-
-        // check whether we have 3d data for feature in first frame
-        if((*it)->front().HasDescriptor("3DPOINT")) {
-
-            // get 3d point
-            shared_ptr<CAbstractDescriptor> desc = (*it)->front().GetDescriptor("3DPOINT");
-            CDescriptor<vecf>* cdesc = (CDescriptor<vecf>*)desc.get();
-            vecf pt = cdesc->Get();
-
-            // copy data
-            ptcolor(0) = pt.Get(0);
-            ptcolor(1) = pt.Get(1);
-            ptcolor(2) = pt.Get(2);
-
-        }
-
-        // check whether the point is colored
-        if((*it)->front().HasDescriptor("COLOR")) {
-
-            // color
-            shared_ptr<CAbstractDescriptor> desc = (*it)->front().GetDescriptor("COLOR");
-            CDescriptor<vecf>* cdesc = (CDescriptor<vecf>*)desc.get();
-            vecf color = cdesc->Get();
-
-            // copy data
-            ptcolor(3) = color.Get(0);
-            ptcolor(4) = color.Get(1);
-            ptcolor(5) = color.Get(2);
-
-        } else {
-
-            ptcolor(3) = 255;
-            ptcolor(4) = 255;
-            ptcolor(5) = 255;
-
-        }
-
-        // only attach if it has at least a point
-        if((*it)->front().HasDescriptor("3DPOINT"))
-            pts.insert(pair<CTracklet*,vec>((*it).get(),ptcolor));
-
-    }
-
-    return pts;
-
-}
-
 CView<float> CMotionTracker::GetLatestView() {
 
     vecf m0 = m_motion.back();
 
-    CRigidMotion<float,3> F(m);
+    CRigidMotion<float,3> F(m0);
     CView<float> view(m_cam,F);
 
     return view;
 
 }
 
-
-
 bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
-    // do LK tracking at every time instance, FIXME: how to do descriptor aggregation with 3d info
+    // do LK tracking at every time instance
     CSimpleTracker::Update(pyramid0,pyramid1);
 
     size_t kfr = (size_t)m_params->GetIntParameter("KEYFRAME_RATE");
@@ -124,15 +67,16 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         CRigidMotion<float,3> F0inv(m0);
         F0inv.Invert();
 
-        vector<pair<vec3f,vec2f> > corrs2i;
-        vector<pair<vec2f,vec2f> > corri2i;
+        vector<vec3f> xs;
+        vector<vec2f> p0s, p1s, p1ss;
         vector<CTracklet*> trackletss2i, trackletsi2i;
 
         list<shared_ptr<CTracklet> >::iterator it;
 
+        // collect image-to-image and scene-to-image correspondences
         for(it=begin(); it!=end(); it++) {
 
-            vec2f u1 = (*it)->GetLatestLocationAtNativeScale();
+            vec2f p1 = (*it)->GetLatestLocationAtNativeScale();
 
             if((*it)->GetStatus() && (*it)->front().HasDescriptor("3DPOINT")) {
 
@@ -141,7 +85,8 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
                 CDescriptor<vecf>* cdesc = (CDescriptor<vecf>*)desc.get();
                 vec3f x(cdesc->Get());
 
-                corrs2i.push_back(pair<vec3f,vec2f>(x,u1));
+                xs.push_back(x);
+                p1ss.push_back(p1);
                 trackletss2i.push_back((*it).get());
 
             }
@@ -149,43 +94,24 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
                 vec2f u0 = (*it)->GetPastLocationAtNativeScale((size_t)kfr);
 
-                corri2i.push_back(pair<vec2f,vec2f>(u0,u1));
+                p0s.push_back(u0);
+                p1s.push_back(p1);
                 trackletsi2i.push_back((*it).get());
 
             }
 
         }
 
+        pair<vector<vec2f>,vector<vec2f> > corri2i(p0s,p1s);
+        pair<vector<vec3f>,vector<vec2f> > corrs2i(xs,p1ss);
 
-// try 8-point initilialization
-//        if(m_global_t/kfr==1) {
-
-//            mat E = CLinearAlgebra::CalibratedNPoint(corri2i,m_cam);
-//            mat F = CLinearAlgebra::FactorEssentialMatrix(E);
-
-//            minit(0) = F(0,3);
-//            minit(1) = F(1,3);
-//            minit(2) = F(2,3);
-
-//            CTransformation<3> T = CTransformation<3>(F);
-
-//            mat R = T.GetLinearPart();
-
-//            vec omega = CRotation<3>::Log(R);
-
-//            minit(3) = omega(0);
-//            minit(4) = omega(1);
-//            minit(5) = omega(2);
-//        }
-
-        cout << "No of correspondences (2d-2d/3d-2d): " << corri2i.size() << " " << corrs2i.size() << endl;
+        cout << "No of correspondences (2d-2d/3d-2d): " << p0s.size() << " " << xs.size() << endl;
 
         // init linear solver
         smatf M(0,0);
         CPreconditioner<smatf,vecf,float> precond = CPreconditioner<smatf,vecf,float>(M);
         CIterativeSolver<smatf,vecf,float> solver = CIterativeSolver<smatf,vecf,float>(precond,
-                                                                                     m_params->GetIntParameter("CGLS_NITER"),
-                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),                                                                                     true);
+                                                                                     m_params->GetIntParameter("CGLS_NITER"),                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),                                                                                     true);
         // init least-squares problem
         CMagicSfM problem(m_cam,corri2i,corrs2i,F0inv);
 
@@ -193,13 +119,13 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         CLevenbergMarquardt<smatf,float> lms(problem,solver,m_params->GetDoubleParameter("LM_LAMBDA"));
 
         // initialize
-        vecf& x = problem.Get();
+        vecf& model = problem.Get();
 
-        for(size_t i=0; i<corri2i.size(); i++)
-            x(i) = m_params->GetDoubleParameter("INIT_DISTANCE");
+        for(size_t i=0; i<p0s.size(); i++)
+            model(i) = m_params->GetDoubleParameter("INIT_DISTANCE");
 
         for(size_t i=0; i<6; i++)
-            x(corri2i.size()+i) = m0(i);
+            model(p0s.size()+i) = m0(i);
 
         // iterate
         vecf r = lms.Iterate(m_params->GetIntParameter("LM_NITER_OUTER"),
@@ -209,19 +135,26 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
                              true);
 
         // add new points to the map
-        double threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_DEPTH");
+        float threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_DEPTH");
 
-        for(size_t i=0; i<corri2i.size(); i++) {
+        // create tentative map points
+        vector<vec3f> x = m_cam.CAbstractCam::Normalize(corri2i.first);
+        for(size_t i=0; i<x.size(); i++)
+            x[i] = x[i]*model.Get(i);
+        x = F0inv.Transform(x);
 
-            if(fabs(r.Get(i))<threshold && fabs(r.Get(corri2i.size()+i))<threshold) {
+        // clear last map
+        m_map.clear();
 
-                // convert depth into world point
-                vec3f x0h = m_cam.Normalize(corri2i[i].first);
-                vec3f pt = x0h*x(i);
-                pt = F0inv.Transform(pt);
+        for(size_t i=0; i<p0s.size(); i++) {
+
+            if(fabs(r.Get(i))<threshold && fabs(r.Get(p0s.size()+i))<threshold) {
+
+                // inject into map container
+                m_map.push_back(pair<vec2f,vec3f>(corri2i.first[i],x[i]));
 
                 // get pointer to initial feature
-                shared_ptr<CAbstractDescriptor> descx(new CDescriptor<vecf>(vecf(pt)));
+                shared_ptr<CAbstractDescriptor> descx(new CDescriptor<vecf>(vecf(x[i])));
                 trackletsi2i[i]->front().AttachDescriptor("3DPOINT",descx);
 
                 // also store initial depths for descriptor canonization
@@ -241,18 +174,17 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
         vecf m1(6);
         for(size_t i=0; i<6; i++)
-            m1(i) = x(corri2i.size()+i);
+            m1(i) = model(p0s.size()+i);
 
         m_motion.push_back(m1);
 
         // reject outliers
-        for(size_t i=0; i<corrs2i.size(); i++) {
+        for(size_t i=0; i<xs.size(); i++) {
 
-            if(fabs(r.Get(2*corri2i.size()+i))>threshold || fabs(r.Get(2*corri2i.size()+corrs2i.size()+i))>threshold)
+            if(fabs(r.Get(2*p0s.size()+i))>threshold || fabs(r.Get(2*p0s.size()+xs.size()+i))>threshold)
                 trackletss2i[i]->SetStatus(false);
 
-                }
-
+       }
 
     }
 
@@ -265,17 +197,6 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
     // get actual pose
     /*vec motion = m_motion.back();
     CRigidMotion<float,3> F(motion);*/
-
-    // smooth image for gradient computation
-    vector<Mat> pyrsmooth;
-    for(size_t s=0; s<pyramid.size(); s++) {
-
-        Mat imsmooth;
-        GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params->GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
-
-        pyrsmooth.push_back(imsmooth);
-
-    }
 
     list<shared_ptr<CTracklet> >::iterator it;
 
@@ -296,9 +217,8 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
             // adjust region to scale
             droi.Scale(1.0/pow(2,s));
             //droi.RotateTo(motion(5));
-/*
 
-            // see the feature has an initial depth
+            /*// see the feature has an initial depth
             if((*it)->front()->HasDescriptor("INITDEPTH")) {
 
                 // get initial depth
@@ -314,14 +234,12 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
                 // scale by z0/z
                 droi.Scale(z(0)/pt(2));
 
-            }
-*/
+            }*/
 
             // compute brief descriptor
             CBRIEF* briefdesc1 = new CBRIEF(droi);
             shared_ptr<CAbstractDescriptor> brief(briefdesc1);
-            brief->Compute(pyrsmooth[s]);
-            //brief->Compute(pyramid[s]);
+            brief->Compute(pyramid[s]);
             x.AttachDescriptor("BRIEF",brief);
 
             // compute quality
@@ -337,55 +255,6 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
             x.SetQuality(quality);
 
-#if COMPUTE_ID == 1
-
-            CIdentityDescriptor* tempid = new CIdentityDescriptor(droi,
-                                                                  (size_t)m_params->GetIntParameter("NORMALIZE_ID"),
-                                                                  (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
-
-            tempid->Compute(pyramid[s]);
-
-            shared_ptr<CDescriptor> id(tempid);
-            x->AttachDescriptor("ID",id);
-
-#endif
-
-            }
-
-        }
-
-    return 0;
-
-}
-
-bool CMotionTracker::ColorMap(cv::Mat& img) {
-
-    list<shared_ptr<CTracklet> >::iterator it;
-
-    for(it=begin(); it!=end(); it++) {
-
-        if((*it)->GetStatus()) {
-
-            imfeature& x = (*it)->GetLatestState();
-            vec2f u0 = x.GetLocationAtNativeScale();
-
-            // add color if not already there
-            if((*it)->front().HasDescriptor("3DPOINT") && !(*it)->front().HasDescriptor("COLOR")) {
-
-                size_t row, col;
-                row = (size_t)u0(1);
-                col = (size_t)u0(0);
-
-                vecf color(3);
-                color(0) = (float)img.at<Vec3b>(row,col)[2];
-                color(1) = (float)img.at<Vec3b>(row,col)[1];
-                color(2) = (float)img.at<Vec3b>(row,col)[0];
-
-                shared_ptr<CAbstractDescriptor> desc(new CDescriptor<vecf>(color));
-                (*it)->front().AttachDescriptor("COLOR",desc);
-
-            }
-
         }
 
     }
@@ -394,9 +263,8 @@ bool CMotionTracker::ColorMap(cv::Mat& img) {
 
 }
 
-
-CMagicSfM::CMagicSfM(CPinholeCam cam, vector<pair<vec2f,vec2f> >& corri2i, vector<pair<vec3f,vec2f> >& corrs2i, CRigidMotion<float,3> F0inv):
-    CLeastSquaresProblem<smatf,float>::CLeastSquaresProblem(2*(corri2i.size()+corrs2i.size()),corri2i.size()+6),
+CMagicSfM::CMagicSfM(CPinholeCam cam, pair<vector<vec2f>,vector<vec2f> >& corri2i, pair<vector<vec3f>,vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv):
+    CLeastSquaresProblem<smatf,float>::CLeastSquaresProblem(2*(corri2i.first.size()+corrs2i.first.size()),corri2i.first.size()+6),
 	m_cam(cam),
 	m_corri2i(corri2i),
 	m_corrs2i(corrs2i),
@@ -406,31 +274,61 @@ CMagicSfM::CMagicSfM(CPinholeCam cam, vector<pair<vec2f,vec2f> >& corri2i, vecto
 
 void CMagicSfM::ComputeResidual(vecf& r) {
 
-    // F0inv ist von cam0 nach welt
-    // problem: multiplikation mit z
-    // ersetze durch view?? nein:
-    // eher nicht
-    // normalize parallel
-    // multiplikation (parallel?)
-    //
-    // F1 durch view ersetzen!
+    size_t m = m_corri2i.first.size();
+    size_t n = m_corrs2i.first.size();
 
     // actual transformation from world to second frame
-    CRigidMotion<float,3> F1(m_model.Get(m_corri2i.size()),           // careful with order
-                             m_model.Get(m_corri2i.size()+1),
-                             m_model.Get(m_corri2i.size()+2),
-                             m_model.Get(m_corri2i.size()+3),
-                             m_model.Get(m_corri2i.size()+4),
-                             m_model.Get(m_corri2i.size()+5));
+    CRigidMotion<float,3> F1(m_model.Get(m),
+                             m_model.Get(m+1),
+                             m_model.Get(m+2),
+                             m_model.Get(m+3),
+                             m_model.Get(m+4),
+                             m_model.Get(m+5));
 
-    // precompute normalization
-    // aendere container: pair<vector<>,<>>
-    // concatenat F1*F0inv
-    // transform to second view
-    // was ist mit Jacobian? Flow?
+    // create second view
+    CView<float> view1(m_cam,F1);
 
-	// projection error for image-to-image correspondences
-	for(size_t i=0; i<m_corri2i.size(); i++) {
+    // normalize pixel in first frame, keep this in Jacobian for flow
+    vector<vec3f> x = m_cam.CAbstractCam::Normalize(m_corri2i.first);
+
+    // multiply by current depth
+    for(size_t i=0; i<x.size(); i++)
+        x[i] = x[i]*m_model.Get(i);
+
+    // transform to world coordinates
+    x = m_F0inv.Transform(x);
+
+    // second view
+    vector<vec2f> p1p = view1.Project(x);
+
+    // enter error in residual vector
+    for(size_t i=0; i<m; i++) {
+
+        // projection error
+        vec2f dp = p1p[i] - m_corri2i.second[i];
+
+        // copy weighted error
+        r(i)   = m_weights.Get(i)*dp.Get(0);
+        r(m+i) = m_weights.Get(m+i)*dp.Get(1);
+
+    }
+
+    // project map points to second view, they are in world coordinates
+    p1p = view1.Project(m_corrs2i.first);
+
+    // copy errors
+    for(size_t i=0; i<n; i++) {
+
+        vec2f dp = p1p[i] - m_corrs2i.second[i];
+
+        // set residual
+        r(2*m+i)   = m_weights.Get(2*m+i)*dp.Get(0);
+        r(2*m+n+i) = m_weights.Get(2*m+n+i)*dp.Get(1);
+
+    }
+
+    // projection error for image-to-image correspondences
+/*	for(size_t i=0; i<m_corri2i.size(); i++) {
 
 		// pixel in img 0 and 1
         vec2f p0, p1;
@@ -476,36 +374,64 @@ void CMagicSfM::ComputeResidual(vecf& r) {
         r(2*m_corri2i.size()+i) = m_weights.Get(2*m_corri2i.size()+i)*dp.Get(0);
         r(2*m_corri2i.size()+m_corrs2i.size()+i) = m_weights.Get(2*m_corri2i.size()+m_corrs2i.size()+i)*dp.Get(1);
 
-	}
+    }*/
 
 }
 
 void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
 
-    size_t m = m_corri2i.size();
-    size_t n = m_corrs2i.size();
+    /* Jacobian w.r.t.
+     * - rotation need backprojected point in world coordinates,
+     * - depths need viewing directions of frame 0 in frame 1 coordinates,
+     * - translations only need Jacobian of pinhole projection into second view,
+     * - all involve Jacobian of second pinhole projection.
+     *
+    */
+
+    // get sizes for easier book-keeping of residual indices
+    size_t m = m_corri2i.first.size();
+    size_t n = m_corrs2i.first.size();
 
     // actual transformation from world to second frame
-    CRigidMotion<float,3> F1(m_model.Get(m_corri2i.size()),           // careful with order
-                             m_model.Get(m_corri2i.size()+1),
-                             m_model.Get(m_corri2i.size()+2),
-                             m_model.Get(m_corri2i.size()+3),
-                             m_model.Get(m_corri2i.size()+4),
-                             m_model.Get(m_corri2i.size()+5));
+    CRigidMotion<float,3> F1(m_model.Get(m),
+                             m_model.Get(m+1),
+                             m_model.Get(m+2),
+                             m_model.Get(m+3),
+                             m_model.Get(m+4),
+                             m_model.Get(m+5));
 
-    // rotational part of the two vantage points
-    matf R0inv = m_F0inv.GetJacobian();
-    matf R1 = F1.GetJacobian();
 
-    // derivatives of rotations
-    matf DRx(3,3), DRy(3,3), DRz(3,3);
-    CDifferentialRotation<float,3>::Rodrigues(m_model.Get(m_corri2i.size()+3),           // careful with order
-                                              m_model.Get(m_corri2i.size()+4),
-                                              m_model.Get(m_corri2i.size()+5),
+    // concatenation of F1*m_F0inv, only Jacobian of this is needed later
+    CTransformation<float,3> F = F1*m_F0inv;
+    CRigidMotion<float,3> Fr = reinterpret_cast<CRigidMotion<float,3>& >(F);
+
+    // derivatives of *rotations* in DF1
+    matf DR1x(3,3), DR1y(3,3), DR1z(3,3);
+    CDifferentialRotation<float,3>::Rodrigues(m_model.Get(m+3),
+                                              m_model.Get(m+4),
+                                              m_model.Get(m+5),
                                               nullptr,
-                                              DRx.Data().get(),
-                                              DRy.Data().get(),
-                                              DRz.Data().get());
+                                              DR1x.Data().get(),
+                                              DR1y.Data().get(),
+                                              DR1z.Data().get());
+
+
+    // create second view
+    CView<float> view1(m_cam,F1);
+
+    // normalize pixel in first frame
+    vector<vec3f> x0n = m_cam.CAbstractCam::Normalize(m_corri2i.first);
+
+    // multiply by current depth
+    vector<vec3f> x0;
+    for(size_t i=0; i<x0n.size(); i++)
+        x0.push_back(x0n[i]*m_model.Get(i));
+
+    // transform point to world coordinates, keep this for Jacobian w.r.t. to rotation
+    x0 = m_F0inv.Transform(x0);
+
+    // transform viewing direction from one frame to the other (depth derivative)
+    x0n = Fr.DifferentialTransform(x0n);
 
     // projection error for image-to-image correspondences
     for(size_t i=0; i<m; i++) {
@@ -514,99 +440,83 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
         wi = m_weights.Get(i);
         wim = m_weights.Get(m+i);
 
-        // pixel in img 0 and 1
-        vec2f p0, p1;
-        p0 = m_corri2i[i].first;
-        p1 = m_corri2i[i].second;
+        // transform point into frame 1
+        vec3f x1 = F1.Transform(x0[i]);
 
-        // estimate of the scene point x0
-        vec3f x0h = m_cam.Normalize(p0);
-        vec3f x0 = x0h*(float)m_model.Get(i);
-        x0 = m_F0inv.Transform(x0);       // x0 in world coordinates
-        x0h = R0inv*x0h;                  // viewing direction in world coordinates
-
-        // point after rigid transform
-        vec3f x1 = F1.Transform(x0);
-
-        // projection of x0 into second image
+        // project and compute Jacobian
         vec2f p1p;
         matf Jpi(2,3);
         m_cam.Project(x1,p1p,Jpi);
 
         // projection error
-        vec2f dp = p1p - p1;
+        vec2f dp = p1p - m_corri2i.second[i];
 
         // set residual
-        r(i) = wi*dp.Get(0);
+        r(i)   = wi*dp.Get(0);
         r(m+i) = wim*dp.Get(1);
 
         // depth derivatives
-        vec3f dz = R1*x0h;
-        J(i,i) = wi*(Jpi.Get(0,0)*dz.Get(0) + Jpi.Get(0,2)*dz.Get(2));
-        J(m+i,i) = wim*(Jpi.Get(1,1)*dz.Get(1) + Jpi.Get(1,2)*dz.Get(2));
+        J(i,i)   = wi*(Jpi.Get(0,0)*x0n[i].Get(0) + Jpi.Get(0,2)*x0n[i].Get(2));
+        J(m+i,i) = wim*(Jpi.Get(1,1)*x0n[i].Get(1) + Jpi.Get(1,2)*x0n[i].Get(2));
 
         // translational derivative
-        J(i,m) = wi*Jpi(0,0); 		J(i,m+1) = wi*Jpi(0,1);	J(i,m+2) = wi*Jpi(0,2);
+        J(i,m)   = wi*Jpi(0,0);     J(i,m+1)   = wi*Jpi(0,1);	J(i,m+2)   = wi*Jpi(0,2);
         J(m+i,m) = wim*Jpi(1,0); 	J(m+i,m+1) = wim*Jpi(1,1); 	J(m+i,m+2) = wim*Jpi(1,2);
 
+        // rotational derivatives
+        vec3f do1 = DR1x*x0[i];
+        vec3f do2 = DR1y*x0[i];
+        vec3f do3 = DR1z*x0[i];
 
-        // rotational derivatives.
-        vec3f do1 = DRx*x0;
-        vec3f do2 = DRy*x0;
-        vec3f do3 = DRz*x0;
-
-        J(i,m+3) = wi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2));
+        J(i,m+3)   = wi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2));
         J(m+i,m+3) = wim*(Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2));
 
-        J(i,m+4) = wi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2));
+        J(i,m+4)   = wi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2));
         J(m+i,m+4) = wim*(Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2));
 
-        J(i,m+5) = wi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2));
+        J(i,m+5)   = wi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2));
         J(m+i,m+5) = wim*(Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2));
 
     }
 
-    // projection error for scene-to-image correspondences
+    // scene-to-image correspondences
     for(size_t i=0; i<n; i++) {
 
         float w2mi, w2min;
         w2mi = m_weights.Get(2*m+i);
         w2min = m_weights.Get(2*m+n+i);
 
-        vec3f x0 = m_corrs2i[i].first;		// scene point in world coordinates
-        vec2f p1 = m_corrs2i[i].second;		// projection into second image
+        // transform map points to frame 1
+        vec3f x1 = F1.Transform(m_corrs2i.first[i]);
 
-        // rigid transform from wc to second cam
-        vec3f x1 = F1.Transform(x0);
-
-        // projection of x1 into second image
+        // projection into second image
         vec2f p1p;
         matf Jpi(2,3);
         m_cam.Project(x1,p1p,Jpi);
 
         // projection error
-        vec2f dp = p1p - p1;
+        vec2f dp = p1p - m_corrs2i.second[i];
 
         // set residual
-        r(2*m+i) = w2mi*dp.Get(0);
+        r(2*m+i)   = w2mi*dp.Get(0);
         r(2*m+n+i) = w2min*dp.Get(1);
 
         // translational derivative
-        J(2*m+i,m) = w2mi*Jpi(0,0);      J(2*m+i,m+1) = w2mi*Jpi(0,1);		J(2*m+i,m+2) = w2mi*Jpi(0,2);
-        J(2*m+n+i,m) = w2min*Jpi(1,0); 	J(2*m+n+i,m+1) = w2min*Jpi(1,1);      J(2*m+n+i,m+2) = w2min*Jpi(1,2);
+        J(2*m+i,m)   = w2mi*Jpi(0,0);   J(2*m+i,m+1)   = w2mi*Jpi(0,1);		J(2*m+i,m+2)   = w2mi*Jpi(0,2);
+        J(2*m+n+i,m) = w2min*Jpi(1,0); 	J(2*m+n+i,m+1) = w2min*Jpi(1,1);    J(2*m+n+i,m+2) = w2min*Jpi(1,2);
 
-        // rotational derivatives.
-        vec3f do1 = DRx*x0;
-        vec3f do2 = DRy*x0;
-        vec3f do3 = DRz*x0;
+        // rotational derivatives
+        vec3f do1 = DR1x*m_corrs2i.first[i];
+        vec3f do2 = DR1y*m_corrs2i.first[i];
+        vec3f do3 = DR1z*m_corrs2i.first[i];
 
-        J(2*m+i,m+3) = w2mi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2));
+        J(2*m+i,m+3)   = w2mi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2));
         J(2*m+n+i,m+3) = w2min*(Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2));
 
-        J(2*m+i,m+4) = w2mi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2));
+        J(2*m+i,m+4)   = w2mi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2));
         J(2*m+n+i,m+4) = w2min*(Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2));
 
-        J(2*m+i,m+5) = w2mi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2));
+        J(2*m+i,m+5)   = w2mi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2));
         J(2*m+n+i,m+5) = w2min*(Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2));
 
     }
@@ -617,8 +527,8 @@ vecf CMagicSfM::ComputeDispersion(const vecf& r) {
 
     vecf sigma(r.NElems());
 
-    size_t m = m_corri2i.size();
-    size_t n = m_corrs2i.size();
+    size_t m = m_corri2i.first.size();
+    size_t n = m_corrs2i.first.size();
 
     // get pointer to the data
     float* rdata = r.Data().get();

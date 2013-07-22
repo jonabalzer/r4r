@@ -11,6 +11,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "viewer.h"
+
 MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -20,7 +22,8 @@ MainWindow::MainWindow(QWidget* parent) :
     m_timer(this),
     m_params(),
     m_tracker(),
-    m_cam() {
+    m_cam(),
+    m_map() {
 
     ui->setupUi(this);
     this->setFixedSize(this->width(),this->height());
@@ -32,6 +35,12 @@ MainWindow::MainWindow(QWidget* parent) :
 
     // set parameters
     m_preferences->on_applyButton_clicked();
+
+    // delete the one we already have and replace it
+    /*CView<float> view(m_cam);
+    ui->openGlWidget = new CViewer(view,this);
+    ui->openGlWidget->setObjectName(QString::fromUtf8("openGlWidget"));
+    ui->openGlWidget->setGeometry(QRect(640, 45, 640, 480));*/
 
 }
 
@@ -114,6 +123,29 @@ void MainWindow::on_stepButton_clicked()
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
 
+    // get map and color it
+    if(ui->renderCheckBox->isChecked()) {
+
+        CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
+        CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
+        list<pair<vec2f,vec3f> >& newpts = tracker->GetMap();
+        list<pair<vec3f,rgb> >& allpts = viewer->get_map();
+
+        // color them and send them to the viewer
+        list<pair<vec2f,vec3f> >::iterator it;
+        for(it=newpts.begin(); it!=newpts.end(); it++) {
+
+            rgb red = { 255, 0, 0 };
+            allpts.push_back(pair<vec3f,rgb>(it->second,red));
+
+         }
+
+        // update view
+        CView<float> view = tracker->GetLatestView();
+        viewer->update_display(view);
+
+    }
+
     // add new tracks
     size_t noactive = m_tracker->GetNumberOfActiveTracks();
     if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
@@ -121,7 +153,6 @@ void MainWindow::on_stepButton_clicked()
 
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
-
 
     // check validity of tracks
     m_tracker->Clean(pyramid,m_pyramid);
@@ -173,7 +204,7 @@ void MainWindow::on_actionOpen_triggered()
     QString filename = QFileDialog::getOpenFileName(this,
                                                     "Open video file...",
                                                     ".",
-                                                    "(*.mp4);;(*.avi);;(*.mov)");
+                                                    "(*.mov);;(*.mp4);;(*.avi)");
 
 
     // check if it is an image or video
@@ -277,8 +308,10 @@ void MainWindow::on_actionSave_Map_triggered() {
 
     CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
 
-    map<CTracklet*,vec> pts = tracker->GetMap();
-    map<CTracklet*,vec>::iterator it;
+    //map<CTracklet*,vec> pts = tracker->GetMap();
+    //map<CTracklet*,vec>::iterator it;
+    /*list<pair<vec3f,rgb> >& pts = ui->openGlWidget->get_map();
+    list<vec3f>::iterator it;
 
     ofstream out(filename.toStdString().c_str());
 
@@ -301,15 +334,11 @@ void MainWindow::on_actionSave_Map_triggered() {
     out << "property uchar blue" << endl;
     out << "end_header" << endl;
 
-    for(it=pts.begin(); it!=pts.end(); it++) {
+    for(it=pts.begin(); it!=pts.end(); it++)
+        out << it->Get(0) << " " << it->Get(1) << " " << it->Get(2) << " " << (unsigned int)255 << " " <<  (unsigned int)255 << " " <<  (unsigned int)255 << endl;
 
-        vec cpt = it->second;
 
-        out << cpt.Get(0) << " " << cpt.Get(1) << " " << cpt.Get(2) << " " << (unsigned int)cpt.Get(3) << " " <<  (unsigned int)cpt.Get(4) << " " <<  (unsigned int)cpt.Get(5) << endl;
-
-    }
-
-    out.close();
+    out.close();*/
 
 }
 

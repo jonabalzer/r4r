@@ -28,6 +28,8 @@
 #include "lk.h"
 #include <fstream>
 
+#include <algorithm>
+
 using namespace std;
 using namespace cv;
 
@@ -138,85 +140,104 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
-	size_t no = 0;
+    // create integral images for each scale
+    vector<CIntegralImage<size_t> > imgs;
+    for(size_t s=0; s<pyramid0.size(); s++)
+        imgs.push_back(CIntegralImage<size_t>(pyramid0[s].cols,pyramid0[s].rows));
 
-    for(u_int s=0; s<pyramid0.size(); s++) {
+    // collect and count feature we already have
+    ComputeFeatureDensity(imgs);
 
-		// compute integral image for counting features
-		CIntegralImage<size_t> cimg = ComputeFeatureDensity(pyramid0[0].cols/pow(2,s),pyramid0[0].rows/pow(2,s),s);
-		cimg.Compute();
+    // compute the integral images
+    for(u_int s=0; s<pyramid0.size(); s++)
+        imgs[s].Compute();
 
-		list<shared_ptr<CTracklet> >::iterator it;
+    list<shared_ptr<CTracklet> >::iterator it;
+    size_t n = 0;
 
-        for(it=begin(); it!=end(); it++) {
+    // now go through all tracklets
+    for(it=begin(); it!=end(); it++) {
 
-            imfeature f = (*it)->GetLatestState();
-            vec2f x = f.GetLocation();
-            u_int scale = u_int(f.GetScale()+0.5);
+        imfeature f = (*it)->GetLatestState();
+        vec2f x = f.GetLocation();
+        u_int s = u_int(f.GetScale()+0.5);
 
-			// if feature is still alive
-            if((*it)->GetStatus() && scale==s) {
+        // if feature is still alive and we have a integral image at its scale...
+        if((*it)->GetStatus() && s<pyramid0.size()) {
 
-				// check quality and distance criterion
-                if(f.GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE") ||
-                   cimg.EvaluateFast(x.Get(0),x.Get(1),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"))>1) {
+            // and if its violates quality or distance criterion...
+            if(f.GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE") ||
+               imgs[s].EvaluateFast(x.Get(0),x.Get(1),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"))>1) {
 
-					// delete last feature
-					(*it)->pop_back();
-					(*it)->SetStatus(false);
+                // delete last feature and kill tracklet
+                (*it)->pop_back();
+                (*it)->SetStatus(false);
 
-				} else
-					no++;	// count number of valid tracks
+            } else
+                n++;
 
-			}
-
-		}
+        }
 
 	}
 
-    m_n_active_tracks = no;
+    // sum over n to get total number of active tracks
+    m_n_active_tracks = n;
 
 }
 
 bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
 
-	for(size_t s = 0; s<pyramid.size(); s++) {
+    // create integral images for each scale
+    vector<CIntegralImage<size_t> > imgs;
+    for(u_int s=0; s<pyramid.size(); s++)
+        imgs.push_back(CIntegralImage<size_t>(pyramid[s].cols,pyramid[s].rows));
 
-		// make a smooth copy of current pyramid level for descriptor computation
-		Mat imsmooth;
-        GaussianBlur(pyramid[s],imsmooth,Size(0,0),m_params->GetDoubleParameter("GRAD_SMOOTH_SIGMA"));
+    // collect and count feature we already have per scale
+    vector<size_t> n = ComputeFeatureDensity(imgs);
 
-		// compute integral image for counting features
-		CIntegralImage<size_t> cimg = ComputeFeatureDensity(pyramid[s].cols,pyramid[s].rows,s);
+    for(u_int s = 0; s<pyramid.size(); s++) {
 
-		vector<KeyPoint> keypoints;
-		m_detector.detect(pyramid[s],keypoints);
+        // how many to add per scale
+        int ntoadd = m_params->GetIntParameter("MAX_NO_FEATURES") - (int)n[s];
 
-		if(keypoints.size()>0) {
+        // if we have enough, don't do anything
+        if(ntoadd>0) {
 
-			for(size_t i=0; i<keypoints.size(); i++)
-				cimg.AddDensityFast(keypoints[i].pt.x,keypoints[i].pt.y,1);
+            // detect
+            vector<KeyPoint> keypoints;
+            m_detector.detect(pyramid[s],keypoints);
 
-			cimg.Compute();
+            // only do something if there were detections at scale s
+            if(keypoints.size()>0) {
 
-            double hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT");
+                // keep the best but no more than the number to add
+                KeyPointsFilter::retainBest(keypoints,ntoadd);
 
-			for(size_t i=0; i<keypoints.size(); i++) {
+                // add potential
+                for(size_t i=0; i<keypoints.size(); i++)
+                    imgs[s].AddDensityFast(keypoints[i].pt.x,keypoints[i].pt.y,1);
 
-				if(cimg.EvaluateFast(keypoints[i].pt.x,keypoints[i].pt.y,hsize,hsize)==1) {
+                imgs[s].Compute();
 
-                    vec2f loc = { keypoints[i].pt.x,keypoints[i].pt.y };
-                    imfeature x(loc,s,0);
+                double hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT");
 
-					// create new tracklet with feature
-					AddTracklet(x);
+                for(size_t i=0; i<keypoints.size(); i++) {
 
-				}
+                    if(imgs[s].EvaluateFast(keypoints[i].pt.x,keypoints[i].pt.y,hsize,hsize)==1) {
 
-			}
+                        vec2f loc = { keypoints[i].pt.x,keypoints[i].pt.y };
+                        imfeature x(loc,s,0);
 
-		}
+                        // create new tracklet with feature
+                        AddTracklet(x);
 
+                    }
+
+                }
+
+            }
+
+        }
 
 	}
 

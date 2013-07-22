@@ -70,6 +70,7 @@ private:
     CParameters m_params;
     CTracker* m_tracker;
     CPinholeCam m_cam;
+    std::map<R4R::vec3f,R4R::rgb> m_map;
 
     void show_image(const QImage& qimg);
 

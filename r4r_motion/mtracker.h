@@ -24,8 +24,6 @@
 #ifndef R4RMTRACKER_H_
 #define R4RMTRACKER_H_
 
-#define COMPUTE_ID 0
-
 #include "cam.h"
 #include "stracker.h"
 #include "lm.h"
@@ -59,14 +57,8 @@ public:
      */
     bool UpdateDescriptors(std::vector<cv::Mat>& pyramid);
 
-    //! Computes color of map points. Do this outside.
-    bool ColorMap(cv::Mat& img);
-
-    //! Returns point cloud.
-    std::map<CTracklet*,vec> GetMap();
-
     //! Returns a reference to the point cloud.
-    //std::list<vec3f>& GetMap() { return m_map; }
+    std::list<std::pair<vec2f,vec3f> >& GetMap() { return m_map; }
 
     //! Access to the motion.
     std::list<vecf> GetMotion() { return m_motion; }
@@ -78,7 +70,7 @@ private:
 
     CPinholeCam m_cam;                                //!< camera
     std::list<vecf> m_motion;                         //!< motion
-    std::list<vec3f> m_map;                           //!< map
+    std::list<std::pair<vec2f,vec3f> > m_map;                           //!< map
 
 };
 
@@ -87,7 +79,7 @@ class CMagicSfM:public CLeastSquaresProblem<smatf,float> {
 public:
 
 	//! Constructor.
-    CMagicSfM(CPinholeCam cam, std::vector<std::pair<vec2f,vec2f> >& corri2i, std::vector<std::pair<vec3f,vec2f> >& corrs2i, CRigidMotion<float,3> F0inv);
+    CMagicSfM(CPinholeCam cam, std::pair<std::vector<vec2f>,std::vector<vec2f> >& corri2i, std::pair<std::vector<vec3f>,std::vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv);
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
     void ComputeResidual(vecf& r);
@@ -101,8 +93,8 @@ public:
 protected:
 
     CPinholeCam& m_cam;													//!< intrinsic camera parameters
-    std::vector<std::pair<vec2f,vec2f> >& m_corri2i;    				//!< image-to-image correspondences
-    std::vector<std::pair<vec3f,vec2f> >& m_corrs2i;					//!< scene-to-image correspondences
+    std::pair<std::vector<vec2f>,std::vector<vec2f> >& m_corri2i;    	//!< image-to-image correspondences
+    std::pair<std::vector<vec3f>,std::vector<vec2f> >& m_corrs2i;		//!< scene-to-image correspondences
     CRigidMotion<float,3> m_F0inv;										//!< transformation from first frame of image pair to world coordinates
 
 };

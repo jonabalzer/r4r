@@ -192,7 +192,7 @@ public:
      * \TODO call this by reference with the integral image as argument, no need to pass size
 	 *
 	 */
-	CIntegralImage<size_t> ComputeFeatureDensity(size_t width, size_t height, size_t s);
+    std::vector<size_t> ComputeFeatureDensity(std::vector<CIntegralImage<size_t> >& imgs);
 
 	//! Returns the set of parameters.
     CParameters GetParameters() { return *m_params; }

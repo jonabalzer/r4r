@@ -13,6 +13,7 @@
 #include "cam.h"
 #include "image.h"
 #include <QImage>
+#include <algorithm>
 
 using namespace std;
 using namespace R4R;
@@ -25,32 +26,19 @@ bool projection(const char* filename);
 
 #include <opennurbs/opennurbs.h>
 
-class Test {
-
-    Test(int no):m_no(no) {}
-    Test():Test(10) {}
-
-private:
-
-    int m_no;
-
-};
+int Sum(int x, int y) { return x+y; }
 
 int main()
 {
 
 
-    for(size_t i=0; i<100; i++) {
-        vec u(2);
-        //u.Rand(-1,1);
+    vector<int> test;
+    test.push_back(1);
+    test.push_back(2);
+    test.push_back(3);
 
-        u(0) = (double)rand()/(double)RAND_MAX;
-        u(1) = (double)rand()/(double)RAND_MAX;
-
-        cout << u.Get(0) << " " << u.Get(1) << endl;
-
-    }
-
+    // wie lambda function?
+    //cout << std::accumulate(&test[0],&test[test.size()],0,Sum);
 
 
 //    ON::Begin();
@@ -311,7 +299,7 @@ bool projection(const char* filename) {
     myview.OpenFromFile(filename);
     cout << myview << endl;
 
-    CRigidMotion<double,3>& Fr = myview.GetTransformation();
+    const CRigidMotion<double,3>& Fr = myview.GetTransformation();
     mat M = mat(Fr);
     cout << M << endl;
 

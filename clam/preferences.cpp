@@ -26,6 +26,7 @@ void Preferences::on_saveButton_clicked() {
     params.Set("SCALE",ui->scaleSpinBox->value());
     params.Set("FEATURE_THRESHOLD",ui->thresholdEdit->text().toDouble());
     params.Set("MIN_NO_FEATURES",ui->minFeatEdit->text().toInt());
+    params.Set("MAX_NO_FEATURES",ui->maxFeatEdit->text().toInt());
     params.Set("TRACKING_HSIZE",ui->trackSizeEdit->text().toInt());
     params.Set("DESCRIPTOR_HSIZE",ui->descSizeEdit->text().toInt());
     params.Set("GRAD_SMOOTH_SIGMA",ui->sigmaEdit->text().toDouble());
@@ -83,6 +84,7 @@ void Preferences::on_loadButton_clicked() {
 
     ui->scaleSpinBox->setValue(params.GetIntParameter("SCALE"));
     ui->thresholdEdit->setText(QString::number(params.GetDoubleParameter("FEATURE_THRESHOLD")));
+    ui->maxFeatEdit->setText(QString::number(params.GetIntParameter("MAX_NO_FEATURES")));
     ui->minFeatEdit->setText(QString::number(params.GetIntParameter("MIN_NO_FEATURES")));
     ui->trackSizeEdit->setText(QString::number(params.GetIntParameter("TRACKING_HSIZE")));
     ui->descSizeEdit->setText(QString::number(params.GetIntParameter("DESCRIPTOR_HSIZE")));
@@ -133,6 +135,7 @@ void Preferences::on_applyButton_clicked() {
     params.Set("SCALE",ui->scaleSpinBox->value());
     params.Set("FEATURE_THRESHOLD",ui->thresholdEdit->text().toDouble());
     params.Set("MIN_NO_FEATURES",ui->minFeatEdit->text().toInt());
+    params.Set("MAX_NO_FEATURES",ui->maxFeatEdit->text().toInt());
     params.Set("TRACKING_HSIZE",ui->trackSizeEdit->text().toInt());
     params.Set("DESCRIPTOR_HSIZE",ui->descSizeEdit->text().toInt());
     params.Set("GRAD_SMOOTH_SIGMA",ui->sigmaEdit->text().toDouble());
