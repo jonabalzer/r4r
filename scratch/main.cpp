@@ -28,6 +28,14 @@ bool projection(const char* filename);
 
 int Sum(int x, int y) { return x+y; }
 
+class A {
+
+    virtual void ficken(uint n) { cout << "Class A: " << n << " mal ficken." << endl; }
+
+};
+
+class B:public A {};
+
 int main()
 {
 

@@ -128,6 +128,19 @@ CPinholeCam::CPinholeCam(double fu, double fv, double cu, double cv) {
 
 }
 
+CPinholeCam::CPinholeCam(size_t w, size_t h, double fu, double fv, double cu, double cv) {
+
+    m_size[0] = w;
+    m_size[1] = h;
+    m_f[0] = fu;
+    m_f[1] = fv;
+    m_c[0] = cu;
+    m_c[1] = cv;
+    fill_n(m_k,5,0);
+    m_alpha = 0;
+
+}
+
 
 CPinholeCam::CPinholeCam(size_t w, size_t h) {
 
@@ -345,7 +358,7 @@ bool CPinholeCam::operator==(CAbstractCam& cam) {
 
 }
 
-mat CPinholeCam::GetProjectionMatrix() {
+mat CPinholeCam::GetProjectionMatrix() const {
 
     mat P(3,3);
 

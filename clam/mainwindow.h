@@ -55,6 +55,8 @@ private slots:
 
     void on_actionSave_Tracks_triggered();
 
+    void on_actionClose_triggered();
+
 signals:
 
     void show_memoryUsage();

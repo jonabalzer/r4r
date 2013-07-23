@@ -56,20 +56,34 @@ void CViewer::initializeGL(){
     glEnable(GL_LIGHTING);
     glShadeModel(GL_FLAT);
 
-    // load intrinsics of camera
-    CPinholeCam& cam = reinterpret_cast<CPinholeCam&>(m_view.GetCam());
+    load_view(m_view);
+    load_camera(m_cam);
+
+}
+
+void CViewer::resizeGL(int w, int h){
+
+    glViewport(0,0,w,h);
+    updateGL();
+
+}
+
+void CViewer::load_camera(const R4R::CPinholeCam& cam) {
+
+    m_cam = cam;
 
     CVector<size_t,2> sizes = cam.GetSize();
 
+    cout << "Sizes: " << sizes.Get(0) << " " << sizes.Get(1) << endl;
     double proj[16];
 
     mat K = cam.GetProjectionMatrix();
 
-    proj[0] = 1; //K.Data().get()[0] / sizes.Get(0);
-    proj[5] = 1.33*proj[0]; //2*K.Data().get()[4] / sizes.Get(1);
+    proj[0] = 1.0; //2*K.Data().get()[0] / sizes.Get(0);
+    proj[5] = 1.3; //2*K.Data().get()[4] / sizes.Get(1);
 
     double znear = 0.001;
-    double zfar = 100;
+    double zfar = 1000;
 
     proj[10] = (-zfar - znear)/(zfar - znear);
     proj[14] = -2*zfar*znear/(zfar - znear);
@@ -80,16 +94,8 @@ void CViewer::initializeGL(){
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixd(&proj[0]);
 
-    load_view(m_view);
-
 }
 
-void CViewer::resizeGL(int w, int h){
-
-    glViewport(0,0,w,h);
-    updateGL();
-
-}
 
 void CViewer::paintGL(){
 
@@ -157,7 +163,7 @@ void CViewer::update_display(const R4R::CView<float>& view) {
 void CViewer::translate(float dx, float dy, float dz) {
 
     // new cam coordinates in old
-    CRigidMotion<float,3> F(0,0,0,dx,dy,dz);
+    CRigidMotion<float,3> F(dx,dy,dz,0,0,0);
     F.Invert();
 
     const CRigidMotion<float,3>& Fa = m_view.GetTransformation();

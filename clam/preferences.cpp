@@ -55,7 +55,8 @@ void Preferences::on_saveButton_clicked() {
     params.Set("INIT_DISTANCE",ui->z0Edit->text().toDouble());
     params.Set("OUTLIER_REJECTION_THRESHOLD_DEPTH",ui->outlierDepthEdit->text().toDouble());
     params.Set("OUTLIER_REJECTION_THRESHOLD_MOTION",ui->outlierMotionEdit->text().toDouble());
-    params.Set("FU",ui->fuEdit->text().toDouble());
+    params.Set("SU",ui->suEdit->text().toInt());
+    params.Set("SV",ui->svEdit->text().toInt());
     params.Set("FV",ui->fvEdit->text().toDouble());
     params.Set("CU",ui->cuEdit->text().toDouble());
     params.Set("CV",ui->cvEdit->text().toDouble());
@@ -116,6 +117,8 @@ void Preferences::on_loadButton_clicked() {
     ui->outlierMotionEdit->setText(QString::number(params.GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_MOTION")));
     ui->fuEdit->setText(QString::number(params.GetDoubleParameter("FU")));
     ui->fvEdit->setText(QString::number(params.GetDoubleParameter("FV")));
+    ui->suEdit->setText(QString::number(params.GetIntParameter("SU")));
+    ui->svEdit->setText(QString::number(params.GetIntParameter("SV")));
     ui->cuEdit->setText(QString::number(params.GetDoubleParameter("CU")));
     ui->cvEdit->setText(QString::number(params.GetDoubleParameter("CV")));
     ui->k0Edit->setText(QString::number(params.GetDoubleParameter("K0")));
@@ -166,6 +169,8 @@ void Preferences::on_applyButton_clicked() {
     params.Set("OUTLIER_REJECTION_THRESHOLD_MOTION",ui->outlierMotionEdit->text().toDouble());
     params.Set("FU",ui->fuEdit->text().toDouble());
     params.Set("FV",ui->fvEdit->text().toDouble());
+    params.Set("SU",ui->suEdit->text().toInt());
+    params.Set("SV",ui->svEdit->text().toInt());
     params.Set("CU",ui->cuEdit->text().toDouble());
     params.Set("CV",ui->cvEdit->text().toDouble());
     params.Set("K0",ui->k0Edit->text().toDouble());

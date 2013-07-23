@@ -55,10 +55,13 @@ MainWindow::~MainWindow() {
 void MainWindow::set_params(CParameters params) {
 
     m_params = params;
-    m_cam = CPinholeCam(m_params.GetDoubleParameter("FU"),
+    m_cam = CPinholeCam(m_params.GetIntParameter("SU"),
+                        m_params.GetIntParameter("SV"),
+                        m_params.GetDoubleParameter("FU"),
                         m_params.GetDoubleParameter("FV"),
                         m_params.GetDoubleParameter("CU"),
                         m_params.GetDoubleParameter("CV"));
+
 
 }
 
@@ -135,7 +138,9 @@ void MainWindow::on_stepButton_clicked()
         list<pair<vec2f,vec3f> >::iterator it;
         for(it=newpts.begin(); it!=newpts.end(); it++) {
 
-            rgb red = { 255, 0, 0 };
+            CVector<size_t,2> p = CVector<size_t,2>(it->first);
+
+            rgb red = { img.at<Vec3b>(p.Get(1),p.Get(0))[2], img.at<Vec3b>(p.Get(1),p.Get(0))[1], img.at<Vec3b>(p.Get(1),p.Get(0))[0] };
             allpts.push_back(pair<vec3f,rgb>(it->second,red));
 
          }
@@ -306,12 +311,11 @@ void MainWindow::on_actionSave_Map_triggered() {
                                ".",
                                tr("(*.ply)"));
 
-    CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
 
-    //map<CTracklet*,vec> pts = tracker->GetMap();
-    //map<CTracklet*,vec>::iterator it;
-    /*list<pair<vec3f,rgb> >& pts = ui->openGlWidget->get_map();
-    list<vec3f>::iterator it;
+    CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
+    list<pair<vec3f,rgb> >& pts = viewer->get_map();
+
+    list<pair<vec3f,rgb> >::iterator it;
 
     ofstream out(filename.toStdString().c_str());
 
@@ -335,10 +339,9 @@ void MainWindow::on_actionSave_Map_triggered() {
     out << "end_header" << endl;
 
     for(it=pts.begin(); it!=pts.end(); it++)
-        out << it->Get(0) << " " << it->Get(1) << " " << it->Get(2) << " " << (unsigned int)255 << " " <<  (unsigned int)255 << " " <<  (unsigned int)255 << endl;
+        out << it->first.Get(0) << " " << it->first.Get(1) << " " << it->first.Get(2) << " " << (unsigned int)it->second.Get(0) << " " <<  (unsigned int)it->second.Get(1) << " " <<  (unsigned int)it->second.Get(2) << endl;
 
-
-    out.close();*/
+    out.close();
 
 }
 
@@ -351,5 +354,23 @@ void MainWindow::on_actionSave_Tracks_triggered()
 
     if(error)
          QMessageBox::critical(this,"Error","Could not save tracks.");
+
+}
+
+void MainWindow::on_actionClose_triggered()
+{
+
+    m_timer.stop();
+    ui->labelImage->clear();
+    delete m_tracker;
+    m_cap.release();
+
+    CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
+    viewer->get_map().clear();
+    viewer->repaint();
+
+    emit show_memoryUsage();
+
+    ui->frameLcdNumber->display(0);
 
 }

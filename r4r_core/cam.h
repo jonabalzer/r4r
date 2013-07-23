@@ -131,6 +131,9 @@ public:
     //! Constructor.
     CPinholeCam(double fu, double fv, double cu, double cv);
 
+    //! Constructor.
+    CPinholeCam(size_t w, size_t h, double fu, double fv, double cu, double cv);
+
     //! \copydoc CAbstractCamera::Project(const vec3&) const
     vec2 Project(const vec3& x) const;
     vec2f Project(const vec3f& x) const;
@@ -163,10 +166,10 @@ public:
     bool operator==(CAbstractCam& cam);
 
     //! Access to image size.
-    CVector<size_t,2> GetSize() {  return { m_size[0], m_size[1] }; }
+    CVector<size_t,2> GetSize() const {  return { m_size[0], m_size[1] }; }
 
     //! Projection matrix.
-    mat GetProjectionMatrix();
+    mat GetProjectionMatrix() const;
 
 private:
 

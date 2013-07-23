@@ -26,6 +26,8 @@ public slots:
     
     void update_display(const R4R::CView<float>& view);
 
+    void load_camera(const R4R::CPinholeCam& cam);
+
 protected:
 
     void initializeGL();
