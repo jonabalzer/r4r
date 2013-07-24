@@ -151,60 +151,6 @@ protected:
 
 };
 
-class CDescriptorFileHeader {
-
-    friend class CFeature;
-
-public:
-
-    //! Constructor.
-    CDescriptorFileHeader();
-
-    //! Constructor.
-    CDescriptorFileHeader(const CFeature& feature);
-
-    //! Sets the comment.
-    void SetComment(const char* comment) { m_comment = std::string(comment); }
-
-    //! Sets the descriptor name, size, and type.
-    bool SetDescriptor(CFeature& feature, const char* name);
-
-    //! Writes header to a file stream.
-    friend std::ostream& operator<<(std::ostream& os, CDescriptorFileHeader& x);
-
-    //! Reads header from a file stream.
-    friend std::istream& operator>>(std::istream& is, CDescriptorFileHeader& x);
-
-    //! Get the number of elements in the descriptor.
-    size_t NElems() { return m_size[0]*m_size[1]; }
-
-    //! Get the number of rows.
-    size_t NRows() { return m_size[0]; }
-
-    //! Get the number of rows.
-    size_t NCols() { return m_size[1]; }
-
-    //! Access to comments.
-    std::string GetComment() { return m_comment; }
-
-    //! Access to location.
-    void GetLocation(float& u, float& v) { u = m_location[0]; v = m_location[1]; }
-
-    //! Access to scale.
-    size_t GetScale() { return m_scale; }
-
-private:
-
-    float m_location[2];                        //! location of the feature where the descriptor was computed
-    size_t m_scale;                             //! scale of the mother feature
-    std::string m_name;                         //! name of the descriptor
-    size_t m_size[2];                           //! size of the container
-    ETYPE m_type;                               //! data type
-    std::string m_comment;                      //! comments
-
-};
-
-
 }
 
 #endif /* DESCRIPTOR_H_ */

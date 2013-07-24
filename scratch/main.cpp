@@ -30,23 +30,25 @@ int Sum(int x, int y) { return x+y; }
 
 class A {
 
-    virtual void ficken(uint n) { cout << "Class A: " << n << " mal ficken." << endl; }
-
+public:
+    void ficken(uint n) { cout << "Class A: " << n << " mal ficken." << endl; }
+    void ficken() {}
 };
 
-class B:public A {};
+class B:public A {
+public:
+    B():A() {}
+    void ficken() {}
+    void ficken(uint n) { cout << "Class B: " << n << " mal ficken." << endl;  }
+    //void auch_ficken() { ficken(2); }
+
+};
 
 int main()
 {
 
-
-    vector<int> test;
-    test.push_back(1);
-    test.push_back(2);
-    test.push_back(3);
-
-    // wie lambda function?
-    //cout << std::accumulate(&test[0],&test[test.size()],0,Sum);
+    B myfuck;
+    myfuck.ficken(3);
 
 
 //    ON::Begin();

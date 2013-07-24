@@ -47,90 +47,6 @@ public:
 	 */
 	template<class T> static void GivensRotation(T a, T b, T& c, T& s, T& r);
 
-	//! Assembles a skew-symmetric matrix from input.
-	static mat Hat(vec omega);
-
-	/*! \brief Computes a rotation matrix from an axis-angle representation.
-	 *
-	 * \details Transcribed from VLFeat.
-	 *
-	 */
-	static mat Rodrigues(vec omega);
-
-	/*! \brief Computes a rotation matrix from an axis-angle representation.
-	 *
-	 * \details Transcribed from VLFeat.
-	 *
-	 */
-	static mat Rodrigues(double o1, double o2, double o3);
-
-	/*! Computes a rotation matrix from an axis-angle representation and its derivative.
-	 *
-	 * \details Transcribed from VLFeat.
-	 *
-	 */
-	static void Rodrigues(vec omega, mat& R, mat& DRx, mat& DRy, mat& DRz);
-
-	/*! \brief Implements a coordinate transformation of points.
-	 *
-	 * \param[in] F homogeneous transformation matrix
-	 * \param[in] x non-homogeneous coordinate vector
-	 * \returns point w.r.t. to new coordinate system
-	 *
-	 */
-	static vec TransformPoint(mat& F, vec& x);
-
-	/*! \brief Implements a coordinate transformation of directions.
-	 *
-	 * \param[in] F homogeneous transformation matrix
-	 * \param[in] x non-homogeneous coordinate vector
-	 * \returns direction w.r.t. to new coordinate system
-	 *
-	 */
-	static vec TransformDirection(mat& F, vec& x);
-
-	//! Computes a transformation matrix from translation and rotation parameters.
-	static mat CreateTransformationMatrix(double tx, double ty, double tz, double ox, double oy, double oz);
-
-	//! Computes a transformation matrix from translation and rotation parameters.
-	static mat CreateInverseTransformationMatrix(double tx, double ty, double tz, double ox, double oy, double oz);
-
-	//! Computes a transformation matrix from translation and rotation parameters.
-    static mat CreateTransformationMatrix(vec params) { return CreateTransformationMatrix(params(0),params(1),params(2),params(3),params(4),params(5)); }
-
-	//! Computes a transformation matrix from translation and rotation parameters.
-	static mat CreateTransformationMatrix(mat& R, vec& t);
-
-	/*! \brief Implements an inverse coordinate transformation of points.
-	 *
-	 * \param[in] F homogeneous transformation matrix
-	 * \param[in] x non-homogeneous coordinate vector
-	 * \returns point w.r.t. to new coordinate system
-	 *
-	 */
-	static vec TransformPointBack(mat& F, vec& x);
-
-	/*! \brief Implements an inverse coordinate transformation of directions.
-	 *
-	 * \param[in] F homogeneous transformation matrix
-	 * \param[in] x non-homogeneous coordinate vector
-	 * \returns direction w.r.t. to new coordinate system
-	 *
-	 */
-	static vec TransformDirectionBack(mat& F, vec& x);
-
-	//! Inverts a transformation.
-	static mat InvertTransformation(mat& F);
-
-	//! Extracts rotational part of transformation.
-	static mat GetRotationMatrix(mat& F);
-
-	//! Extracts translational part of transformation.
-    static vec GetTranslationVector(mat& F);
-
-    //! Projects a matrix onto SO(3) by Procrustes analysis.
-	static mat ProjectToSO3(mat& R);
-
 	/*! \brief Estimates the essential matrix by a DLTN technique.
 	 *
 	 * \param[in] corr pixel correspondences
@@ -143,7 +59,7 @@ public:
 	 * second frame (the former being assumed the world coordinate system).
 	 *
 	 */
-	static mat CalibratedNPoint(const std::vector<std::pair<vec,vec> >& corr, const CCam& cam);
+    static mat CalibratedNPoint(const std::vector<std::pair<vec,vec> >& corr, const CPinholeCam& cam);
 
 	/*! \brief Estimates a homography matrix \f$H:\mathrm{P}^2\to \mathrm{P}^2\f$ by a DLTN technique.
 	 *
@@ -173,7 +89,7 @@ public:
 	 * \returns coordinate transformation from the first to the second frame
 	 *
 	 */
-	static mat ZhangFactorization(const mat& H, const CCam& cam);
+    static mat ZhangFactorization(const mat& H, const CPinholeCam& cam);
 
 };
 

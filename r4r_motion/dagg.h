@@ -41,9 +41,6 @@ public:
     //! Aggregates over the entire tracker.
     void Aggregate();
 
-    //! Aggregates over the entire tracker into a file.
-    //virtual bool Aggregate(const char* filename, const char* comment = nullptr);
-
     //! Access to the aggregates.
     list<imfeature>& Get() { return m_aggregate; }
 

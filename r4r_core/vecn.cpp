@@ -190,6 +190,7 @@ template class CVector<unsigned char,3>;
 template class CVector<float,2>;
 template class CVector<double,2>;
 template class CVector<unsigned char,2>;
+template class CVector<size_t,3>;
 template class CVector<size_t,2>;
 template class CVector<int,2>;
 

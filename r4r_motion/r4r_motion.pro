@@ -17,7 +17,6 @@ SOURCES += tracker.cpp \
     stracker.cpp \
     #ptracker.cpp \
     mtracker.cpp \
-    map.cpp \
     lk.cpp \
     feature.cpp \
     descriptor.cpp \
@@ -32,7 +31,6 @@ HEADERS += \
     stracker.h \
     #ptracker.h \
     mtracker.h \
-    map.h \
     lk.h \
     feature.h \
     descriptor.h \
