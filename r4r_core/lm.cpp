@@ -205,6 +205,9 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
 			// restore state because step was unsuccessful
             x = xold;
 
+            // show how lambda develops
+            cout << "Adjusting lambda to " << m_lambda << "." << endl;
+
         }
 
 	}

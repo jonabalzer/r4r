@@ -56,10 +56,10 @@ public:
     T& operator()(u_int i, u_int j);
 
     //! Forward transformation.
-    CVector<T,n> Transform(const CVector<T,n>& x);
+    CVector<T,n> Transform(const CVector<T,n>& x) const;
 
     //! Transform a direction.
-    CVector<T,n> DifferentialTransform(const CVector<T,n>& x);
+    CVector<T,n> DifferentialTransform(const CVector<T,n>& x) const;
 
     //! Forward transformation.
     CVector<T,n> Transform(const T* x);
@@ -80,7 +80,7 @@ public:
     T* Data() { return m_F; }
 
     //! Parallelized mass transformation.
-    std::vector<CVector<T,n> > Transform(const std::vector<CVector<T,n> >& x);
+    std::vector<CVector<T,n> > Transform(const std::vector<CVector<T,n> >& x) const;
 
     //! Parallelized mass transformation.
     std::vector<CVector<T,n> > DifferentialTransform(const std::vector<CVector<T,n> >& x);

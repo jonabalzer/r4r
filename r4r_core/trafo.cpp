@@ -112,7 +112,7 @@ CTransformation<T,n>::operator CDenseArray<T>() const {
 }
 
 template <typename T,u_int n>
-CVector<T,n> CTransformation<T,n>::Transform(const CVector<T, n>& x) {
+CVector<T,n> CTransformation<T,n>::Transform(const CVector<T, n>& x) const {
 
     CVector<T,n> result;
 
@@ -130,7 +130,7 @@ CVector<T,n> CTransformation<T,n>::Transform(const CVector<T, n>& x) {
 }
 
 template <typename T,u_int n>
-CVector<T,n> CTransformation<T,n>::DifferentialTransform(const CVector<T,n>& x) {
+CVector<T,n> CTransformation<T,n>::DifferentialTransform(const CVector<T,n>& x) const {
 
     CVector<T,n> result;
 
@@ -164,7 +164,7 @@ CVector<T,n> CTransformation<T,n>::Transform(const T* x) {
 }
 
 template <typename T,u_int n>
-vector<CVector<T,n> > CTransformation<T,n>::Transform(const vector<CVector<T,n> >& x) {
+vector<CVector<T,n> > CTransformation<T,n>::Transform(const vector<CVector<T,n> >& x) const {
 
     vector<CVector<T,n> > result(x.size());
 
