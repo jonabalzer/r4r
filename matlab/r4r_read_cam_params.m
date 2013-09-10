@@ -33,8 +33,9 @@ alpha = fscanf(fileIn, '%f',1);
 fgets(fileIn);
 fgets(fileIn);
 
-F = fscanf(fileIn, '%f',[3,4]);
-cam.F = F';
+F = fscanf(fileIn, '%f',[4,3]);
+
+cam.F = [F';0,0,0,1];
 
 cam.sizes = sizes;
 cam.f = f;

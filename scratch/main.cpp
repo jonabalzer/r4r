@@ -14,6 +14,8 @@
 #include "image.h"
 #include <QImage>
 #include <algorithm>
+#include <queue>
+#include <unordered_map>
 
 using namespace std;
 using namespace R4R;
@@ -24,7 +26,8 @@ bool solve_linear_system();
 bool gradients(const char* filename);
 bool projection(const char* filename);
 
-#include <set>insert
+#include <limits>
+#include <map>
 #include <opennurbs/opennurbs.h>
 
 int Sum(int x, int y) { return x+y; }
@@ -32,43 +35,11 @@ int Sum(int x, int y) { return x+y; }
 int main()
 {
 
+    string a = string("abc");
 
+    cout << a.c_str()[2] << endl;
 
-//    for(size_t i=0; i<3; i++) {
-
-//        cout << "i: " << i << endl;
-
-//        for(size_t j=++i; j<3; j++) {
-
-//            cout << "j: " << j << endl;
-
-
-//        }
-
-//    }
-
-    set<int> x;
-    x.insert(4);
-    x.insert(5);
-    x.insert(6);
-
-    set<int>::iterator it0, it1;
-
-    for(it0=x.begin(); it0!=x.end(); ++it0) {
-
-        cout << "i: " << *it0 << endl;
-
-        for(it1=it0++; it1!=x.end(); ++it1) {
-
-            cout << "j: " << *it1 << endl;
-
-
-        }
-
-
-    }
-
-
+    //cout << sizeof(x)<< endl;
 
 
 

@@ -283,9 +283,7 @@ public:
     void SetInverseTransformation(const CRigidMotion<T,3>& Finv) { m_Finv = Finv; m_F = Finv; m_F.Invert(); }
 
     //! Access to the cam.
-    CAbstractCam& GetCam() { return m_cam; }
-
-
+    const CAbstractCam& GetCam() const { return m_cam; }
 
 protected:
 

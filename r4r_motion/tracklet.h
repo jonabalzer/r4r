@@ -69,22 +69,22 @@ public:
     imfeature& GetLatestState() { return back(); }
 
 	//! Provides access to the current feature position.
-    vec2f GetLatestLocation() { return back().GetLocation(); }
+    vec2f GetLatestLocation() const { return back().GetLocation(); }
 
 	//! Provides access to previous feature position.
-    vec2f GetPastLocation(size_t steps);
+    vec2f GetPastLocation(size_t steps) const;
 
 	//! Provides access to previous feature position w.r.t. to the native scale.
-    vec2f GetPastLocationAtNativeScale(size_t steps);
+    vec2f GetPastLocationAtNativeScale(size_t steps) const;
 
 	//! Provides access to the current feature position w.r.t. to the native scale.
-    vec2f GetLatestLocationAtNativeScale() { return back().GetLocationAtNativeScale(); }
+    vec2f GetLatestLocationAtNativeScale() const { return back().GetLocationAtNativeScale(); }
 
 	//! Extrapolates the current translational speed from the feature.
     vec2f GetLatestVelocity();
 
     //! Returns the current scale.
-    float GetScale() { return back().GetScale(); }
+    float GetScale() const { return back().GetScale(); }
 
 	//! Streams the tracklet to a given output.
 	friend std::ostream& operator<<(std::ostream& os, CTracklet& x);
@@ -95,10 +95,10 @@ public:
 	 * - creation time
 	 * - initial x and y position
 	 */
-	std::string GetHash();
+    std::string GetHash() const;
 
 	//! Gets the status.
-    bool GetStatus() { return m_status; }
+    bool GetStatus() const { return m_status; }
 
     //! Sets the status flag.
     void SetStatus(bool status) { m_status = status; }
@@ -108,14 +108,14 @@ public:
      *\details Note that there is no member function to change #m_t as it is uniquely defined during reconstruction.
 	 *
 	 */
-    size_t GetCreationTime() { return m_t0; }
+    size_t GetCreationTime() const { return m_t0; }
 
 #ifdef QT_GUI_LIB
 
     static const Qt::GlobalColor COLORS[10];
 
     //! Draws the trajectory into a single image.
-    void Draw(QImage& img, size_t length);
+    void Draw(QImage& img, size_t length) const;
 
 #endif
 

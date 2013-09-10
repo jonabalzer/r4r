@@ -64,10 +64,10 @@ public:
     CInterestPoint(CVector<T,n>& location, float scale, T quality);
 
     //! Returns the scale.
-    float GetScale() { return m_scale; }
+    float GetScale() const { return m_scale; }
 
     //! Returns the strength/quality of the feature.
-    T GetQuality() { return m_quality; }
+    T GetQuality() const { return m_quality; }
 
     //! Sets the strength/quality of the feature.
     void SetQuality(T quality) { m_quality = quality; }
@@ -82,21 +82,21 @@ public:
     void AttachDescriptor(const char* id, shared_ptr<CAbstractDescriptor> descriptor);
 
     //! Returns the number of descriptors attached to the feature.
-    size_t NoDescriptors() { return m_descriptors.size(); }
+    size_t NoDescriptors() const { return m_descriptors.size(); }
 
     //! Checks whether a descriptor of a given name exists.
-    bool HasDescriptor(const char* name);
+    bool HasDescriptor(const char* name) const;
 
     //! Returns feature location w.r.t. to inherent scale.
-    CVector<T,n> GetLocation() { return m_location; }
+    CVector<T,n> GetLocation() const { return m_location; }
 
     //! Returns feature location w.r.t. to native scale.
-    CVector<T,n> GetLocationAtNativeScale();
+    CVector<T,n> GetLocationAtNativeScale() const;
 
     //! Access to the descriptor container.
     std::map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; }
 
-    //! Looks for descriptor with a specified name.
+    //! Looks for descriptor with a specified name. \TODO: Better return iterator.
     shared_ptr<CAbstractDescriptor> GetDescriptor(const char* name);
 
     //! Looks for a descriptor at specified position.

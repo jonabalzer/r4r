@@ -119,7 +119,7 @@ public:
     size_t Capacity() { return size(); }
 
 	//! Computes the number of tracklets in the container that are still alive.
-	size_t ActiveCapacity();
+    size_t ActiveCapacity() const;
 
 	/*!
 	 * \brief  Initializes the tracker.
@@ -185,12 +185,8 @@ public:
 	 *	of active tracklets in a rectangular subdomain of the current frame. Caveat: This is just the density, meaning that
 	 *	CIntegralImage::Compute() must be called separately.
 	 *
-	 * \returns Integral image \f$\mathcal{I}\f$. At evaluation, no swapping of indices is required, i.e., if \f$(i,j)\f$
-	 * denotes a pixel where \f$i\f$ is the horizontal image location and \f$j\f$ the vertical one, the integral bound is
-	 * passed in that same order \f$\mathcal{I}(i,j)\f$.
+     * \returns
      *
-     * \TODO call this by reference with the integral image as argument, no need to pass size
-	 *
 	 */
     std::vector<size_t> ComputeFeatureDensity(std::vector<CIntegralImage<size_t> >& imgs);
 
@@ -219,7 +215,7 @@ public:
 #ifdef QT_GUI_LIB
 
     //! Draws active tracklets into an image.
-    void Draw(QImage& img, size_t length);
+    void Draw(QImage& img, size_t length) const;
 
 #endif
 

@@ -98,9 +98,6 @@ public:
     //! Creates a deep copy of a region of interest using bilinear interpolation.
     //template<typename T> CRGBImage Clone(CRectangle<T> roi);
 
-
-
-
 private:
 
 };

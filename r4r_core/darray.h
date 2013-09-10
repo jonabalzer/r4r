@@ -275,7 +275,7 @@ public:
 	T Determinant() const;
 
 	//! Returns the number of bytes of the data type.
-    size_t SizeOf() { return sizeof(T); }
+    size_t SizeOf() const { return sizeof(T); }
 
     //! Returns the numerical type.
     ETYPE GetType();

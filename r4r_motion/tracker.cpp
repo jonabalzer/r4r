@@ -88,11 +88,11 @@ shared_ptr<CTracklet> CTracker::AddTracklet(imfeature x) {
 
 }
 
-size_t CTracker::ActiveCapacity() {
+size_t CTracker::ActiveCapacity() const {
 
 	size_t result = 0;
 
-	list<shared_ptr<CTracklet> >::iterator it;
+    list<shared_ptr<CTracklet> >::const_iterator it;
 
     for(it=begin(); it!=end(); it++) {
 
@@ -107,9 +107,9 @@ size_t CTracker::ActiveCapacity() {
 
 #ifdef QT_GUI_LIB
 
-void CTracker::Draw(QImage& img, size_t length) {
+void CTracker::Draw(QImage& img, size_t length) const {
 
-    list<shared_ptr<CTracklet> >::iterator it;
+    list<shared_ptr<CTracklet> >::const_iterator it;
 
     for(it=begin(); it!=end(); it++) {
 

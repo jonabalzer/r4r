@@ -89,14 +89,14 @@ const Qt::GlobalColor CTracklet::COLORS[10] = { Qt::green,
                                                 Qt::darkRed,
                                                 Qt::darkBlue };
 
-void CTracklet::Draw(QImage& img, size_t length) {
+void CTracklet::Draw(QImage& img, size_t length) const {
 
     // check if length > 0
     if(length==0)
         return;
 
     // access to the two last features
-    list<imfeature>::reverse_iterator ita, itb;
+    list<imfeature>::const_reverse_iterator ita, itb;
     ita = rbegin();
     itb = rbegin();
     itb++;
@@ -150,7 +150,7 @@ ostream& operator<<(ostream& os, CTracklet& x) {
 
 }
 
-std::string CTracklet::GetHash() {
+std::string CTracklet::GetHash() const {
 
 	stringstream t0;
 	t0.fill('0');
@@ -174,9 +174,9 @@ std::string CTracklet::GetHash() {
 
 }
 
-vec2f CTracklet::GetPastLocation(size_t steps) {
+vec2f CTracklet::GetPastLocation(size_t steps) const {
 
-    list<imfeature>::reverse_iterator rit = rbegin();
+    list<imfeature>::const_reverse_iterator rit = rbegin();
 
 	for(size_t i=0; i<steps; i++)
 		rit++;
@@ -185,9 +185,9 @@ vec2f CTracklet::GetPastLocation(size_t steps) {
 
 }
 
-vec2f CTracklet::GetPastLocationAtNativeScale(size_t steps) {
+vec2f CTracklet::GetPastLocationAtNativeScale(size_t steps) const {
 
-    list<imfeature>::reverse_iterator rit = rbegin();
+    list<imfeature>::const_reverse_iterator rit = rbegin();
 
 	for(size_t i=0; i<steps; i++)
 		rit++;

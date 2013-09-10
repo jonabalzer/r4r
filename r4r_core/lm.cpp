@@ -22,8 +22,11 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "lm.h"
-#include <math.h>
 #include "rutils.h"
+
+
+#include <math.h>
+#include <limits>
 
 using namespace std;
 
@@ -151,9 +154,11 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
 		// compute rho
         T normstep, descent, dres, dlres, rho;
 		dres = m_residuals.back() - res;
+
         normstep = sqrt(CDenseVector<T>::InnerProduct(step,step));
         descent = -CDenseVector<T>::InnerProduct(step,grad);
-		dlres = 0.5*(normstep*normstep*m_lambda - descent);
+
+        dlres = 0.5*(normstep*normstep*m_lambda - descent);
 		rho = dres/dlres;
 
 		// check step size criterion (lambda going to infinity)
@@ -188,7 +193,7 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
                 cout << k << "\t" << res << "\t" << normgrad << "\t" << normstep << "\t" << m_lambda << endl;
 
 			// check convergence criteria
-			if(normgrad<epsilon1 || k==n )
+            if(normgrad<epsilon1 || k==n || std::isinf(m_lambda))
 				break;
 
         }
@@ -206,7 +211,8 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
             x = xold;
 
             // show how lambda develops
-            cout << "Adjusting lambda to " << m_lambda << "." << endl;
+            if(!silent)
+                cout << "Adjusting lambda to " << m_lambda << "." << endl;
 
         }
 

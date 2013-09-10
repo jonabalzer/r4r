@@ -59,7 +59,7 @@ void CInterestPoint<T,n>::AttachDescriptor(const char* id, shared_ptr<CAbstractD
 }
 
 template<typename T,u_int n>
-bool CInterestPoint<T,n>::HasDescriptor(const char* name) {
+bool CInterestPoint<T,n>::HasDescriptor(const char* name) const {
 
     if(!m_descriptors.empty())
         return m_descriptors.find(name)!=m_descriptors.end();
@@ -69,7 +69,7 @@ bool CInterestPoint<T,n>::HasDescriptor(const char* name) {
 }
 
 template<typename T,u_int n>
-CVector<T,n> CInterestPoint<T,n>::GetLocationAtNativeScale() {
+CVector<T,n> CInterestPoint<T,n>::GetLocationAtNativeScale() const {
 
     return pow(2,m_scale)*m_location;
 

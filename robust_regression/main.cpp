@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
     if(argc==1) {
 
-        cout << "Type \"lmtest 0\" for LM-method on Rosebrock's function or \"lmtest 1\" for robust rew-eighted LM-method on Osbourne's function." << endl;
+        cout << "Type \"lmtest 0\" for LM-method on Rosenbrock's function or \"lmtest 1\" for robust rew-eighted LM-method on Osbourne's function." << endl;
         return 1;
 
     }
