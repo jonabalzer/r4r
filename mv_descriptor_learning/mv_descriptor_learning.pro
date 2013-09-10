@@ -4,13 +4,12 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = mv_descriptor_learning
+TARGET = mvdl
 TEMPLATE = app
-
 
 QMAKE_CXXFLAGS += -std=c++0x -O3
 
@@ -18,33 +17,38 @@ SOURCES += main.cpp\
            mainwindow.cpp \
            preferences.cpp
 
-HEADERS  += mainwindow.h \
-            preferences.h
+HEADERS += mainwindow.h \
+           preferences.h
 
-FORMS    += mainwindow.ui \
-            preferences.ui
+FORMS += mainwindow.ui \
+         preferences.ui
 
-unix:!symbian|win32: LIBS += -L/usr/local/lib/\
-                             -lopencv_core\
-                             -lopencv_highgui\
-                             -lopencv_video\
-                             -lopencv_imgproc\
-                             -lopencv_features2d\
-                             -lopencv_calib3d \
-                             -llapack \
-                             -lgomp
+INCLUDEPATH += $$PWD/../r4r_core \
+               $$PWD/../r4r_motion
 
+DEPENDPATH += $$PWD/../r4r_core \
+              $$PWD/../r4r_motion
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../r4r_core/release/ -lr4r_core
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../r4r_core/debug/ -lr4r_core
-else:unix:!symbian: LIBS += -L$$OUT_PWD/../r4r_core/ -lr4r_core
+target.path = $$OUT_PWD/../bin
+INSTALLS += target
 
-INCLUDEPATH += $$PWD/../r4r_core
-DEPENDPATH += $$PWD/../r4r_core
+unix:!symbian|win32: {
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../r4r_motion/release/ -lr4r_motion
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../r4r_motion/debug/ -lr4r_motion
-else:unix:!symbian: LIBS += -L$$OUT_PWD/../r4r_motion/ -lr4r_motion
+    LIBS += -L/usr/local/lib/\
+            -lopencv_core\
+            -lopencv_highgui\
+            -lopencv_video\
+            -lopencv_imgproc\
+            -lopencv_features2d\
+            -lopencv_calib3d \
+            -llapack \
+            -lgomp \
+            -L$$OUT_PWD/../r4r_core/ \
+            -lr4r_core \
+            -L$$OUT_PWD/../r4r_motion/ \
+            -lr4r_motion
 
-INCLUDEPATH += $$PWD/../r4r_motion
-DEPENDPATH += $$PWD/../r4r_motion
+   INCLUDEPATH += /usr/include/r4r/
+
+}
+

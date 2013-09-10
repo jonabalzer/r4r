@@ -1,12 +1,7 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2013-02-21T16:45:43
-#
-#-------------------------------------------------
-
 QMAKE_CXXFLAGS += -std=c++0x -O3
 
-DEFINES += HAVE_FFTW  # add last flag depending on whether FFTW is present
+# add last flag depending on whether FFTW is present
+DEFINES += HAVE_FFTW
 
 TARGET = r4r_motion
 TEMPLATE = lib
@@ -40,35 +35,35 @@ HEADERS += \
     dagg.h \
     descspecial.h
 
-symbian {
-    MMP_RULES += EXPORTUNFROZEN
-    TARGET.UID3 = 0xED8A93FC
-    TARGET.CAPABILITY = 
-    TARGET.EPOCALLOWDLLDATA = 1
-    addFiles.sources = r4r_motion.dll
-    addFiles.path = !:/sys/bin
-    DEPLOYMENT += addFiles
-}
 
-unix:!macx:!symbian: LIBS += -L$$OUT_PWD/../r4r_core/ -lr4r_core
+# make sure that r4r_core is up to date
+DEPENDPATH += $$PWD/../r4r_core
 
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib
+# local inlude path
+INCLUDEPATH += $$PWD/../r4r_core
+
+unix:!symbian|win32 {
+
+    # set install path
+    headers.files = $$HEADERS
+    headers.path = /usr/include/r4r/
+    target.path = /usr/lib/
+
+    INSTALLS += target \
+                headers
+
+    # include paths
+    INCLUDEPATH += /usr/include/r4r/
+
+    LIBS += -L/usr/local/lib/ \
+            -lopencv_features2d \
+            -lopencv_video
+
+    contains( DEFINES, HAVE_FFTW ) {
+
+        LIBS += -lfftw3
+
     }
-    INSTALLS += target
-    INCLUDEPATH += ../r4r_core
-    LIBS += \
-         -L/usr/local/lib/\
-         -lopencv_core\
-         -lopencv_highgui\
-         -lopencv_video\
-         -lopencv_imgproc\
-         -lopencv_features2d\
-         -lopencv_calib3d \
-         -lfftw3
 
 }
 
