@@ -54,12 +54,26 @@ HEADERS += \
     vecn.h \
     image.h
 
-LIBS += -L/usr/local/lib \
-     -lopencv_core \
-     -lopencv_highgui \
-     -lopencv_video \
-     -lopencv_imgproc \
-     -lopencv_features2d \
-     -lopencv_calib3d \
-     -llapack \
-     -lgomp
+unix:!symbian|win32 {
+
+    headers.files = $$HEADERS
+    headers.path = /usr/include/r4r/
+
+    target.path = /usr/lib/
+
+    INSTALLS += target \
+                headers
+
+    # what about clean target?
+
+    LIBS += -L/usr/local/lib \
+            -lopencv_core \
+            -lopencv_highgui \
+            -lopencv_video \
+            -lopencv_imgproc \
+            -lopencv_features2d \
+            -lopencv_calib3d \
+            -llapack \
+            -lgomp
+
+}
