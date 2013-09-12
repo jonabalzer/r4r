@@ -25,8 +25,6 @@
 #include <iostream>
 #include <fstream>
 #include <set>
-#include <GL/gl.h>
-#include <GL/glut.h>
 
 using namespace std;
 using namespace cv;
