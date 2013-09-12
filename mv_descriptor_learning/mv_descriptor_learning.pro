@@ -34,7 +34,11 @@ INSTALLS += target
 
 unix:!symbian|win32: {
 
-    LIBS += -L/usr/local/lib/\
+    LIBS += -L$$OUT_PWD/../r4r_core/ \
+            -L$$OUT_PWD/../r4r_motion/ \
+            -lr4r_core \
+            -lr4r_motion \
+            -L/usr/local/lib/\
             -lopencv_core\
             -lopencv_highgui\
             -lopencv_video\
@@ -42,11 +46,7 @@ unix:!symbian|win32: {
             -lopencv_features2d\
             -lopencv_calib3d \
             -llapack \
-            -lgomp \
-            -L$$OUT_PWD/../r4r_core/ \
-            -lr4r_core \
-            -L$$OUT_PWD/../r4r_motion/ \
-            -lr4r_motion
+            -lgomp
 
    INCLUDEPATH += /usr/include/r4r/
 
