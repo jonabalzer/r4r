@@ -142,7 +142,7 @@ bool CTracker::SaveToFile(const char* dir, const char* prefix) {
         counter++;
 
         stringstream filename;
-        filename << dir << prefix << no.str() << ".dat";
+        filename << string(dir) << string(prefix) << no.str() << ".dat";
 
         imfeature::SaveToFile(filename.str().c_str(),*(*it));
 

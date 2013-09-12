@@ -204,6 +204,7 @@ void MainWindow::on_stepButton_clicked()
 
     // add new tracks
     size_t noactive = m_tracker->GetNumberOfActiveTracks();
+    cout << "Number of active tracklets: " << noactive << endl;
     if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
          m_tracker->AddTracklets(m_pyramid);
 
