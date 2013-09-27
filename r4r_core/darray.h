@@ -130,6 +130,9 @@ public:
 	//! Overwrites data.
     void Set(std::shared_ptr<T> data);
 
+    //! Access methods whose purpose is to provide a common interface with sparse matrix classes.
+    void Set(size_t i, size_t j, T val) { this->operator()(i,j) = val; }
+
 	//! Returns a column.
     CDenseVector<T> GetColumn(size_t j) const;
 
@@ -147,6 +150,9 @@ public:
 
 	//! Sums two arrays.
     CDenseArray<T> operator+(const CDenseArray<T>& array) const;
+
+    //! Divides two arrays element-wise.
+    CDenseArray<T> operator/(const CDenseArray<T>& array) const;
 
 	//! Multiplies two arrays pointwise.
     CDenseArray<T> operator^(const CDenseArray<T>& array) const;
@@ -166,6 +172,9 @@ public:
     //! Divides the array by a scalar.
     CDenseArray<T> operator/(const T& scalar) const;
 
+    //! Multiplies the object with an array from the right.
+    //template<class Array> Array operator*(const Array& array) const;
+
 	//! Multiplies the object with an array from the right.
     CDenseArray<T> operator*(const CDenseArray<T>& array) const;
 
@@ -177,6 +186,9 @@ public:
 
 	//! Computes the standard inner product.
     static double InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
+
+    //! Computes inner products between columns.
+    static CDenseVector<T> ColumwiseInnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y);
 
     //! Computes the inner product w.r.t. to a kernel.
     static double InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y, CMercerKernel<T>& kernel);
@@ -201,6 +213,9 @@ public:
 
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
+
+    //! Scale column.
+    CDenseArray<T> ScaleColumns(const CDenseVector<T>& s);
 
     //! In-place addition of a scalar.
     void Add(const T& scalar);
@@ -286,6 +301,22 @@ public:
     //! Matrix inversion.
     bool Invert();
 
+    //! Typecast operator
+    template<typename Array> operator Array() {
+
+        Array result(m_nrows,m_ncols);
+
+        for(size_t i=0; i<result.NRows(); i++) {
+
+            for(size_t j=0; j<result.NCols(); j++)
+                result.Set(i,j,this->Get(i,j));
+
+        }
+
+        return result;
+
+    }
+
 protected:
 
 	size_t m_nrows;				//!< number of rows
@@ -342,6 +373,9 @@ public:
 
 	//! Subtracts two vectors.
     CDenseVector<T> operator-(const CDenseVector<T>& vector) const;
+
+    //! Divides two vectors element-wise.
+    CDenseVector<T> operator/(const CDenseVector<T>& vector) const;
 
 	//! Multiplies the vector with a scalar.
     CDenseVector<T> operator*(const T& scalar) const;

@@ -109,9 +109,10 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
         // init linear solver
         smatf M(0,0);
-        CPreconditioner<smatf,vecf,float> precond = CPreconditioner<smatf,vecf,float>(M);
-        CIterativeSolver<smatf,vecf,float> solver = CIterativeSolver<smatf,vecf,float>(precond,
-                                                                                     m_params->GetIntParameter("CGLS_NITER"),                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),                                                                                     true);
+        CPreconditioner<smatf,float> precond(M);
+        CConjugateGradientMethodLeastSquares<smatf,float> solver(precond,
+                                                                 m_params->GetIntParameter("CGLS_NITER"),                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),                                                                                     true);
+
         // init least-squares problem
         CMagicSfM problem(m_cam,corri2i,corrs2i,F0inv);
 

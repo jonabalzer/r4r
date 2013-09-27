@@ -55,9 +55,6 @@ public:
 	//! Constructor
 	CSparseArray(size_t nrows, size_t ncols);
 
-	//! Prints the array to standard ouput.
-	//void Print();
-
 	//! Writes matrix to a stream.
 	template<class U> friend std::ostream& operator << (std::ostream& os, CSparseArray<U>& x);
 
@@ -74,10 +71,10 @@ public:
 	CSparseArray<T> static Square(CSparseArray<T>& array);
 
 	//! Non-destructive element access.
-	T Get(size_t i, size_t j);
+    T Get(size_t i, size_t j) const;
 
 	//! Returns a row of the matrix.
-	std::map<size_t,T> GetRow(size_t i);
+    std::map<size_t,T> GetRow(size_t i) const;
 
 	/*! \brief Element access.
 	 *
@@ -105,13 +102,10 @@ public:
 	CSparseArray<T> operator-(const CSparseArray<T>& array);
 
 	//! Multiplies the object with a dense array from the right.
-	template<class Matrix> Matrix operator*(Matrix& array);
+    template<class Matrix> Matrix operator*(const Matrix& array) const;
 
-	//! Multiplies the object with a dense vector from the right.
-	CDenseVector<T> operator*(const CDenseVector<T>& vector);
-
-	//! Computes the standard inner product.
-	T static InnerProduct(CSparseArray<T>& x, CSparseArray<T>& y);
+    //! Computes the standard inner product.
+    T static InnerProduct(const CSparseArray<T>& x, const CSparseArray<T>& y);
 
 	//! Access number of cols.
     size_t NRows() const { return m_nrows; }
@@ -146,6 +140,22 @@ public:
 	//! Sets random entries in the matrix to random values.
 	void Rand(size_t nnz);
 
+    //! Typecast operator
+    template<typename Array> operator Array() {
+
+        Array result(m_nrows,m_ncols);
+
+        for(size_t i=0; i<result.NRows(); i++) {
+
+            for(size_t j=0; j<result.NCols(); j++)
+                result(i,j) = this->Get(i,j);
+
+        }
+
+        return result;
+
+    }
+
 protected:
 
 
@@ -154,13 +164,7 @@ protected:
 	bool m_transpose;											//!< transpose flag
 	std::map<size_t,std::map<size_t,T> > m_data;				//!< container that holds the array data
 
-	//! Swaps the two input indices.
-	void Transpose(size_t& i, size_t& j);
-
 };
-
-
-
 
 /*! \brief sparse 2d matrix/array
  *
@@ -178,8 +182,8 @@ public:
 	//! Constructor
 	CSparseBandedArray(size_t nrows, size_t ncols);
 
-	//! Prints the array to standard ouput.
-	void Print();
+    //! Writes matrix to a stream.
+    template<class U> friend std::ostream& operator << (std::ostream& os, const CSparseBandedArray<U>& x);
 
 	//! Non-destructive element access.
 	virtual T Get(size_t i, size_t j);
@@ -253,8 +257,8 @@ public:
 	//! Multiplies the object with a sparse array from the right.
 	CSparseBandedArray<T> operator*(CSparseBandedArray<T>& array);
 
-	//! Solves linear system associated with this matrix.
-    virtual void Solve(CDenseArray<T>& x, const CDenseArray<T>& b) {}
+    //! Solves linear system associated with this matrix. FIXME: Implement this.
+    virtual void Solve(CDenseArray<T>& x, const CDenseArray<T>& b) const {}
 
 	//! Deletes an element.
 	void Delete(size_t i, size_t j);
@@ -274,6 +278,22 @@ public:
 	//! Saves the matrix in matrix market format.
 	bool SaveToFile(const char* filename);
 
+    //! Typecast operator
+    template<typename Array> operator Array() {
+
+        Array result(m_nrows,m_ncols);
+
+        for(size_t i=0; i<result.NRows(); i++) {
+
+            for(size_t j=0; j<result.NCols(); j++)
+                result.Set(i,j,this->Get(i,j));
+
+        }
+
+        return result;
+
+    }
+
 protected:
 
 	size_t m_nrows;														//!< number of rows
@@ -282,19 +302,16 @@ protected:
 	std::map<int,std::map<size_t,T> > m_data;							//!< container that holds the array data
 
 	//! Computes the band index.
-    int Band(size_t i, size_t j) { return (int)j - (int)i; }
+    int Band(size_t i, size_t j) const { return (int)j - (int)i; }
 
 	//! Computes the location in the band.
-    size_t BandIndex(size_t i, size_t j) { 	return j<=i ? j : i; }
+    size_t BandIndex(size_t i, size_t j) const { 	return j<=i ? j : i; }
 
 	//! Computes the row from band/diagonal index representation.
-    size_t Row(int b, size_t d) { return b<=0 ? size_t((int)d-b) : d; }
+    size_t Row(int b, size_t d) const { return b<=0 ? size_t((int)d-b) : d; }
 
 	//! Computes the row from band/diagonal index representation.
-    size_t Col(int b, size_t d) { return b<=0 ? d : size_t((int)d+b); }
-
-	//! Swaps the two input indices.
-    void Transpose(size_t& i, size_t& j);
+    size_t Col(int b, size_t d) const { return b<=0 ? d : size_t((int)d+b); }
 
 };
 
@@ -316,11 +333,8 @@ public:
 	//! Constructor.
 	CSparseDiagonalArray(size_t nrows, size_t ncols);
 
-	//! Copy/casting constructor.
-	CSparseDiagonalArray(CSparseBandedArray<T>& array);
-
-	//! Copy/casting constructor.
-	CSparseDiagonalArray(CSparseArray<T>& array);
+    //! Non-destructive element access.
+    T Get(size_t i, size_t j);
 
 	//! Non-destructive element access.
     T Get(size_t i) { return CSparseBandedArray<T>::Get(i,i); }
@@ -335,7 +349,7 @@ public:
 	T& operator()(size_t i, size_t j);
 
 	//! \copydoc CSparseBandedArray::Solve(CDenseArray<T>&,const CDenseArray<T>&)
-	void Solve(CDenseArray<T>& x, const CDenseArray<T>& b);
+    void Solve(CDenseArray<T>& x, const CDenseArray<T>& b) const;
 
 	//! Method stump (transposition does nothing to square diagonal matrices).
     virtual void Transpose() {}
@@ -348,7 +362,6 @@ protected:
 	using CSparseBandedArray<T>::m_data;
 	using CSparseBandedArray<T>::m_nrows;
 	using CSparseBandedArray<T>::m_ncols;
-//	using CSparseBandedArray<T>::m_transpose;
 
 };
 
@@ -369,12 +382,6 @@ public:
 	//! Constructor.
 	CSparseUpperTriangularArray(size_t nrows, size_t ncols);
 
-	//! Copy/casting constructor.
-	CSparseUpperTriangularArray(CSparseBandedArray<T>& array);
-
-	//! Copy/casting constructor.
-	CSparseUpperTriangularArray(CSparseArray<T>& array);
-
 	//! \copydoc CSparseBandedArray::Get(size_t,size_t)
 	T Get(size_t i, size_t j);
 
@@ -385,7 +392,7 @@ public:
 	T& operator()(size_t i, size_t j);
 
 	//! \copydoc CSparseBandedArray::Solve(CDenseArray<T>&,const CDenseArray<T>&)
-	void Solve(CDenseArray<T>& x, const CDenseArray<T>& b);
+    void Solve(CDenseArray<T>& x, const CDenseArray<T>& b) const;
 
 	//! Method stump (no transposition allowed for triangular matrices).
     virtual void Transpose() {}
@@ -416,12 +423,6 @@ public:
 	//! Constructor.
 	CSparseLowerTriangularArray(size_t nrows, size_t ncols);
 
-	//! Copy/casting constructor.
-	CSparseLowerTriangularArray(CSparseBandedArray<T>& array);
-
-	//! Copy/casting constructor.
-	CSparseLowerTriangularArray(CSparseArray<T>& array);
-
 	//! \copydoc CSparseBandedArray::Get(size_t,size_t)
 	T Get(size_t i, size_t j);
 
@@ -432,7 +433,7 @@ public:
 	T& operator()(size_t i, size_t j);
 
 	//! \copydoc CSparseBandedArray::Solve(CDenseArray<T>&,const CDenseArray<T>&)
-	void Solve(CDenseArray<T>& x, const CDenseArray<T>& b);
+    void Solve(CDenseArray<T>& x, const CDenseArray<T>& b) const;
 
     //! Method stump (no transposition allowed for triangular matrices).
     virtual void Transpose() {}
@@ -446,8 +447,6 @@ protected:
 
 
 };
-
-
 
 }
 

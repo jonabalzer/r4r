@@ -22,50 +22,47 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "precond.h"
+
 #include <stdio.h>
 #include <iostream>
+#include <assert.h>
 
 using namespace std;
 
 namespace R4R {
 
-template<class Matrix,class Vector,class Scalar>
-CPreconditioner<Matrix,Vector,Scalar>::CPreconditioner(Matrix& A):
+template<class Matrix,typename T>
+CPreconditioner<Matrix,T>::CPreconditioner(Matrix& A):
 	m_A(A){
 
 }
 
-template class CPreconditioner<CSparseBandedArray<double>,CDenseArray<double>,double>;
-template class CPreconditioner<CSparseArray<double>,CDenseArray<double>,double>;
-template class CPreconditioner<CDenseArray<double>,CDenseArray<double>,double>;
-template class CPreconditioner<CDenseArray<double>,CDenseVector<double>,double>;
-template class CPreconditioner<CDenseArray<float>,CDenseVector<float>,float>;
-template class CPreconditioner<CSparseArray<double>,CDenseVector<double>,double>;
-template class CPreconditioner<CSparseArray<float>,CDenseVector<float>,float>;
-template class CPreconditioner<CSparseArray<float>,CDenseArray<float>,float>;
+template class CPreconditioner<CSparseArray<double>,double>;
+template class CPreconditioner<CDenseArray<double>,double>;
+template class CPreconditioner<CSparseArray<float>,float>;
+template class CPreconditioner<CDenseArray<float>,float>;
 
-
-template<class Matrix,class Vector,class Scalar>
-CSSORPreconditioner<Matrix,Vector,Scalar>::CSSORPreconditioner(Matrix& A, Scalar omega, bool lower):
-	CPreconditioner<Matrix,Vector,Scalar>(A),
+template<class Matrix,typename T>
+CSSORPreconditioner<Matrix,T>::CSSORPreconditioner(Matrix& A, T omega, bool lower):
+    CPreconditioner<Matrix,T>(A),
 	m_omega(omega),
 	m_D(A) {
 
 	if(lower) {
 
-		m_L = CSparseLowerTriangularArray<Scalar>(A);
+        m_L = CSparseLowerTriangularArray<T>(A);
 
 		A.Transpose();
-		m_U = CSparseUpperTriangularArray<Scalar>(A);
+        m_U = CSparseUpperTriangularArray<T>(A);
 		A.Transpose();
 
 	}
 	else {
 
-		m_U = CSparseUpperTriangularArray<Scalar>(A);
+        m_U = CSparseUpperTriangularArray<T>(A);
 
 		A.Transpose();
-		m_L = CSparseLowerTriangularArray<Scalar>(A);
+        m_L = CSparseLowerTriangularArray<T>(A);
 		A.Transpose();
 
 	}
@@ -78,44 +75,42 @@ CSSORPreconditioner<Matrix,Vector,Scalar>::CSSORPreconditioner(Matrix& A, Scalar
 
 }
 
-template<class Matrix,class Vector,class Scalar>
-void CSSORPreconditioner<Matrix,Vector,Scalar>::Solve(Vector& x, Vector& y) {
+template<class Matrix,typename T>
+void CSSORPreconditioner<Matrix,T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& y) const {
 
 	m_L.Solve(x,y);
-	Vector temp(x);
+    CDenseArray<T> temp = x.Clone();
 	m_D.Solve(temp,x);
 	m_U.Solve(x,temp);
 
 }
 
+template class CSSORPreconditioner<CDenseArray<double>,double>;
+template class CSSORPreconditioner<CSparseArray<double>,double>;
+template class CSSORPreconditioner<CDenseArray<float>,double>;
+template class CSSORPreconditioner<CSparseArray<float>,double>;
 
-template class CSSORPreconditioner<CSparseBandedArray<double>,CDenseArray<double>,double>;
-template class CSSORPreconditioner<CSparseArray<double>,CDenseArray<double>,double>;
-template class CSSORPreconditioner<CSparseArray<double>,CDenseVector<double>,double>;
-
-template<class Matrix,class Vector,class Scalar>
-CJacobiPreconditioner<Matrix,Vector,Scalar>::CJacobiPreconditioner(Matrix& A):
-	CPreconditioner<Matrix,Vector,Scalar>(A),
-	m_D(A) {
-
-}
-
-template<class Matrix,class Vector,class Scalar>
-void CJacobiPreconditioner<Matrix,Vector,Scalar>::Solve(Vector& x, Vector& y) {
-
-	m_D.Solve(x,y);
-
+template<class Matrix,typename T>
+CJacobiPreconditioner<Matrix,T>::CJacobiPreconditioner(Matrix& A):
+    CPreconditioner<Matrix,T>(A),
+    m_D(A) {
 
 }
 
+template<class Matrix,typename T>
+void CJacobiPreconditioner<Matrix,T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& y) const {
 
-template class CJacobiPreconditioner<CSparseBandedArray<double>,CDenseArray<double>,double>;
-template class CJacobiPreconditioner<CSparseArray<double>,CDenseArray<double>,double>;
-template class CJacobiPreconditioner<CSparseArray<double>,CDenseVector<double>,double>;
-
-
+    m_D.Solve(x,y);
 
 }
+
+template class CJacobiPreconditioner<CDenseArray<double>,double>;
+template class CJacobiPreconditioner<CSparseArray<double>,double>;
+template class CJacobiPreconditioner<CDenseArray<float>,float>;
+template class CJacobiPreconditioner<CSparseArray<float>,float>;
+
+
+} // end of namespace
 
 
 

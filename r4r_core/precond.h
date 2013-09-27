@@ -35,7 +35,7 @@ namespace R4R {
  *
  *
  */
-template<class Matrix,class Vector,class Scalar>
+template<class Matrix,typename T>
 class CPreconditioner {
 
 public:
@@ -44,12 +44,11 @@ public:
 	CPreconditioner(Matrix& A);
 
 	//! Performs preconditioning.
-    virtual void Solve(Vector& x, Vector& y) { x = y; }
+    virtual void Solve(CDenseArray<T>& x, const CDenseArray<T>& y) const { x = y; }
 
 protected:
 
 	Matrix& m_A;						//!< input matrix, M is member of inherited classes
-
 
 };
 
@@ -57,25 +56,25 @@ protected:
  *
  *
  */
-template<class Matrix,class Vector,class Scalar>
-class CSSORPreconditioner: public CPreconditioner<Matrix,Vector,Scalar> {
+template<class Matrix,typename T>
+class CSSORPreconditioner: public CPreconditioner<Matrix,T> {
 
 public:
 
 	//! Constructor.
-	CSSORPreconditioner(Matrix& A, Scalar omega, bool lower = true);
+    CSSORPreconditioner(Matrix& A, T omega, bool lower = true);
 
 	//! \copydoc CPreconditioner::Solve(Vector& x, Vector& y)
-	void Solve(Vector& x, Vector& y);
+    void Solve(CDenseArray<T>& x, const CDenseArray<T>& y) const;
 
 protected:
 
-	Scalar m_omega;													//!< relaxation parameter
-	CSparseLowerTriangularArray<Scalar> m_L;						//!< lower-triangular part of #m_A (or transpose of #m_U)
-	CSparseDiagonalArray<Scalar> m_D;								//!< diagonal of #m_A
-	CSparseUpperTriangularArray<Scalar> m_U;						//!< upper-triangular part of #m_A (or transpose of #m_L)
+    T m_omega;                                              //!< relaxation parameter
+    CSparseLowerTriangularArray<T> m_L;						//!< lower-triangular part of #m_A (or transpose of #m_U)
+    CSparseDiagonalArray<T> m_D;							//!< diagonal of #m_A
+    CSparseUpperTriangularArray<T> m_U;						//!< upper-triangular part of #m_A (or transpose of #m_L)
 
-	using CPreconditioner<Matrix,Vector,Scalar>::m_A;
+    using CPreconditioner<Matrix,T>::m_A;
 
 };
 
@@ -85,8 +84,8 @@ protected:
  *
  *
  */
-template<class Matrix,class Vector,class Scalar>
-class CJacobiPreconditioner:public CPreconditioner<Matrix,Vector,Scalar> {
+template<class Matrix,typename T>
+class CJacobiPreconditioner:public CPreconditioner<Matrix,T> {
 
 public:
 
@@ -94,13 +93,13 @@ public:
 	CJacobiPreconditioner(Matrix& A);
 
 	//! \copydoc CPreconditioner::Solve(Vector& x, Vector& y)
-	void Solve(Vector& x, Vector& y);
+    void Solve(CDenseArray<T>& x, const CDenseArray<T>& y) const;
 
 protected:
 
-	CSparseDiagonalArray<Scalar> m_D;								//!< diagonal of #m_A
+    CSparseDiagonalArray<T> m_D;						//!< diagonal of #m_A
 
-	using CPreconditioner<Matrix,Vector,Scalar>::m_A;
+    using CPreconditioner<Matrix,T>::m_A;
 
 };
 

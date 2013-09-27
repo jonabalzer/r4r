@@ -32,7 +32,6 @@ using namespace std;
 
 namespace R4R {
 
-
 template <class Matrix,typename T>
 CLeastSquaresProblem<Matrix,T>::CLeastSquaresProblem():
 	m_nopts(0),
@@ -79,7 +78,7 @@ template <class Matrix,typename T>
 const T CLevenbergMarquardt<Matrix,T>::m_params[5] = { 0.25, 0.75 , 2, 1.0/3.0, 3.0 };
 
 template <class Matrix,typename T>
-CLevenbergMarquardt<Matrix,T>::CLevenbergMarquardt(CLeastSquaresProblem<Matrix,T>& problem, CIterativeSolver<Matrix,CDenseVector<T>,T>& solver, T tau):
+CLevenbergMarquardt<Matrix,T>::CLevenbergMarquardt(CLeastSquaresProblem<Matrix,T>& problem, CIterativeLinearSolver<Matrix,T>& solver, T tau):
 	m_problem(problem),
 	m_solver(solver),
 	m_tau(tau),
@@ -137,7 +136,7 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
 
 		// solve linear system
         CDenseVector<T> step(m_problem.GetNumberOfModelParameters());
-        m_solver.CGLS(J,r,step);
+        m_solver.Iterate(J,r,step);
 
         // save old state before advancing
         CDenseVector<T> xold = x.Clone();
@@ -193,7 +192,7 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
                 cout << k << "\t" << res << "\t" << normgrad << "\t" << normstep << "\t" << m_lambda << endl;
 
 			// check convergence criteria
-            if(normgrad<epsilon1 || k==n || std::isinf(m_lambda))
+            if(normgrad<epsilon1 || k==n)
 				break;
 
         }
@@ -215,6 +214,9 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
                 cout << "Adjusting lambda to " << m_lambda << "." << endl;
 
         }
+
+        if(std::isinf(m_lambda))
+            break;
 
 	}
 

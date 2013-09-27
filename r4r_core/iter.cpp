@@ -34,383 +34,353 @@ namespace R4R {
 
 using namespace std;
 
-template<class Matrix,class Vector,class Scalar>
-CIterativeSolver<Matrix,Vector,Scalar>::CIterativeSolver(CPreconditioner<Matrix,Vector,Scalar>& M, size_t n, Scalar eps, bool silent):
-	m_M(M),
-	m_n(n),
-	m_eps(eps),
-	m_silent(silent) {
+template<class Matrix,typename T>
+CConjugateGradientMethod<Matrix,T>::CConjugateGradientMethod(const CPreconditioner<Matrix,T>& M, size_t n, double eps, bool silent):
+    CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent) {}
+
+template<class Matrix,typename T>
+double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) {
+
+    // check dimensions
+    if(!(A.NCols()==X.NRows() && X.NRows()==B.NRows() && X.NCols()==B.NCols())) {
+
+        cerr << "ERROR: Check matrix dimensions!" << endl;
+        return -1;
+
+    }
+
+    // init iteration index
+    size_t k = 0;
+
+    // compute residual
+    CDenseArray<T> R = B - A*X;
+
+    // residual norm
+    double normr = R.Norm2();
+
+    if(!m_silent)
+        cout << "k=" << k << ": " << normr << endl;
+
+    // make a copy for the temporary variable used in pre-conditioning
+    CDenseArray<T> Z = R.Clone();
+
+    // apply preconditioner
+    m_M.Solve(Z,R);
+
+    CDenseVector<T> deltan = CDenseArray<T>::ColumwiseInnerProduct(Z,R);
+
+    // init descent direction
+    CDenseArray<T> P = Z.Clone();
+
+    while(k<m_n) {
+
+        CDenseArray<T> Q = A*P;
+
+        CDenseVector<T> pq =  CDenseArray<T>::ColumwiseInnerProduct(P,Q);
+        CDenseVector<T> alpha = deltan/pq;
+
+        // descent step
+        X = X + P.ScaleColumns(alpha);
+
+        // update residual
+        Q = Q.ScaleColumns(alpha);
+        R = R - Q;
+
+        // check convergence
+        normr = R.Norm2();
+
+        k++;
+
+        if(!m_silent)
+            cout << "k=" << k << ": " << normr << endl;
+
+        if(normr<m_eps)
+            break;
+
+        // apply pre-conditioner
+        m_M.Solve(Z,R);
+
+        // make a copy of deltan
+        CDenseVector<T> deltao = deltan.Clone();
+
+        // column-wise inner product
+        deltan = CDenseVector<T>::ColumwiseInnerProduct(Z,R);
+
+        // component-wise division
+        CDenseVector<T> beta = deltan/deltao;
+
+        // update descent direction
+        P = Z + P.ScaleColumns(beta);
+
+    }
+
+    return normr;
 
 }
 
-template<class Matrix,class Vector,class Scalar>
-Scalar CIterativeSolver<Matrix,Vector,Scalar>::CG(Matrix& A, Vector& b, Vector& x) {
+template<class Matrix,typename T>
+double CConjugateGradientMethod<Matrix,T>::Iterate(Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
 
-	// check dimensions
-	if(!(A.NCols()==x.NRows() && x.NRows()==b.NRows() && x.NCols()==b.NCols() && x.NCols()==1)) {
+    // check dimensions
+    if(!(A.NCols()==x.NRows() && x.NRows()==b.NRows())) {
 
-		cout << "ERROR: Check matrix dimensions!" << endl;
-		return -1;
+        cerr << "ERROR: Check matrix dimensions!" << endl;
+        return -1;
 
-	}
+    }
 
-	// init
-	size_t k = 0;
+    // init
+    size_t k = 0;
 
-    Vector r = b - A*x;
+    CDenseVector<T> r = b - A*x;
 
-	Scalar normr = r.Norm2();
+    double normr = r.Norm2();
 
-	if(!m_silent)
-		cout << "k=" << k << ": " << normr << endl;
+    if(!m_silent)
+        cout << "k=" << k << ": " << normr << endl;
 
-	Vector z(r);
+    CDenseVector<T> z = r.Clone();
 
-	m_M.Solve(z,r);
+    m_M.Solve(z,r);
 
-	Scalar deltan = CDenseArray<Scalar>::InnerProduct(z,r);
+    T deltao = CDenseArray<T>::InnerProduct(z,r);
 
-	Vector p = z;
+    CDenseVector<T> p = z.Clone();
 
-	while(k<x.NRows() && k<m_n) {
+    while(k<m_n) {
 
-		Vector q = A*p;
+        CDenseVector<T> q = A*p;
 
-		Scalar alpha = deltan/CDenseArray<Scalar>::InnerProduct(p,q);
+        T alpha = deltao/CDenseArray<T>::InnerProduct(p,q);
 
-		x = x + p*alpha;
+        x = x + p*alpha;
 
-		q.Scale(alpha);
-		r = r - q;
+        q.Scale(alpha);
+        r = r - q;
 
-		normr = r.Norm2();
+        normr = r.Norm2();
 
-		k++;
+        if(normr<m_eps)
+            break;
 
-		if(!m_silent)
-			cout << "k=" << k << ": " << normr << endl;
+        k++;
 
-		if(normr<m_eps)
-			break;
+        if(!m_silent)
+            cout << "k=" << k << ": " << normr << endl;
 
-		m_M.Solve(z,r);
+        m_M.Solve(z,r);
 
-		Scalar deltao = deltan;
+        T deltan = CDenseArray<T>::InnerProduct(z,r);
 
-		deltan = CDenseArray<Scalar>::InnerProduct(z,r);
 
-		Scalar beta = deltan/deltao;
+        T beta = deltan/deltao;
 
-		p.Scale(beta);
-		p = z + p;
+        p.Scale(beta);
 
-	}
+        p = z + p;
 
-	return deltan;
+        deltao = deltan;
+
+    }
+
+    return normr;
+}
+
+template class CConjugateGradientMethod<CDenseArray<double>,double>;
+template class CConjugateGradientMethod<CSparseArray<double>,double>;
+template class CConjugateGradientMethod<CDenseArray<float>,float>;
+template class CConjugateGradientMethod<CSparseArray<float>,float>;
+
+template<class Matrix,typename T>
+CConjugateGradientMethodLeastSquares<Matrix,T>::CConjugateGradientMethodLeastSquares(const CPreconditioner<Matrix,T>& M, size_t n, double eps, bool silent):
+    CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent) {}
+
+template<class Matrix,typename T>
+double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) {
+
+    if(!(A.NCols()==X.NRows() && A.NRows()==B.NRows() && X.NCols()==B.NCols())) {
+
+        cerr << "ERROR: Check matrix dimensions!" << endl;
+        return -1;
+
+    }
+
+    /* Get a transposed copy of the input matrix. This way we can keep the input reference
+     * constant (would not work for in-place back and forth transposition). The overhead is
+     * minimal for the dense matrix structure because smart pointers are used. Need to introduce
+     * same structure to sparse matrix classes.
+     *
+     */
+    Matrix At = Matrix::Transpose(A);
+
+    // init
+    size_t k = 0;
+
+    // residual of the non-square system
+    CDenseArray<T> R = B - A*X;
+
+    double normrt, normr;
+    normr = R.Norm2();
+
+    // residual of the normal equation
+    CDenseArray<T> Rnormal = At*R;
+
+    // preconditioning
+    CDenseArray<T> Z = Rnormal.Clone();
+    m_M.Solve(Z,Rnormal);
+
+    CDenseVector<T> deltao = CDenseArray<T>::ColumwiseInnerProduct(Z,Rnormal);
+
+    // descent direction
+    CDenseArray<T> P = Z.Clone();
+
+    if(!m_silent)
+        cout << "k=" << k << ": " << normr << endl;
+
+    while(k<m_n) {
+
+        // need that later
+        CDenseArray<T> Q = A*P;
+
+        // step siz
+        CDenseVector<T> qq = CDenseArray<T>::ColumwiseInnerProduct(Q,Q);
+        CDenseVector<T> alpha = deltao/qq;
+
+        // perform descent step
+        X = X + P.ScaleColumns(alpha);
+
+        // update residual of non-square system
+        R = R - Q.ScaleColumns(alpha);
+
+        // check convergence
+        normrt = R.Norm2();
+
+        k++;
+
+        if(!m_silent)
+            cout << "k=" << k << ": " << normrt << endl;
+
+        if(fabs(normr-normrt)<m_eps)
+            break;
+
+        normr = normrt;
+
+        // update residual of normal equation
+        Rnormal = At*R;
+
+        // apply preconditioner
+        m_M.Solve(Z,Rnormal);
+
+        // update beta
+        CDenseVector<T> deltan = CDenseArray<T>::ColumwiseInnerProduct(Z,Rnormal);
+        CDenseVector<T> beta = deltan/deltao;
+        deltao = deltan;
+
+        // update direction
+        P = Z + P.ScaleColumns(beta);
+
+    }
+
+    return normr;
 
 }
 
-template<class Matrix,class Vector,class Scalar>
-Scalar CIterativeSolver<Matrix,Vector,Scalar>::CGLS(Matrix& A, Vector& b, Vector& x) {
+template<class Matrix,typename T>
+double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
 
-	if(!(A.NCols()==x.NRows() && A.NRows()==b.NRows() && x.NCols()==1)) {
+    if(!(A.NCols()==x.NRows() && A.NRows()==b.NRows())) {
 
-		cout << "ERROR: Check matrix dimensions!" << endl;
-		return -1;
+        cout << "ERROR: Check matrix dimensions!" << endl;
+        return -1;
 
-	}
+    }
 
-	// init
-	size_t k = 0;
+    /* Get a transposed copy of the input matrix. This way we can keep the input reference
+     * constant (would not work for in-place back and forth transposition). The overhead is
+     * minimal for the dense matrix structure because smart pointers are used. Need to introduce
+     * same structure to sparse matrix classes.
+     *
+     */
+    //Matrix At = Matrix::Transpose(A);
 
-	// residual of the non-square system
-	Vector r = b - A*x;
+    // init
+    size_t k = 0;
 
-	Scalar normrt, normr;
-	normr = r.Norm2();
+    // residual of the non-square system
+    CDenseVector<T> r = b - A*x;
 
-	// transpose in place to save computation time
-	A.Transpose();
-	Vector rnormal = A*r;   // residual of the normal equation
-	A.Transpose();
+    double normrt, normr;
+    normr = r.Norm2();
 
-	// preconditioning
-    Vector z = rnormal.Clone();
-	m_M.Solve(z,rnormal);
+    // residual of the normal equation
+    A.Transpose();
+    CDenseVector<T> rnormal = A*r;
+    A.Transpose();
 
-	// descent direction
-    Vector p = z.Clone();
+    // preconditioning
+    CDenseVector<T> z = rnormal.Clone();
+    m_M.Solve(z,rnormal);
 
-	Scalar deltao = CDenseArray<Scalar>::InnerProduct(z,rnormal);  // numerator: z\dot rnormal
+    // descent direction
+    CDenseVector<T> p = z.Clone();
 
-	if(!m_silent)
-		cout << "k=" << k << ": " << normr << endl;
+    T deltao = CDenseArray<T>::InnerProduct(z,rnormal);
 
-	//size_t mind = min(A.NRows(),A.NCols());
+    if(!m_silent)
+        cout << "k=" << k << ": " << normr << endl;
 
-	//while(k<mind && k<m_n) {
-	while(k<m_n) {
+    while(k<m_n) {
 
-		// need that later
-		Vector q = A*p;
+        // need that later
+        CDenseVector<T> q = A*p;
 
-		// step size (recycle deltao for computation of beta)
-		Scalar alpha = deltao/CDenseArray<Scalar>::InnerProduct(q,q);
+        // step size (recycle deltao for computation of beta)
+        T alpha = deltao/CDenseArray<T>::InnerProduct(q,q);
 
-		// perform descent step
-		x = x + p*alpha;
+        // perform descent step
+        x = x + p*alpha;
 
-		q.Scale(alpha);
-		r = r - q;				// update residual of non-square system
+        q.Scale(alpha);
+        r = r - q;				// update residual of non-square system
 
-		normrt = r.Norm2();
+        normrt = r.Norm2();
 
-		k++;
+        k++;
 
-		if(!m_silent)
-			cout << "k=" << k << ": " << normr << endl;
+        if(!m_silent)
+            cout << "k=" << k << ": " << normrt << endl;
 
-		if(fabs(normr-normrt)<m_eps)
-			break;
+        if(fabs(normr-normrt)<m_eps)
+            break;
 
-		normr = normrt;
+        normr = normrt;
 
-		A.Transpose();
-		rnormal = A*r;			// update residual of normal equation
-		A.Transpose();
+        // update residual of normal equation
+        A.Transpose();
+        rnormal = A*r;
+        A.Transpose();
 
-		// apply preconditioner
-		m_M.Solve(z,rnormal);
-		//z = rnormal;
+        // apply preconditioner
+        m_M.Solve(z,rnormal);
 
-		// update beta
-		Scalar deltan = CDenseArray<Scalar>::InnerProduct(z,rnormal);
-		Scalar beta = deltan/deltao;
-		deltao = deltan;
+        // update beta
+        T deltan = CDenseArray<T>::InnerProduct(z,rnormal);
+        T beta = deltan/deltao;
+        deltao = deltan;
 
-		// update direction
-		p.Scale(beta);
-		p = z + p;
+        // update direction
+        p.Scale(beta);
+        p = z + p;
 
-	}
+    }
 
-	return deltao;
+    return normr;
 
 }
 
-template<class Matrix,class Vector,class Scalar>
-Scalar CIterativeSolver<Matrix,Vector,Scalar>::CGS(Matrix& A, Vector& b, Vector& x) {
-
-	// check dimensions
-	if(!(A.NCols()==x.NRows() && x.NRows()==b.NRows() && x.NCols()==b.NCols() && x.NCols()==1)) {
-
-		cout << "ERROR: Check matrix dimensions!" << endl;
-		return -1;
-
-	}
-
-	// init
-	size_t i = 0;
-
-	Vector r = b - A*x;
-	Vector rld = r;
-
-	Scalar deltan = r.Norm2();
-
-	if(!m_silent)
-		cout << "k=" << i << ": " << deltan << endl;
-
-	Scalar rho1, rho, beta, alpha;
-	Vector p, q, u, v, temp;
-
-	while(i<m_n && i<x.NRows() && deltan>m_eps) {
-
-		rho = CDenseArray<Scalar>::InnerProduct(rld,r);
-
-		if(rho==0)
-			return -1;
-
-		if (i>0) {
-
-			beta = rho/rho1;
-
-			q.Scale(beta);
-			u = r + q;
-
-			temp = u + q;
-
-			Scalar betas = beta*beta;
-
-			p.Scale(betas);
-
-			p = temp + p;
-
-		} else {
-
-			u = r;
-			p = u;
-
-		}
-
-		Vector vhat(p);
-
-		m_M.Solve(vhat,p);
-
-		v = A*vhat;
-
-		alpha = rho/CDenseArray<Scalar>::InnerProduct(rld,v);
-
-		v.Scale(alpha);
-
-		q = u - v;
-
-		temp = u + q;
-
-		m_M.Solve(u,temp);
-
-		u.Scale(alpha);
-
-		x = x + u;
-
-		r = r - A*u;
-
-		i++;
-
-		deltan = r.Norm2();
-
-		if(!m_silent)
-			cout << "k=" << i << ": " << deltan << endl;
-
-		rho1 = rho;
-
-	}
-
-	return deltan;
-
-}
-
-
-template<class Matrix,class Vector,class Scalar>
-Scalar CIterativeSolver<Matrix,Vector,Scalar>::LSQR(Matrix& A, Vector& b, Vector& x, Scalar lambda) {
-
-	// check dimensions
-	if(!(A.NCols()==x.NRows() && x.NRows()==b.NRows() && x.NCols()==b.NCols() && x.NCols()==1)) {
-
-		cout << "ERROR: Check matrix dimensions!" << endl;
-		return -1;
-
-	}
-
-	// initialization
-	size_t i = 0;
-
-	// temp vector for applying preconditioner
-	Vector z = x;
-
-	Vector u = b - A*x;
-
-	Scalar beta = u.Norm2();
-
-	if(beta!=0)
-		u.Scale(1/beta);
-
-	m_M.Solve(z,u);
-
-	A.Transpose(); 		// in-place transpose to avoid making expensive copy of A
-	Vector v = A*z;
-	A.Transpose();
-
-	Scalar alpha = v.Norm2();
-
-	if(alpha!=0)
-		v.Scale(1/alpha);
-
-	Vector w = v;
-	Scalar phibar = beta;
-	Scalar rhobar = alpha;
-
-	Scalar deltan = phibar;
-
-	// check for premature termination
-	if(alpha*beta==0)
-		return 0;
-
-	if(!m_silent)
-		cout << "k=" << i << ": " << deltan << endl;
-
-	while(i<m_n && i<x.NRows()) {
-
-		// 1. Lanczos step
-		u.Scale(alpha);
-
-		m_M.Solve(z,v);
-		u = A*z - u;
-
-		beta = u.Norm2();
-
-		if(beta!=0)
-			u.Scale(1/beta);
-
-		// update v
-		v.Scale(beta);
-
-		m_M.Solve(z,u);
-
-		A.Transpose();
-		v = A*z - v;
-		A.Transpose();
-
-		alpha = v.Norm2();
-
-		if(alpha!=0)
-			v.Scale(1/alpha);
-
-		/*Scalar cl, sl, rl;
-		R4R::CLinearAlgebra::GivensRotation(rhobar,lambda,cl,sl,rl);
-		phibar = cl*phibar;
-		Scalar temp = sqrt(rhobar*rhobar + lambda*lambda);*/
-
-		// 2. solve sub least-squares problem by cheap QR decomposition
-		Scalar c, s, r;
-
-		CLinearAlgebra::GivensRotation(rhobar,beta,c,s,r);
-
-		Scalar theta = s*alpha;
-
-		rhobar = -c*alpha;
-
-		Scalar phi = c*phibar;
-
-		phibar = s*phibar;
-
-		// 3. update x
-		x = x + w*(phi/r);
-		w = v - w*(theta/r);
-
-		i++;
-
-		// 4. check termination criteria
-		deltan = phibar;
-
-		if(!m_silent)
-			cout << "k=" << i << ": " << deltan << endl;
-
-		if(deltan<m_eps)
-			break;
-
-	}
-
-	return deltan;
-
-}
-
-template class  CIterativeSolver<CDenseArray<double>,CDenseArray<double>,double>;
-template class  CIterativeSolver<CDenseArray<double>,CDenseVector<double>,double>;
-template class  CIterativeSolver<CDenseArray<float>,CDenseVector<float>,float>;
-template class  CIterativeSolver<CSparseBandedArray<double>,CDenseArray<double>,double>;
-template class  CIterativeSolver<CSparseArray<double>,CDenseArray<double>,double>;
-template class  CIterativeSolver<CSparseArray<double>,CDenseVector<double>,double>;
-template class  CIterativeSolver<CSparseArray<float>,CDenseArray<float>,float>;
-template class  CIterativeSolver<CSparseArray<float>,CDenseVector<float>,float>;
+template class CConjugateGradientMethodLeastSquares<CDenseArray<double>,double>;
+template class CConjugateGradientMethodLeastSquares<CSparseArray<double>,double>;
+template class CConjugateGradientMethodLeastSquares<CDenseArray<float>,float>;
+template class CConjugateGradientMethodLeastSquares<CSparseArray<float>,float>;
 
 }

@@ -104,7 +104,7 @@ class CLevenbergMarquardt {
 public:
 
 	//! Constructor.
-    CLevenbergMarquardt(CLeastSquaresProblem<Matrix,T>& problem, CIterativeSolver<Matrix,CDenseVector<T>,T>& solver, T tau = 1.0);
+    CLevenbergMarquardt(CLeastSquaresProblem<Matrix,T>& problem, CIterativeLinearSolver<Matrix,T>& solver, T tau = 1.0);
 
 	//! Triggers execution of Levenberg-Marquardt steps.
     CDenseVector<T> Iterate(size_t n, T epsilon1, T epsilon2, bool silent = true);
@@ -115,7 +115,7 @@ public:
 protected:
 
     CLeastSquaresProblem<Matrix,T>& m_problem;						//!< least-squares problem
-    CIterativeSolver<Matrix,CDenseVector<T>,T>& m_solver;			//!< linear solver
+    CIterativeLinearSolver<Matrix,T>& m_solver;                     //!< linear solver
     T m_tau;        												//!< initial damping parameter weight
     T m_lambda;             										//!< damping parameter
     std::vector<T> m_residuals;     								//!< residuals

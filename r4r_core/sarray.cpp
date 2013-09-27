@@ -92,7 +92,7 @@ ostream& operator << (ostream& os, CSparseArray<U>& x) {
 
 	return os;
 
-};
+}
 
 template <class T>
 T CSparseArray<T>::Norm2() {
@@ -142,7 +142,7 @@ T& CSparseArray<T>::operator()(size_t i, size_t j) {
     assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
-		Transpose(i,j);
+        std::swap(i,j);
 
 	return m_data[i][j];
 
@@ -150,21 +150,21 @@ T& CSparseArray<T>::operator()(size_t i, size_t j) {
 
 
 template <class T>
-T CSparseArray<T>::Get(size_t i, size_t j) {
+T CSparseArray<T>::Get(size_t i, size_t j) const {
 
 	if(m_transpose)
-		Transpose(i,j);
+        std::swap(i,j);
 
     assert(i<m_nrows && j<m_ncols);
 
-	typename map<size_t,map<size_t,T> >::iterator it_row;
+    typename map<size_t,map<size_t,T> >::const_iterator it_row;
 
 	it_row = m_data.find(i);
 
 	if(it_row == m_data.end())
 		return (T)0;
 
-	typename map<size_t,T>::iterator it_col;
+    typename map<size_t,T>::const_iterator it_col;
 
 	it_col = it_row->second.find(j);
 
@@ -176,7 +176,7 @@ T CSparseArray<T>::Get(size_t i, size_t j) {
 }
 
 template <class T>
-std::map<size_t,T> CSparseArray<T>::GetRow(size_t i) {
+map<size_t,T> CSparseArray<T>::GetRow(size_t i) const {
 
     assert(i<m_nrows);
 
@@ -184,14 +184,17 @@ std::map<size_t,T> CSparseArray<T>::GetRow(size_t i) {
 
 	if(!m_transpose) {
 
-		if(m_data.find(i)!=m_data.end())
-			row = m_data[i];
+        typename map<size_t,map<size_t,T> >::const_iterator loc = m_data.find(i);
+
+
+        if(loc!=m_data.end())
+            row = loc->second;
 
 	}
 	else {
 
-		typename map<size_t,map<size_t,T> >::iterator it_col = m_data.begin();
-		typename map<size_t,T>::iterator it_row;
+        typename map<size_t,map<size_t,T> >::const_iterator it_col = m_data.begin();
+        typename map<size_t,T>::const_iterator it_row;
 
 		while(it_col!=m_data.end()) {
 
@@ -222,7 +225,7 @@ template <class T>
 void CSparseArray<T>::Set(size_t i, size_t j, T v) {
 
 	if(m_transpose)
-		Transpose(i,j);
+        std::swap(i,j);
 
     assert(i<m_nrows && j<m_ncols);
 
@@ -348,14 +351,14 @@ CSparseArray<T> CSparseArray<T>::operator-(const CSparseArray& array) {
 }
 
 template <class T>
-T CSparseArray<T>::InnerProduct(CSparseArray<T>& x, CSparseArray<T>& y) {
+T CSparseArray<T>::InnerProduct(const CSparseArray<T>& x, const CSparseArray<T>& y) {
 
 	assert(x.m_nrows==y.m_nrows && x.m_ncols==y.m_ncols);
 
 	T sum = 0;
 
-	typename map<size_t,map<size_t,T> >::iterator it_row;
-	typename map<size_t,T>::iterator it_col;
+    typename map<size_t,map<size_t,T> >::const_iterator it_row;
+    typename map<size_t,T>::const_iterator it_col;
 
 	it_row = x.m_data.begin();
 
@@ -376,7 +379,7 @@ T CSparseArray<T>::InnerProduct(CSparseArray<T>& x, CSparseArray<T>& y) {
 }
 
 template <class T>
-template<class Matrix> Matrix CSparseArray<T>::operator*(Matrix& array) {
+template<class Matrix> Matrix CSparseArray<T>::operator*(const Matrix& array) const {
 
 /*#ifdef _OPENMP
     assert(m_ncols==array.NRows());
@@ -456,8 +459,8 @@ template<class Matrix> Matrix CSparseArray<T>::operator*(Matrix& array) {
 
 	if(!m_transpose) {
 
-		typename map<size_t,map<size_t,T> >::iterator it_row;
-		typename map<size_t,T>::iterator it_col;
+        typename map<size_t,map<size_t,T> >::const_iterator it_row;
+        typename map<size_t,T>::const_iterator it_col;
 
 		for(it_row=m_data.begin(); it_row!=m_data.end(); it_row++) {
 
@@ -478,8 +481,8 @@ template<class Matrix> Matrix CSparseArray<T>::operator*(Matrix& array) {
 	}
 	else {
 
-		typename map<size_t,map<size_t,T> >::iterator it_col;
-		typename map<size_t,T>::iterator it_row;
+        typename map<size_t,map<size_t,T> >::const_iterator it_col;
+        typename map<size_t,T>::const_iterator it_row;
 
 		for(size_t j=0; j<array.NCols(); j++) {
 
@@ -505,59 +508,59 @@ template<class Matrix> Matrix CSparseArray<T>::operator*(Matrix& array) {
 
 }
 
-template <class T>
+/*template <class T>
 CDenseVector<T> CSparseArray<T>::operator*(const CDenseVector<T>& vector) {
 
-/*#ifdef _OPENMP
-    assert(m_ncols==vector.NRows());
+//#ifdef _OPENMP
+//    assert(m_ncols==vector.NRows());
 
-    CDenseVector<T> result = CDenseVector<T>(m_nrows);
+//    CDenseVector<T> result = CDenseVector<T>(m_nrows);
 
-    if(!m_transpose) {
+//    if(!m_transpose) {
 
-        typename map<size_t,T>::iterator it_col;
+//        typename map<size_t,T>::iterator it_col;
 
-#pragma omp parallel for private(it_col), shared(result,vector)
-        for(size_t i=0; i<m_nrows; i++) {
+//#pragma omp parallel for private(it_col), shared(result,vector)
+//        for(size_t i=0; i<m_nrows; i++) {
 
-            if(m_data[i].size()>0) {
+//            if(m_data[i].size()>0) {
 
-                T sum = 0;
+//                T sum = 0;
 
-                for(it_col=m_data[i].begin(); it_col!=m_data[i].end(); it_col++)
-                    sum+= (it_col->second)*vector.Get(it_col->first);
+//                for(it_col=m_data[i].begin(); it_col!=m_data[i].end(); it_col++)
+//                    sum+= (it_col->second)*vector.Get(it_col->first);
 
-                result(i) = sum;
+//                result(i) = sum;
 
-            }
+//            }
 
-        }
+//        }
 
-    }
-    else {
+//    }
+//    else {
 
-        typename map<size_t,T>::iterator it_row;
+//        typename map<size_t,T>::iterator it_row;
 
-#pragma omp parallel for private(it_row), shared(result,vector)
-        for(size_t i=0; i<m_ncols; i++) {
+//#pragma omp parallel for private(it_row), shared(result,vector)
+//        for(size_t i=0; i<m_ncols; i++) {
 
-            if(m_data[i].size()>0) {
+//            if(m_data[i].size()>0) {
 
-                for(it_row=m_data[i].begin(); it_row!=m_data[i].end(); it_row++) {
+//                for(it_row=m_data[i].begin(); it_row!=m_data[i].end(); it_row++) {
 
-#pragma omp critical
-                    result(it_row->first) += it_row->second*vector.Get(i);				// protect this
+//#pragma omp critical
+//                    result(it_row->first) += it_row->second*vector.Get(i);				// protect this
 
-                }
+//                }
 
-            }
+//            }
 
-        }
+//        }
 
-    }
+//    }
 
-    return result;
-#else*/
+//    return result;
+//#else
 
     assert(m_ncols==vector.NRows());
 
@@ -597,7 +600,7 @@ CDenseVector<T> CSparseArray<T>::operator*(const CDenseVector<T>& vector) {
 	return result;
 //#endif
 
-}
+}*/
 
 template <class T>
 void CSparseArray<T>::Scale(T scalar) {
@@ -624,19 +627,6 @@ void CSparseArray<T>::Scale(T scalar) {
 	}
 
 }
-
-
-template <class T>
-void CSparseArray<T>::Transpose(size_t& i, size_t& j) {
-
-	size_t temp = i;
-
-	i = j;
-
-	j = temp;
-
-}
-
 
 template <class T>
 CSparseArray<T> CSparseArray<T>::Transpose(const CSparseArray<T>& array) {
@@ -892,12 +882,12 @@ void CSparseArray<T>::Rand(size_t nnz) {
 template class CSparseArray<float>;
 template class CSparseArray<double>;
 template class CSparseArray<int>;
-template CDenseArray<double> CSparseArray<double>::operator *(CDenseArray<double>& x);
-template CDenseVector<double> CSparseArray<double>::operator *(CDenseVector<double>& x);
-template CSparseArray<double> CSparseArray<double>::operator *(CSparseArray<double>& x);
-template CDenseArray<float> CSparseArray<float>::operator *(CDenseArray<float>& x);
-template CDenseVector<float> CSparseArray<float>::operator *(CDenseVector<float>& x);
-template CSparseArray<float> CSparseArray<float>::operator *(CSparseArray<float>& x);
+template CDenseArray<double> CSparseArray<double>::operator *(const CDenseArray<double>& x) const;
+template CDenseVector<double> CSparseArray<double>::operator *(const CDenseVector<double>& x) const;
+template CSparseArray<double> CSparseArray<double>::operator *(const CSparseArray<double>& x) const;
+template CDenseArray<float> CSparseArray<float>::operator *(const CDenseArray<float>& x) const;
+template CDenseVector<float> CSparseArray<float>::operator *(const CDenseVector<float>& x) const;
+template CSparseArray<float> CSparseArray<float>::operator *(const CSparseArray<float>& x) const;
 
 
 template ostream& operator<< (ostream& os, CSparseArray<double>& x);
@@ -921,17 +911,6 @@ CSparseBandedArray<T>::CSparseBandedArray(size_t nrows, size_t ncols):
 }
 
 template <class T>
-void CSparseBandedArray<T>::Transpose(size_t& i, size_t& j) {
-
-	size_t temp = i;
-
-	i = j;
-
-	j = temp;
-
-}
-
-template <class T>
 CSparseBandedArray<T> CSparseBandedArray<T>::Transpose(const CSparseBandedArray<T>& array) {
 
 	CSparseBandedArray<T> result = array;
@@ -948,7 +927,7 @@ void CSparseBandedArray<T>::Delete(size_t i, size_t j) {
     assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
-		Transpose(i,j);
+        std::swap(i,j);
 
 	int b = Band(i,j);
 	size_t d = BandIndex(i,j);
@@ -982,34 +961,36 @@ void CSparseBandedArray<T>::DeleteCol(size_t j) {
 
 }
 
-template <class T>
-void CSparseBandedArray<T>::Print() {
+template<class U>
+ostream& operator << (ostream& os, const CSparseBandedArray<U>& x) {
 
-	typename map<int,map<size_t,T> >::iterator it_b;
-	typename map<size_t,T>::iterator it_d;
+    typename map<int,map<size_t,U> >::const_iterator it_b;
+    typename map<size_t,U>::const_iterator it_d;
 
-	it_b = m_data.begin();
+    it_b = x.m_data.begin();
 
-	while(it_b != m_data.end()) {
+    while(it_b != x.m_data.end()) {
 
-		it_d = it_b->second.begin();
+        it_d = it_b->second.begin();
 
-		while(it_d!=it_b->second.end()) {
+        while(it_d!=it_b->second.end()) {
 
-			if(m_transpose)
-				printf("[%d,%d] %.4f\n",(int)Row(-it_b->first,it_d->first),(int)Col(-it_b->first,it_d->first),(float)it_d->second);
-			else
-				printf("[%d,%d] %.4f\n",(int)Row(it_b->first,it_d->first),(int)Col(it_b->first,it_d->first),(float)it_d->second);
+            if(x.m_transpose)
+                os << "[ " << x.Row(-it_b->first,it_d->first) << " " << x.Col(-it_b->first,it_d->first) << " " << it_d->second << " ]" << endl;
+            else
+                os << "[ " << x.Row(it_b->first,it_d->first) << " " <<  x.Col(it_b->first,it_d->first) << " " << it_d->second << " ]" << endl;
 
-			it_d++;
+            it_d++;
 
-		}
+        }
 
-		printf("\n");
+        os << endl;
 
-		it_b++;
+        it_b++;
 
-	}
+    }
+
+    return os;
 
 }
 
@@ -1017,7 +998,7 @@ template <class T>
 T CSparseBandedArray<T>::Get(size_t i, size_t j) {
 
 	if(m_transpose)
-		Transpose(i,j);
+        std::swap(i,j);
 
     assert(i<m_nrows && j<m_ncols);
 
@@ -1086,7 +1067,7 @@ template <class T>
 void CSparseBandedArray<T>::Set(size_t i, size_t j, T v) {
 
 	if(m_transpose)
-		Transpose(i,j);
+        std::swap(i,j);
 
     assert(i<m_nrows && j<m_ncols);
 
@@ -1094,7 +1075,7 @@ void CSparseBandedArray<T>::Set(size_t i, size_t j, T v) {
 	int b = Band(i,j);
 	size_t d = BandIndex(i,j);
 
-	if(v==0){	// if the new value is zero, delete entry
+    if(v==0) {	// if the new value is zero, delete entry
 
 		typename map<int,map<size_t,T> >::iterator it_b;
 		typename map<size_t,T>::iterator it_d;
@@ -1128,7 +1109,7 @@ T& CSparseBandedArray<T>::operator()(size_t i, size_t j) {
     assert(i<m_nrows && j<m_ncols);
 
 	if(m_transpose)
-		Transpose(i,j);
+        std::swap(i,j);
 
 	int b = Band(i,j);
 	size_t d = BandIndex(i,j);
@@ -1170,11 +1151,7 @@ T CSparseBandedArray<T>::Norm2() {
 template <class T>
 void CSparseBandedArray<T>::Transpose() {
 
-	size_t temp = m_nrows;
-
-	m_nrows = m_ncols;
-	m_ncols = temp;
-
+    std::swap(m_nrows,m_ncols);
 	m_transpose = !m_transpose;
 
 }
@@ -1271,7 +1248,7 @@ CDenseArray<T> CSparseBandedArray<T>::operator*(const CDenseArray<T>& array) {
 				size_t j = Col(it_b->first,it_d->first);
 
 				if(m_transpose)
-					Transpose(i,j);
+                    std::swap(i,j);
 
 				result(i,k) += it_d->second*array.Get(j,k);
 
@@ -1305,7 +1282,7 @@ CSparseBandedArray<T> CSparseBandedArray<T>::operator*(CSparseBandedArray<T>& ar
 				size_t j = Col(it_b->first,it_d->first);
 
 				if(m_transpose)
-					Transpose(i,j);
+                    std::swap(i,j);
 
 				T temp = it_d->second*array.Get(j,k);
 
@@ -1434,7 +1411,7 @@ bool CSparseBandedArray<T>::SaveToFile(const char* filename) {
 			size_t j = Col(it_b->first,it_d->first);
 
 			if(m_transpose)
-				Transpose(i,j);
+                std::swap(i,j);
 
 			out << i << " " << j << " " << it_d->second;
 
@@ -1452,9 +1429,10 @@ bool CSparseBandedArray<T>::SaveToFile(const char* filename) {
 
 }
 
-
 template class CSparseBandedArray<float>;
 template class CSparseBandedArray<double>;
+template ostream& operator<< (ostream& os, const CSparseBandedArray<double>& x);
+template ostream& operator<< (ostream& os, const CSparseBandedArray<float>& x);
 
 template <class T>
 CSparseDiagonalArray<T>::CSparseDiagonalArray():
@@ -1470,58 +1448,34 @@ CSparseDiagonalArray<T>::CSparseDiagonalArray(size_t nrows, size_t ncols):
 }
 
 template <class T>
-CSparseDiagonalArray<T>::CSparseDiagonalArray(CSparseBandedArray<T>& array):
-	CSparseBandedArray<T>(min(array.NRows(),array.NCols()),min(array.NRows(),array.NCols())) {
+T CSparseDiagonalArray<T>::Get(size_t i, size_t j) {
 
-	typename map<int,map<size_t,T> >::iterator it_b;
-	typename map<size_t,T>::iterator it_d;
-
-	m_data = array.GetBands(0,0);
-
-};
-
-
-template <class T>
-CSparseDiagonalArray<T>::CSparseDiagonalArray(CSparseArray<T>& array):
-	CSparseBandedArray<T>(min(array.NRows(),array.NCols()),min(array.NRows(),array.NCols())) {
-
-	for(size_t i=0; i<min(m_nrows,m_ncols); i++) {
-
-		if(array.Get(i,i)!=0) {
-
-			this->operator ()(i,i) = array.Get(i,i);
-
-		}
-
-	}
+    return j==i ? CSparseBandedArray<T>::Get(i,j) : 0;
 
 }
 
 template <class T>
 void CSparseDiagonalArray<T>::Set(size_t i, size_t j, T v) {
 
-	assert(i==j);
-
-	CSparseBandedArray<T>::Set(i,j,v);
+    if(j==i)
+        CSparseBandedArray<T>::Set(i,j,v);
 
 }
 
 template <class T>
 T& CSparseDiagonalArray<T>::operator()(size_t i, size_t j) {
 
-	assert(i==j);
-
 	return CSparseBandedArray<T>::operator()(i,j);
 
 }
 
 template <class T>
-void CSparseDiagonalArray<T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& b) {
+void CSparseDiagonalArray<T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& b) const {
 
-	assert(b.NRows()==m_nrows && x.NRows()==m_nrows);
+    assert(b.NRows()==m_nrows && x.NRows()==m_nrows && b.NCols()==x.NCols());
 
-	typename map<int,map<size_t,T> >::iterator it_b;
-	typename map<size_t,T>::iterator it_d;
+    typename map<int,map<size_t,T> >::const_iterator it_b;
+    typename map<size_t,T>::const_iterator it_d;
 
 	it_b = m_data.find(0);
 
@@ -1536,10 +1490,10 @@ void CSparseDiagonalArray<T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& b) 
 
 	while(it_d!=it_b->second.end()) {
 
-		for(size_t j=0; j<b.NCols(); j++)
-			x(it_d->first,j) = b.Get(it_d->first,j)/it_d->second;
+        for(size_t j=0; j<b.NCols(); j++)
+            x(it_d->first,j)=b.Get(it_d->first,j)/it_d->second;
 
-		it_d++;
+        it_d++;
 
 	}
 
@@ -1556,7 +1510,7 @@ void CSparseDiagonalArray<T>::Invert() {
 
 	if(it_b->second.size()!=m_nrows) {
 
-		printf("ERROR: Matrix is rank-deficient.\n");
+        cerr << "ERROR: Matrix is rank-deficient." << endl;
 		return;
 
 	}
@@ -1577,7 +1531,6 @@ void CSparseDiagonalArray<T>::Invert() {
 template class CSparseDiagonalArray<float>;
 template class CSparseDiagonalArray<double>;
 
-
 template <class T>
 CSparseUpperTriangularArray<T>::CSparseUpperTriangularArray():
 	CSparseBandedArray<T>() {
@@ -1591,50 +1544,6 @@ CSparseUpperTriangularArray<T>::CSparseUpperTriangularArray(size_t nrows, size_t
 }
 
 template <class T>
-CSparseUpperTriangularArray<T>::CSparseUpperTriangularArray(CSparseBandedArray<T>& array):
-	CSparseBandedArray<T>(min(array.NRows(),array.NCols()),min(array.NRows(),array.NCols())) {
-
-	typename map<int,map<size_t,T> >::iterator it_b;
-	typename map<size_t,T>::iterator it_d;
-
-	m_data = array.GetBands(0,array.NRows()+array.NCols());
-
-};
-
-template <class T>
-CSparseUpperTriangularArray<T>::CSparseUpperTriangularArray(CSparseArray<T>& array):
-	CSparseBandedArray<T>(min(array.NRows(),array.NCols()),min(array.NRows(),array.NCols())) {
-
-	// iterate through incoming array to avoid zeros
-	typename map<size_t,map<size_t,T> >::iterator it_row;
-	typename map<size_t,T>::iterator it_col;
-
-	it_row = array.m_data.begin();
-
-	while(it_row!=array.m_data.end()){
-
-		it_col = it_row->second.begin();
-
-		while(it_col!=it_row->second.end()) {
-
-			if(!array.m_transpose && it_row->first<=it_col->first)
-				this->operator ()(it_row->first,it_col->first) = it_col->second;
-			else if(array.m_transpose && it_row->first>=it_col->first)
-				this->operator ()(it_col->first,it_row->first) = it_col->second;
-
-			it_col++;
-
-		}
-
-		it_row++;
-
-	}
-
-}
-
-
-
-template <class T>
 T CSparseUpperTriangularArray<T>::Get(size_t i, size_t j) {
 
 	return j>=i ? CSparseBandedArray<T>::Get(i,j) : 0;
@@ -1645,50 +1554,47 @@ T CSparseUpperTriangularArray<T>::Get(size_t i, size_t j) {
 template <class T>
 void CSparseUpperTriangularArray<T>::Set(size_t i, size_t j, T v) {
 
-	assert(j>=i);
-
-	CSparseBandedArray<T>::Set(i,j,v);
+    if(j>=i)
+        CSparseBandedArray<T>::Set(i,j,v);
 
 }
 
 template <class T>
 T& CSparseUpperTriangularArray<T>::operator()(size_t i, size_t j) {
 
-	assert(j>=i);
-
 	return CSparseBandedArray<T>::operator()(i,j);
 
 }
 
 template <class T>
-void CSparseUpperTriangularArray<T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& b) {
+void CSparseUpperTriangularArray<T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& b) const {
 
-	assert(m_nrows>=m_ncols && b.NRows()==m_nrows && x.NRows()==m_ncols);
+    assert(m_nrows>=m_ncols && b.NRows()==m_nrows && x.NRows()==m_ncols && b.NCols()==x.NCols());
 
-	typename map<int,map<size_t,T> >::iterator it_diagonal = m_data.find(0);
+    typename map<int,map<size_t,T> >::const_iterator it_diagonal = m_data.find(0);
 
 	if(it_diagonal->second.size()!= b.NRows()) {
 
-		printf("ERROR: Matrix is rank-deficient.\n");
+        cerr << "ERROR: Matrix is rank-deficient." << endl;
 		return;
 
 	}
 
-	map<int,typename map<size_t,T>::reverse_iterator> bands;
-	typename map<int,map<size_t,T> >::iterator it_b;
+    map<int,typename map<size_t,T>::const_reverse_iterator> bands;
+    typename map<int,map<size_t,T> >::const_iterator it_b;
 
 	// increment to start adding everyting above diagonal
 	it_diagonal++;
 
 	// init iterators to the beginning of all bands
 	for(it_b=it_diagonal; it_b!=m_data.end();it_b++)
-		bands.insert(pair<int,typename map<size_t,T>::reverse_iterator >(it_b->first,it_b->second.rbegin()));
+        bands.insert(pair<int,typename map<size_t,T>::const_reverse_iterator >(it_b->first,it_b->second.rbegin()));
 
 	// set iterator back to diagonal
 	it_diagonal--;
 
-	typename map<size_t,T>::reverse_iterator it_d = it_diagonal->second.rbegin();
-	typename map<int,typename map<size_t,T>::reverse_iterator >::iterator it_bands;
+    typename map<size_t,T>::const_reverse_iterator it_d = it_diagonal->second.rbegin();
+    typename map<int,typename map<size_t,T>::const_reverse_iterator >::iterator it_bands;
 
 	// one accumulator for each column of b
 	T* sums = new T[b.NCols()];
@@ -1749,47 +1655,6 @@ CSparseLowerTriangularArray<T>::CSparseLowerTriangularArray(size_t nrows, size_t
 }
 
 template <class T>
-CSparseLowerTriangularArray<T>::CSparseLowerTriangularArray(CSparseBandedArray<T>& array):
-	CSparseBandedArray<T>(min(array.NRows(),array.NCols()),min(array.NRows(),array.NCols())){
-
-	typename map<int,map<size_t,T> >::iterator it_b;
-	typename map<size_t,T>::iterator it_d;
-
-	m_data = array.GetBands(-(array.NRows()+array.NCols()),0);
-
-};
-
-template <class T>
-CSparseLowerTriangularArray<T>::CSparseLowerTriangularArray(CSparseArray<T>& array):
-	CSparseBandedArray<T>(min(array.NRows(),array.NCols()),min(array.NRows(),array.NCols())) {
-
-	typename map<size_t,map<size_t,T> >::iterator it_row;
-	typename map<size_t,T>::iterator it_col;
-
-	it_row = array.m_data.begin();
-
-	while(it_row!=array.m_data.end()){
-
-		it_col = it_row->second.begin();
-
-		while(it_col!=it_row->second.end()) {
-
-			if(!array.m_transpose && it_row->first>=it_col->first)
-				this->operator ()(it_row->first,it_col->first) = it_col->second;
-			else if(array.m_transpose && it_row->first<=it_col->first)
-				this->operator ()(it_col->first,it_row->first) = it_col->second;
-
-			it_col++;
-
-		}
-
-		it_row++;
-
-	}
-
-}
-
-template <class T>
 T CSparseLowerTriangularArray<T>::Get(size_t i, size_t j) {
 
 	return j<=i ? CSparseBandedArray<T>::Get(i,j) : 0;
@@ -1800,44 +1665,44 @@ T CSparseLowerTriangularArray<T>::Get(size_t i, size_t j) {
 template <class T>
 void CSparseLowerTriangularArray<T>::Set(size_t i, size_t j, T v) {
 
-	assert(j<=i);
-
-	CSparseBandedArray<T>::Set(i,j,v);
+    if(j<=i)
+        CSparseBandedArray<T>::Set(i,j,v);
 
 }
 
 template <class T>
 T& CSparseLowerTriangularArray<T>::operator()(size_t i, size_t j) {
 
-	assert(j<=i);
+     // just work with diagonal values, don't worry about memory
+    //assert(j<=i);
 
 	return CSparseBandedArray<T>::operator()(i,j);
 
 }
 
 template <class T>
-void CSparseLowerTriangularArray<T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& b) {
+void CSparseLowerTriangularArray<T>::Solve(CDenseArray<T>& x, const CDenseArray<T>& b) const {
 
-	assert(m_nrows>=m_ncols && b.NRows()==m_nrows && x.NRows()==m_ncols);
+    assert(m_nrows>=m_ncols && b.NRows()==m_nrows && x.NRows()==m_ncols && b.NCols()==x.NCols());
 
-	typename map<int,map<size_t,T> >::iterator it_diagonal = m_data.find(0);
+    typename map<int,map<size_t,T> >::const_iterator it_diagonal = m_data.find(0);
 
 	if(it_diagonal->second.size()!= b.NRows()) {
 
-		cout << "ERROR: Matrix is rank-deficient." << endl;
+        cerr << "ERROR: Matrix is rank-deficient." << endl;
 		return;
 
 	}
 
-	map<int,typename map<size_t,T>::iterator> bands;
-	typename map<int,map<size_t,T> >::iterator it_b;
+    map<int,typename map<size_t,T>::const_iterator> bands;
+    typename map<int,map<size_t,T> >::const_iterator it_b;
 
 	// init iterators to the beginning of all bands
 	for(it_b=m_data.begin(); it_b!=m_data.end();it_b++)
-		bands.insert(pair<int,typename map<size_t,T>::iterator >(it_b->first,it_b->second.begin()));
+        bands.insert(pair<int,typename map<size_t,T>::const_iterator >(it_b->first,it_b->second.begin()));
 
-	typename map<size_t,T>::iterator it_d;
-	typename map<int,typename map<size_t,T>::iterator >::iterator it_bands;
+    typename map<size_t,T>::const_iterator it_d;
+    typename map<int,typename map<size_t,T>::const_iterator >::iterator it_bands;
 
 	it_d = it_diagonal->second.begin();
 
@@ -1882,7 +1747,6 @@ void CSparseLowerTriangularArray<T>::Solve(CDenseArray<T>& x, const CDenseArray<
 	delete [] sums;
 
 }
-
 
 template class CSparseLowerTriangularArray<float>;
 template class CSparseLowerTriangularArray<double>;
