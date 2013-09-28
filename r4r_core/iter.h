@@ -90,7 +90,7 @@ public:
      * optimized for this special case.
      *
      */
-    virtual double Iterate(Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) = 0;
+    virtual double Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) = 0;
 
 protected:
 
@@ -120,7 +120,7 @@ public:
     double Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X);
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseVector<T>&,CDenseVector<T>&)
-    double Iterate(Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
+    double Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
 
 private:
 
@@ -151,7 +151,7 @@ public:
     double Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X);
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseVector<T>&,CDenseVector<T>&)
-    double Iterate(Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
+    double Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
 
 private:
 

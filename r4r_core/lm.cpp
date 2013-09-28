@@ -332,6 +332,28 @@ template class CLevenbergMarquardt<mat,double>;
 template class CLevenbergMarquardt<smat,double>;
 template class CLevenbergMarquardt<smatf,float>;
 
+
+template<class Matrix,typename T>
+CSplitBregman<Matrix,T>::CSplitBregman(const Matrix& Phi, const Matrix& A, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps):
+    m_f(f),
+    m_u(u),
+    m_solver(solver),
+    m_mu(mu),
+    m_lambda(lambda),
+    m_eps(eps) {
+
+    m_K(Phi.NRows()+A.NRows(),u.NRows());
+
+    // build K
+    // scale and cocatenate
+    // resize and concatenate in matrix classes
+    // shrinkage in densemat, vector valued
+
+    // sample app in qt -> denoising!
+
+}
+
+
 }
 
 

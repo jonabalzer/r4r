@@ -82,8 +82,14 @@ public:
 	//! Constructor
     CDenseArray(size_t nrows, size_t ncols, T val = T(0));
 
+    //! Re-allocation.
+    void Resize(size_t nrows, size_t ncols);
+
 	//! Copy constructor.
 	CDenseArray(const CDenseArray& array);
+
+    //! Concatenate two arrays.
+    void Concatenate(const CDenseArray& array, bool direction);
 
     //! Assignment operator.
     CDenseArray<T> operator=(const CDenseArray<T>& array);

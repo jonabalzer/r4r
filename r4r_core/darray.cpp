@@ -70,6 +70,90 @@ CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, T val):
 }
 
 template <class T>
+void CDenseArray<T>::Resize(size_t nrows, size_t ncols) {
+
+    if(nrows==m_nrows && ncols==m_ncols)
+        return;
+
+    T* data;
+
+#ifndef __SSE4_1__
+    data = new T[nrows*ncols];
+#else
+    data = (T*)_mm_malloc(nrows*ncols*sizeof(T),16);
+#endif
+
+    // copy data
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++) {
+
+            if(i<nrows && j<ncols) {
+
+                if(!m_transpose)
+                    data[nrows*j + i] = this->Get(i,j);
+                else
+                    data[nrows*i + j] = this->Get(i,j);
+
+            }
+            else {
+
+                if(!m_transpose)
+                    data[nrows*j + i] = 0;
+                else
+                    data[nrows*i + j] = 0;
+
+            }
+
+        }
+
+    }
+
+    m_nrows = nrows;
+    m_ncols = ncols;
+
+#ifndef __SSE4_1__
+    delete [] m_data;
+    m_data = data;
+#else
+    m_data.reset(data,CDenseMatrixDeallocator<T>());
+#endif
+
+}
+
+template <class T>
+void CDenseArray<T>::Concatenate(const CDenseArray& array, bool direction) {
+
+    // put on top of each other
+    if(!direction) {
+
+        assert(m_ncols==array.NCols());
+
+        size_t oldnrows = m_nrows;
+
+        // now resize, this changes m_nrows
+        this->Resize(oldnrows+array.NRows(),m_ncols);
+
+        cout << oldnrows << " " << NRows() << endl;
+
+        // copy
+        for(size_t i=0; i<array.NRows(); i++) {
+
+            for(size_t j=0; j<array.NCols(); j++)
+                this->operator ()(oldnrows+i,j) = array.Get(i,j);
+
+        }
+
+    }
+    else {
+
+
+    }
+
+}
+
+
+template <class T>
 CDenseArray<T>::CDenseArray(const CDenseArray& array):
 	m_nrows(array.m_nrows),
 	m_ncols(array.m_ncols),

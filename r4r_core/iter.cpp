@@ -119,7 +119,7 @@ double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDense
 }
 
 template<class Matrix,typename T>
-double CConjugateGradientMethod<Matrix,T>::Iterate(Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
+double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
 
     // check dimensions
     if(!(A.NCols()==x.NRows() && x.NRows()==b.NRows())) {
@@ -286,7 +286,7 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
 }
 
 template<class Matrix,typename T>
-double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
+double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
 
     if(!(A.NCols()==x.NRows() && A.NRows()==b.NRows())) {
 
@@ -301,7 +301,7 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(Matrix& A, const 
      * same structure to sparse matrix classes.
      *
      */
-    //Matrix At = Matrix::Transpose(A);
+    Matrix At = Matrix::Transpose(A);
 
     // init
     size_t k = 0;
@@ -313,9 +313,9 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(Matrix& A, const 
     normr = r.Norm2();
 
     // residual of the normal equation
-    A.Transpose();
-    CDenseVector<T> rnormal = A*r;
-    A.Transpose();
+    //A.Transpose();
+    CDenseVector<T> rnormal = At*r;
+    //A.Transpose();
 
     // preconditioning
     CDenseVector<T> z = rnormal.Clone();
@@ -356,9 +356,9 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(Matrix& A, const 
         normr = normrt;
 
         // update residual of normal equation
-        A.Transpose();
-        rnormal = A*r;
-        A.Transpose();
+        //A.Transpose();
+        rnormal = At*r;
+        //A.Transpose();
 
         // apply preconditioner
         m_M.Solve(z,rnormal);

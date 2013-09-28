@@ -129,6 +129,30 @@ protected:
 
 };
 
+/*! \brief Split Bregman method
+ *
+ */
+template<class Matrix,typename T>
+class CSplitBregman {
+
+    //! Constructor.
+    CSplitBregman(const Matrix& Phi, const Matrix& A, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps);
+
+    //! Deleted standard constructor.
+    CSplitBregman() = delete;
+
+private:
+
+    const Matrix& m_K;                                      //! stack of two linear operators
+    const CDenseArray<T>& m_f;                              //! force vector
+    const CDenseArray<T>& m_u;                              //! solution vector
+    const CIterativeLinearSolver<Matrix,T>& m_solver;       //! linear solver
+    T m_lambda;                                             //! \f$\lambda\f$
+    T m_mu;                                                 //! \f$\mu\f$
+    double m_eps;                                           //! tolerance
+
+};
+
 }
 
 #endif /* LM_H_ */
