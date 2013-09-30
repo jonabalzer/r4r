@@ -31,12 +31,6 @@ using namespace std;
 
 namespace R4R {
 
-template<class Matrix,typename T>
-CPreconditioner<Matrix,T>::CPreconditioner(Matrix& A):
-	m_A(A){
-
-}
-
 template class CPreconditioner<CSparseArray<double>,double>;
 template class CPreconditioner<CDenseArray<double>,double>;
 template class CPreconditioner<CSparseArray<float>,float>;
@@ -44,9 +38,8 @@ template class CPreconditioner<CDenseArray<float>,float>;
 
 template<class Matrix,typename T>
 CSSORPreconditioner<Matrix,T>::CSSORPreconditioner(Matrix& A, T omega, bool lower):
-    CPreconditioner<Matrix,T>(A),
-	m_omega(omega),
-	m_D(A) {
+    m_D(A),
+    m_omega(omega) {
 
 	if(lower) {
 
@@ -92,7 +85,6 @@ template class CSSORPreconditioner<CSparseArray<float>,double>;
 
 template<class Matrix,typename T>
 CJacobiPreconditioner<Matrix,T>::CJacobiPreconditioner(Matrix& A):
-    CPreconditioner<Matrix,T>(A),
     m_D(A) {
 
 }

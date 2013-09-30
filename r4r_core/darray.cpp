@@ -70,54 +70,33 @@ CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, T val):
 }
 
 template <class T>
+CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, const CDenseVector<T>& x):
+    m_nrows(nrows),
+    m_ncols(ncols),
+    m_transpose(false),
+    m_data(x.Data()){
+
+    assert(nrows*ncols==x.NElems());
+
+}
+
+template <class T>
 void CDenseArray<T>::Resize(size_t nrows, size_t ncols) {
 
     if(nrows==m_nrows && ncols==m_ncols)
         return;
 
-    T* data;
-
-#ifndef __SSE4_1__
-    data = new T[nrows*ncols];
-#else
-    data = (T*)_mm_malloc(nrows*ncols*sizeof(T),16);
-#endif
+    CDenseArray<T> result(nrows,ncols);
 
     // copy data
-    for(size_t i=0; i<m_nrows; i++) {
+    for(size_t i=0; i<min(nrows,m_nrows); i++) {
 
-        for(size_t j=0; j<m_ncols; j++) {
-
-            if(i<nrows && j<ncols) {
-
-                if(!m_transpose)
-                    data[nrows*j + i] = this->Get(i,j);
-                else
-                    data[nrows*i + j] = this->Get(i,j);
-
-            }
-            else {
-
-                if(!m_transpose)
-                    data[nrows*j + i] = 0;
-                else
-                    data[nrows*i + j] = 0;
-
-            }
-
-        }
+        for(size_t j=0; j<min(ncols,m_ncols); j++)
+            result(i,j) = this->Get(i,j);
 
     }
 
-    m_nrows = nrows;
-    m_ncols = ncols;
-
-#ifndef __SSE4_1__
-    delete [] m_data;
-    m_data = data;
-#else
-    m_data.reset(data,CDenseMatrixDeallocator<T>());
-#endif
+    *this = result;
 
 }
 
@@ -134,8 +113,6 @@ void CDenseArray<T>::Concatenate(const CDenseArray& array, bool direction) {
         // now resize, this changes m_nrows
         this->Resize(oldnrows+array.NRows(),m_ncols);
 
-        cout << oldnrows << " " << NRows() << endl;
-
         // copy
         for(size_t i=0; i<array.NRows(); i++) {
 
@@ -146,6 +123,21 @@ void CDenseArray<T>::Concatenate(const CDenseArray& array, bool direction) {
 
     }
     else {
+
+        assert(m_nrows==array.NRows());
+
+        size_t oldncols = m_ncols;
+
+        // now resize, this changes m_nrows
+        this->Resize(m_nrows,oldncols+array.NCols());
+
+        // copy
+        for(size_t i=0; i<array.NRows(); i++) {
+
+            for(size_t j=0; j<array.NCols(); j++)
+                this->operator ()(i,oldncols+j) = array.Get(i,j);
+
+        }
 
 
     }
@@ -352,6 +344,28 @@ ostream& operator<< (ostream& os, const CDenseArray<U>& x) {
 	}
 
 	return os;
+
+}
+
+template <>
+ostream& operator<< (ostream& os, const CDenseArray<unsigned char>& x) {
+
+    for(size_t i=0; i<x.m_nrows; i++) {
+
+        for(size_t j=0; j<x.m_ncols-1; j++) {
+
+            os << (unsigned int)x.Get(i,j) << " ";
+
+        }
+
+        if(i<x.m_nrows-1)
+            os << (unsigned int)x.Get(i,x.m_ncols-1) << endl;
+        else
+            os << (unsigned int)x.Get(i,x.m_ncols-1);
+
+    }
+
+    return os;
 
 }
 
@@ -763,10 +777,67 @@ T CDenseArray<T>::Determinant() const {
 
 }
 
+
+template <>
+void CDenseArray<rgb>::Shrink(double lambda) {
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++) {
+
+            double xabs = this->Get(i,j).Norm2();
+
+            CVector<double,3> result;
+
+            if(xabs<lambda)
+                result = 0.f*this->Get(i,j);
+            else {
+
+                // cast into double
+                result = CVector<double,3>(this->Get(i,j));
+
+                // normalize
+                result.Normalize();
+
+                // shrink
+                result = (xabs-lambda)*result;
+
+            }
+
+            // cast back
+            this->Set(i,j,rgb(result));
+
+        }
+
+    }
+
+}
+
+template <class T>
+void CDenseArray<T>::Shrink(double lambda) {
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++) {
+
+            double xabs = fabs(this->Get(i,j));
+
+            if(xabs<lambda)
+                this->Set(i,j,0);
+            else
+                this->Set(i,j,copysign(xabs-lambda,this->Get(i,j)));
+
+        }
+
+    }
+
+}
+
 template <class T>
 bool CDenseArray<T>::Invert() {
 
-    cerr << "General matrix inversion not implemented, yet." << endl;
+    // this is not implemented yet for fields other than the reals
+    assert(false);
 
     return false;
 
@@ -775,8 +846,7 @@ bool CDenseArray<T>::Invert() {
 template <>
 bool CDenseArray<double>::Invert() {
 
-    if(m_nrows!=m_ncols)
-        return 1;
+    assert((m_ncols==2 && m_nrows==2) || (m_ncols==3 && m_nrows==3));
 
     double* pdata = m_data.get();
     double* temp = new double[m_nrows*m_ncols];
@@ -955,7 +1025,6 @@ void CDenseArray<rgb>::Abs() {
     return;
 
 }
-
 
 template <class T>
 T CDenseArray<T>::Get(size_t i, size_t j) const {
@@ -1619,6 +1688,7 @@ template class CDenseArray<int>;
 template class CDenseArray<size_t>;
 template class CDenseArray<bool>;
 template class CDenseArray<rgb>;
+template class CDenseArray<unsigned char>;
 
 template ostream& operator<< (ostream& os, const CDenseArray<double>& x);
 template istream& operator>> (istream& is, CDenseArray<double>& x);
@@ -1692,6 +1762,10 @@ CDenseVector<T>::CDenseVector(CVector<T,n>& x):
     memcpy(m_data.get(),x.Data(),n*sizeof(T));
 
 }
+
+template <class T>
+CDenseVector<T>::CDenseVector(const CDenseArray<T>& x):
+    CDenseArray<T>::CDenseArray(x.NElems(),1,x.Data()){}
 
 template CDenseVector<double>::CDenseVector<3>(CVector<double,3>& x);
 template CDenseVector<double>::CDenseVector<2>(CVector<double,2>& x);

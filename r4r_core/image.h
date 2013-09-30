@@ -33,30 +33,21 @@
 
 namespace R4R {
 
-/*! \brief R4R's own gray value image class
- *
- *
+/*! \brief image interface
  *
  */
-class CImage: public CDenseArray<unsigned char> {
+class CImage {
 
-public:
-
-    //! Constructor.
-    CImage():CDenseArray<unsigned char>(){}
-
-    //! Constructor.
-    CImage(size_t w, size_t h):CDenseArray<unsigned char>(h,w){}
 
 };
 
 
-/*! \brief R4R's own gray value image class
+/*! \brief R4R's own RGB image class
  *
  *
  *
  */
-class CRGBImage: public CDenseArray<rgb> {
+class CRGBImage: public CDenseArray<rgb>, public CImage {
 
 public:
 
@@ -101,6 +92,37 @@ public:
 private:
 
 };
+
+/*! \brief R4R's own gray value image class
+ *
+ *
+ *
+ */
+class CGrayValueImage: public CDenseArray<unsigned char> {
+
+public:
+
+    //! Constructor.
+    CGrayValueImage():CDenseArray<unsigned char>(){}
+
+    //! Constructor.
+    CGrayValueImage(size_t w, size_t h):CDenseArray<unsigned char>(h,w){}
+
+    //! Constructor.
+    template<class Array>
+    CGrayValueImage(const Array& img);
+
+#ifdef QT_GUI_LIB
+    //! Construct from QT image.
+    //CGrayValueImage(const QImage& img);
+
+    //! Cast to a QT image.
+    operator QImage() const;
+#endif
+
+
+};
+
 
 }
 

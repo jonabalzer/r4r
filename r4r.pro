@@ -4,7 +4,8 @@ CONFIG += ordered
 
 SUBDIRS += r4r_core \
            r4r_motion \
-           r4r_hardware
+           r4r_hardware \
+    tvdenoising
 
 equals( HAVE_EXAMPLES, 1 ) {
 

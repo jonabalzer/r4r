@@ -28,6 +28,67 @@ using namespace std;
 
 namespace R4R {
 
+#ifdef QT_GUI_LIB
+CGrayValueImage::operator QImage() const {
+
+    QImage qimg(NCols(),NRows(),QImage::Format_RGB888);
+
+    for(size_t i=0; i<NRows(); i++) {
+
+        for(size_t j=0; j<NCols(); j++) {
+
+            unsigned char val = this->Get(i,j);
+
+            qimg.setPixel(j,i,qRgb(val,val,val));
+
+        }
+
+    }
+
+    return qimg;
+
+}
+#endif
+
+template <class Array>
+CGrayValueImage::CGrayValueImage(const Array& img):
+    CDenseArray<unsigned char>::CDenseArray(img.NRows(),img.NCols()) {
+
+    for(size_t i=0; i<img.NRows(); i++) {
+
+        for(size_t j=0; j<img.NCols(); j++)
+            this->Set(i,j,(unsigned char)img.Get(i,j));
+
+    }
+
+}
+
+template CGrayValueImage::CGrayValueImage<matf>(const matf& x);
+
+#ifdef QT_GUI_LIB
+template <>
+CGrayValueImage::CGrayValueImage(const QImage& img):
+    CDenseArray<unsigned char>::CDenseArray(img.height(),img.width()) {
+
+    for(size_t i=0; i<NRows(); i++) {
+
+        for(size_t j=0; j<NCols(); j++) {
+
+            QRgb val = img.pixel(j,i);
+
+            // find mean
+            float mean = (float(qRed(val)) + float(qGreen(val)) + float(qBlue(val)))/3.0;
+
+            // roound
+            this->operator ()(i,j) = (unsigned char)(mean+0.5);
+
+        }
+
+    }
+
+}
+#endif
+
 CRGBImage::CRGBImage(size_t w, size_t h, unsigned char* data):
     CDenseArray<rgb>::CDenseArray(h,w) {
 
@@ -89,7 +150,6 @@ CVector<T,3> CRGBImage::Gradient(const CVector<T,2>& p, bool dir) {
 
 template CVector<double,3> CRGBImage::Gradient<double>(const CVector<double,2>& p, bool dir);
 template CVector<float,3> CRGBImage::Gradient<float>(const CVector<float,2>& p, bool dir);
-
 
 #ifdef QT_GUI_LIB
 CRGBImage::CRGBImage(const QImage& img):

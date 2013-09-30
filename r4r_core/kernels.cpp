@@ -289,6 +289,7 @@ template class CMercerKernel<double>;
 template class CMercerKernel<bool>;
 template class CMercerKernel<int>;
 template class CMercerKernel<size_t>;
+template class CMercerKernel<unsigned char>;
 
 template<class T>
 double CChiSquaredKernel<T>::Evaluate(T* x, T* y) {
@@ -389,7 +390,7 @@ template class CChiSquaredKernel<double>;
 template class CChiSquaredKernel<int>;
 template class CChiSquaredKernel<size_t>;
 template class CChiSquaredKernel<bool>;
-
+template class CChiSquaredKernel<unsigned char>;
 
 template <class T>
 double CIntersectionKernel<T>::Evaluate(T* x, T* y) {
@@ -452,6 +453,7 @@ template class CIntersectionKernel<double>;
 template class CIntersectionKernel<bool>;
 template class CIntersectionKernel<int>;
 template class CIntersectionKernel<size_t>;
+template class CIntersectionKernel<unsigned char>;
 
 template <class T>
 double CHellingerKernel<T>::Evaluate(T* x, T* y) {
@@ -547,6 +549,7 @@ template class CHellingerKernel<double>;
 template class CHellingerKernel<int>;
 template class CHellingerKernel<bool>;
 template class CHellingerKernel<size_t>;
+template class CHellingerKernel<unsigned char>;
 
 template <class T>
 unsigned int CBitwiseHammingKernel<T>::m_lut[256] = {   0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3,
@@ -582,6 +585,7 @@ template class CRBFKernel<double>;
 template class CRBFKernel<bool>;
 template class CRBFKernel<size_t>;
 template class CRBFKernel<int>;
+template class CRBFKernel<unsigned char>;
 
 template <class T>
 double CPolynomialKernel<T>::Evaluate(T*x , T*y) {
@@ -597,5 +601,6 @@ template class CPolynomialKernel<double>;
 template class CPolynomialKernel<int>;
 template class CPolynomialKernel<bool>;
 template class CPolynomialKernel<size_t>;
+template class CPolynomialKernel<unsigned char>;
 
 }

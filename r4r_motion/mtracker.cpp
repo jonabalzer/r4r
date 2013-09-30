@@ -108,9 +108,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         cout << "No of correspondences (2d-2d/3d-2d): " << p0s.size() << " " << xs.size() << endl;
 
         // init linear solver
-        smatf M(0,0);
-        CPreconditioner<smatf,float> precond(M);
-        CConjugateGradientMethodLeastSquares<smatf,float> solver(precond,
+        CConjugateGradientMethodLeastSquares<smatf,float> solver(CPreconditioner<smatf,float>(),
                                                                  m_params->GetIntParameter("CGLS_NITER"),                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),                                                                                     true);
 
         // init least-squares problem

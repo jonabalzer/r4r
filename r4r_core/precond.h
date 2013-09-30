@@ -40,15 +40,10 @@ class CPreconditioner {
 
 public:
 
-	//! Constructor.
-	CPreconditioner(Matrix& A);
-
 	//! Performs preconditioning.
     virtual void Solve(CDenseArray<T>& x, const CDenseArray<T>& y) const { x = y; }
 
 protected:
-
-	Matrix& m_A;						//!< input matrix, M is member of inherited classes
 
 };
 
@@ -74,7 +69,6 @@ protected:
     CSparseDiagonalArray<T> m_D;							//!< diagonal of #m_A
     CSparseUpperTriangularArray<T> m_U;						//!< upper-triangular part of #m_A (or transpose of #m_L)
 
-    using CPreconditioner<Matrix,T>::m_A;
 
 };
 
@@ -98,8 +92,6 @@ public:
 protected:
 
     CSparseDiagonalArray<T> m_D;						//!< diagonal of #m_A
-
-    using CPreconditioner<Matrix,T>::m_A;
 
 };
 
