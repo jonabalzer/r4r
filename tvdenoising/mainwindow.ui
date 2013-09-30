@@ -19,6 +19,10 @@
   <property name="windowTitle">
    <string>TV Denoising</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="icon.qrc">
+    <normaloff>:/program/cm.png</normaloff>:/program/cm.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QToolBox" name="optionsToolBox">
     <property name="geometry">
@@ -54,7 +58,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>0.05</string>
+       <string>0.2</string>
       </property>
      </widget>
      <widget class="QLabel" name="muLabel">
@@ -93,7 +97,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>0.1</string>
+       <string>1</string>
       </property>
      </widget>
      <widget class="QSpinBox" name="niterSpinBox">
@@ -109,7 +113,7 @@
        <number>50</number>
       </property>
      </widget>
-     <widget class="QLabel" name="label">
+     <widget class="QLabel" name="nIterLabel">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -132,10 +136,10 @@
        </rect>
       </property>
       <property name="value">
-       <number>20</number>
+       <number>1</number>
       </property>
      </widget>
-     <widget class="QLabel" name="label_2">
+     <widget class="QLabel" name="nCGLSLabel">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -146,6 +150,32 @@
       </property>
       <property name="text">
        <string>Number CGLS steps</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="epsLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>290</y>
+        <width>66</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Epsilon</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="epsEdit">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>320</y>
+        <width>113</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>1e-3</string>
       </property>
      </widget>
     </widget>
@@ -169,30 +199,49 @@
      <string/>
     </property>
    </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>490</y>
+      <width>353</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="errorLabel">
+       <property name="text">
+        <string>Total error</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLCDNumber" name="errorLcdNumber"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="constraintLabel">
+       <property name="text">
+        <string>Constraint violation</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLCDNumber" name="constraintLcdNumber"/>
+     </item>
+    </layout>
+   </widget>
    <widget class="QPushButton" name="iterButton">
     <property name="geometry">
      <rect>
-      <x>540</x>
+      <x>550</x>
       <y>490</y>
-      <width>99</width>
+      <width>81</width>
       <height>27</height>
      </rect>
     </property>
     <property name="text">
      <string>Iterate</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="stepButton">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>490</y>
-      <width>99</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Step</string>
     </property>
    </widget>
   </widget>
@@ -210,6 +259,7 @@
      <string>File</string>
     </property>
     <addaction name="actionOpen"/>
+    <addaction name="actionReload"/>
     <addaction name="actionSave"/>
     <addaction name="actionExit"/>
    </widget>
@@ -231,8 +281,15 @@
     <string>Exit</string>
    </property>
   </action>
+  <action name="actionReload">
+   <property name="text">
+    <string>Reload</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="icon.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -37,3 +37,6 @@ unix:!symbian|win32: {
    INCLUDEPATH += /usr/include/r4r/
 
 }
+
+RESOURCES += \
+    icon.qrc

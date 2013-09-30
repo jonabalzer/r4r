@@ -38,8 +38,48 @@ void CImageDenoising::ComputeGradientOperator(smatf& nabla) {
 
     nabla = smatf(2*m_height*m_width,m_height*m_width);
 
+    size_t i,j;
+
+    // matrices are stored in col-major order
+    for(i=0; i<m_height-1; i++) {
+
+        for(j=0; j<m_width-1; j++) {
+
+            size_t row = j*m_height + i;
+
+            // dudx
+            nabla.Set(row,row,-1.0);
+            nabla.Set(row,row+m_height,1.0);
+
+            // dudy
+            nabla.Set(m_width*m_height+row,row,-1.0);
+            nabla.Set(m_width*m_height+row,row+1,1.0);
+
+        }
+
+    }
+
+   // bottom of image, dudx exists
+   i = m_height - 1;
+   for(j=0; j<m_width-1; j++) {
+
+       size_t row = j*m_height + i;
+
+       nabla.Set(row,row,-1.0);
+       nabla.Set(row,row+m_height,1.0);
+
+   }
+
+   // right edge of image, dudy exists
+   j = m_width - 1;
+   for(i=0; i<m_height-1; i++) {
+
+       size_t row = j*m_height + i;
+
+       nabla.Set(m_width*m_height+row,row,-1.0);
+       nabla.Set(m_width*m_height+row,row+1,1.0);
 
 
-
+   }
 
 }

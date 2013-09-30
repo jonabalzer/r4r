@@ -53,13 +53,17 @@ private slots:
 
     void on_actionSave_triggered();
 
+    void on_actionReload_triggered();
+
+    void on_iterButton_clicked();
+
 private:
 
     Ui::MainWindow *ui;
     R4R::matf m_f;
+    R4R::smatf m_A;
+    R4R::smatf m_nabla;
     R4R::matf m_u;
-
-
 
 };
 

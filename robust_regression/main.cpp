@@ -65,9 +65,8 @@ int main(int argc, char *argv[]) {
     }
     else if((unsigned int)option[0]==49) { // reweighted LS on Osbourne function
 
-        mat M(0,0);
-        CPreconditioner<mat,double> precond(M);
-        CConjugateGradientMethodLeastSquares<mat,double> solver(precond,20,1e-20,true);
+
+        CConjugateGradientMethodLeastSquares<mat,double> solver(CPreconditioner<mat,double>(),20,1e-20,true);
 
         COsbourneFunction problem = COsbourneFunction();
         problem.DisturbSamplePoints(10,1);

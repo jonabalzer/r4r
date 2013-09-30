@@ -39,7 +39,7 @@ CConjugateGradientMethod<Matrix,T>::CConjugateGradientMethod(const CPrecondition
     CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent) {}
 
 template<class Matrix,typename T>
-vector<double> CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) {
+vector<double> CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) const {
 
     // check dimensions
     if(!(A.NCols()==X.NRows() && X.NRows()==B.NRows() && X.NCols()==B.NCols())) {
@@ -120,7 +120,7 @@ vector<double> CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, cons
 }
 
 template<class Matrix,typename T>
-vector<double> CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
+vector<double> CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) const {
 
     // check dimensions
     if(!(A.NCols()==x.NRows() && x.NRows()==b.NRows())) {
@@ -199,7 +199,7 @@ CConjugateGradientMethodLeastSquares<Matrix,T>::CConjugateGradientMethodLeastSqu
     CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent) {}
 
 template<class Matrix,typename T>
-vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) {
+vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) const {
 
     if(!(A.NCols()==X.NRows() && A.NRows()==B.NRows() && X.NCols()==B.NCols())) {
 
@@ -287,7 +287,7 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
 }
 
 template<class Matrix,typename T>
-vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
+vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) const {
 
     if(!(A.NCols()==x.NRows() && A.NRows()==b.NRows())) {
 

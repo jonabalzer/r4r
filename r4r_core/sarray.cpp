@@ -1016,6 +1016,7 @@ template CSparseArray<float> CSparseArray<float>::operator *(const CSparseArray<
 
 
 template ostream& operator<< (ostream& os, CSparseArray<double>& x);
+template ostream& operator<< (ostream& os, CSparseArray<float>& x);
 
 template <class T>
 CSparseBandedArray<T>::CSparseBandedArray():

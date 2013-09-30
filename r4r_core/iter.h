@@ -79,7 +79,7 @@ public:
      * value of \f$X\f$ which is passed to the function.
      *
      */
-    virtual std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& b, CDenseArray<T>& x) = 0;
+    virtual std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) const = 0;
 
     /*! \brief Iterate.
      *
@@ -92,7 +92,7 @@ public:
      * optimized for this special case.
      *
      */
-    virtual std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) = 0;
+    virtual std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) const = 0;
 
 protected:
 
@@ -119,10 +119,10 @@ public:
     CConjugateGradientMethod() = delete;
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseArray<T>&,CDenseArray<T>&)
-    std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X);
+    std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) const;
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseVector<T>&,CDenseVector<T>&)
-    std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
+    std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) const;
 
 private:
 
@@ -150,10 +150,10 @@ public:
     CConjugateGradientMethodLeastSquares() = delete;
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseArray<T>&,CDenseArray<T>&)
-    std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X);
+    std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) const;
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseVector<T>&,CDenseVector<T>&)
-    std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
+    std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) const;
 
 private:
 

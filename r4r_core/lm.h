@@ -135,8 +135,10 @@ protected:
 template<class Matrix,typename T>
 class CSplitBregman {
 
+public:
+
     //! Constructor.
-    CSplitBregman(const Matrix& A, const Matrix& Phi, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps);
+    CSplitBregman(const Matrix& A, const Matrix& nabla, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps);
 
     //! Deleted standard constructor.
     CSplitBregman() = delete;
@@ -156,13 +158,13 @@ class CSplitBregman {
 
 private:
 
-    const Matrix& m_K;                                      //! stack of two linear operators
+    Matrix m_K;                                             //! stack of two linear operators
     const Matrix& m_nabla;                                  //! gradient operator
     const CDenseArray<T>& m_f;                              //! force vector
-    const CDenseArray<T>& m_u;                              //! solution vector
+    CDenseArray<T>& m_u;                                    //! solution vector
     const CIterativeLinearSolver<Matrix,T>& m_solver;       //! linear solver
-    T m_lambda;                                             //! \f$\lambda\f$
     T m_mu;                                                 //! \f$\mu\f$
+    T m_lambda;                                             //! \f$\lambda\f$
     double m_eps;                                           //! tolerance
     std::vector<double> m_total_error;                      //! total error over time
     std::vector<double> m_constraint_violation;             //! constraint violation over time
