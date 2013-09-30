@@ -136,20 +136,52 @@ template<class Matrix,typename T>
 class CSplitBregman {
 
     //! Constructor.
-    CSplitBregman(const Matrix& Phi, const Matrix& A, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps);
+    CSplitBregman(const Matrix& A, const Matrix& Phi, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps);
 
     //! Deleted standard constructor.
     CSplitBregman() = delete;
 
+    /*! \brief Iterate.
+     *
+     * \param[in] n maximum number of iterations
+     *
+     */
+    void Iterate(size_t n);
+
+    //! Access to residual.
+    std::vector<double>& GetTotalError() { return m_total_error; }
+
+    //! Access to constraint violation.
+    std::vector<double>& GetConstraintViolation() { return m_constraint_violation; }
+
 private:
 
     const Matrix& m_K;                                      //! stack of two linear operators
+    const Matrix& m_nabla;                                  //! gradient operator
     const CDenseArray<T>& m_f;                              //! force vector
     const CDenseArray<T>& m_u;                              //! solution vector
     const CIterativeLinearSolver<Matrix,T>& m_solver;       //! linear solver
     T m_lambda;                                             //! \f$\lambda\f$
     T m_mu;                                                 //! \f$\mu\f$
     double m_eps;                                           //! tolerance
+    std::vector<double> m_total_error;                      //! total error over time
+    std::vector<double> m_constraint_violation;             //! constraint violation over time
+
+};
+
+/*! interface for function objects needed in TV-regularized LM method
+ *
+ */
+template <class Matrix,typename T>
+class CLMTVMatrices {
+
+public:
+
+    //! Computes residual and Jacobian.
+    virtual void ComputeJacobian(Matrix& J) = 0;
+
+    //! Computes representation of gradient operator.
+    virtual void ComputeGradientOperator(Matrix& nabla) = 0;
 
 };
 

@@ -36,9 +36,7 @@ int main(int argc, char *argv[]) {
 
     if((unsigned int)option[0]==48) {  // LM demo on Rosenbrock function
 
-        mat M(0,0);
-        CPreconditioner<mat,double> precond(M);
-        CConjugateGradientMethodLeastSquares<mat,double> solver(precond,10,1e-20,true);
+        CConjugateGradientMethodLeastSquares<mat,double> solver(CPreconditioner<mat,double>(),10,1e-20,true);
 
         CRosenbrockFunction problem = CRosenbrockFunction();
         CLevenbergMarquardt<mat,double> lms(problem,solver,0);

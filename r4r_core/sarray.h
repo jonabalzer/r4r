@@ -37,7 +37,7 @@ template <class T> class CSparseUpperTriangularArray;
 
 /*! \brief sparse 2d matrix/array
  *
- *
+ * \todo - Make #m_data a shared pointer and allow shallow copies.
  *
  */
 template<class T>
@@ -54,6 +54,15 @@ public:
 
 	//! Constructor
 	CSparseArray(size_t nrows, size_t ncols);
+
+    //! Creates an identiy matrix.
+    void Eye();
+
+    //! Resizes the array.
+    void Resize(size_t nrows, size_t ncols) { m_nrows = nrows; m_ncols = ncols; }
+
+    //! Concatenates the array with another.
+    void Concatenate(const CSparseArray& array, bool direction);
 
 	//! Writes matrix to a stream.
 	template<class U> friend std::ostream& operator << (std::ostream& os, CSparseArray<U>& x);
@@ -157,7 +166,6 @@ public:
     }
 
 protected:
-
 
 	size_t m_nrows;												//!< number of rows
 	size_t m_ncols;												//!< number of cols

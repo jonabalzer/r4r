@@ -76,11 +76,20 @@ class CDenseArray {
 
 public:
 
-	//! Constructor
+    //! Constructor.
 	CDenseArray();
 
-	//! Constructor
+    /*! \brief Constructor.
+     *
+     * Creates a new header for a vector, reshaping it into a row-major
+     * layout.
+     *
+     */
+    CDenseArray(size_t nrows, size_t ncols, const CDenseVector<T>& x);
+
+    //! Constructor.
     CDenseArray(size_t nrows, size_t ncols, T val = T(0));
+
 
     //! Re-allocation.
     void Resize(size_t nrows, size_t ncols);
@@ -295,6 +304,9 @@ public:
 	 */
 	T Determinant() const;
 
+    //! Column-wise shrinkage operator.
+    void Shrink(double lambda);
+
 	//! Returns the number of bytes of the data type.
     size_t SizeOf() const { return sizeof(T); }
 
@@ -308,7 +320,7 @@ public:
     bool Invert();
 
     //! Typecast operator
-    template<typename Array> operator Array() {
+    template<class Array> operator Array() {
 
         Array result(m_nrows,m_ncols);
 
@@ -361,6 +373,15 @@ public:
 
     //! Copy constructor.
     template<u_int n> CDenseVector(CVector<T,n>& x);
+
+    /*! Copy constructor.
+     *
+     * \param[in] x matrix
+     *
+     * Lines values of a matrix up in row-major order without making
+     * a deep copy.
+     */
+    CDenseVector(const CDenseArray<T>& x);
 
     //! Assignment operator.
     CDenseVector<T> operator=(const CDenseVector<T>& array);

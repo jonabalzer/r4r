@@ -39,13 +39,13 @@ CConjugateGradientMethod<Matrix,T>::CConjugateGradientMethod(const CPrecondition
     CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent) {}
 
 template<class Matrix,typename T>
-double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) {
+vector<double> CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) {
 
     // check dimensions
     if(!(A.NCols()==X.NRows() && X.NRows()==B.NRows() && X.NCols()==B.NCols())) {
 
         cerr << "ERROR: Check matrix dimensions!" << endl;
-        return -1;
+        return vector<double>();
 
     }
 
@@ -56,10 +56,11 @@ double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDense
     CDenseArray<T> R = B - A*X;
 
     // residual norm
-    double normr = R.Norm2();
+    vector<double> res;
+    res.push_back(R.Norm2());
 
     if(!m_silent)
-        cout << "k=" << k << ": " << normr << endl;
+        cout << "k=" << k << ": " << res.back() << endl;
 
     // make a copy for the temporary variable used in pre-conditioning
     CDenseArray<T> Z = R.Clone();
@@ -87,14 +88,14 @@ double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDense
         R = R - Q;
 
         // check convergence
-        normr = R.Norm2();
+        res.push_back(R.Norm2());
 
         k++;
 
         if(!m_silent)
-            cout << "k=" << k << ": " << normr << endl;
+            cout << "k=" << k << ": " << res.back() << endl;
 
-        if(normr<m_eps)
+        if(res.back()<m_eps)
             break;
 
         // apply pre-conditioner
@@ -114,18 +115,18 @@ double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDense
 
     }
 
-    return normr;
+    return res;
 
 }
 
 template<class Matrix,typename T>
-double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
+vector<double> CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
 
     // check dimensions
     if(!(A.NCols()==x.NRows() && x.NRows()==b.NRows())) {
 
         cerr << "ERROR: Check matrix dimensions!" << endl;
-        return -1;
+        return vector<double>();
 
     }
 
@@ -134,10 +135,11 @@ double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDense
 
     CDenseVector<T> r = b - A*x;
 
-    double normr = r.Norm2();
+    vector<double> res;
+    res.push_back(r.Norm2());
 
     if(!m_silent)
-        cout << "k=" << k << ": " << normr << endl;
+        cout << "k=" << k << ": " << res.back() << endl;
 
     CDenseVector<T> z = r.Clone();
 
@@ -158,20 +160,20 @@ double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDense
         q.Scale(alpha);
         r = r - q;
 
-        normr = r.Norm2();
-
-        if(normr<m_eps)
-            break;
+        res.push_back(r.Norm2());
 
         k++;
 
         if(!m_silent)
-            cout << "k=" << k << ": " << normr << endl;
+            cout << "k=" << k << ": " << res.back() << endl;
+
+        if(res.back()<m_eps)
+            break;
+
 
         m_M.Solve(z,r);
 
         T deltan = CDenseArray<T>::InnerProduct(z,r);
-
 
         T beta = deltan/deltao;
 
@@ -183,7 +185,8 @@ double CConjugateGradientMethod<Matrix,T>::Iterate(const Matrix& A, const CDense
 
     }
 
-    return normr;
+    return res;
+
 }
 
 template class CConjugateGradientMethod<CDenseArray<double>,double>;
@@ -196,12 +199,12 @@ CConjugateGradientMethodLeastSquares<Matrix,T>::CConjugateGradientMethodLeastSqu
     CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent) {}
 
 template<class Matrix,typename T>
-double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) {
+vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) {
 
     if(!(A.NCols()==X.NRows() && A.NRows()==B.NRows() && X.NCols()==B.NCols())) {
 
         cerr << "ERROR: Check matrix dimensions!" << endl;
-        return -1;
+        return vector<double>();
 
     }
 
@@ -219,8 +222,8 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
     // residual of the non-square system
     CDenseArray<T> R = B - A*X;
 
-    double normrt, normr;
-    normr = R.Norm2();
+    vector<double> res;
+    res.push_back(R.Norm2());
 
     // residual of the normal equation
     CDenseArray<T> Rnormal = At*R;
@@ -235,7 +238,7 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
     CDenseArray<T> P = Z.Clone();
 
     if(!m_silent)
-        cout << "k=" << k << ": " << normr << endl;
+        cout << "k=" << k << ": " << res.back() << endl;
 
     while(k<m_n) {
 
@@ -253,17 +256,15 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
         R = R - Q.ScaleColumns(alpha);
 
         // check convergence
-        normrt = R.Norm2();
+        res.push_back(R.Norm2());
 
         k++;
 
         if(!m_silent)
-            cout << "k=" << k << ": " << normrt << endl;
+            cout << "k=" << k << ": " << res.back() << endl;
 
-        if(fabs(normr-normrt)<m_eps)
+        if(fabs(res.at(res.size()-2)-res.back())<m_eps)
             break;
-
-        normr = normrt;
 
         // update residual of normal equation
         Rnormal = At*R;
@@ -281,17 +282,17 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
 
     }
 
-    return normr;
+    return res;
 
 }
 
 template<class Matrix,typename T>
-double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
+vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) {
 
     if(!(A.NCols()==x.NRows() && A.NRows()==b.NRows())) {
 
-        cout << "ERROR: Check matrix dimensions!" << endl;
-        return -1;
+        cerr << "ERROR: Check matrix dimensions!" << endl;
+        return vector<double>();
 
     }
 
@@ -309,8 +310,9 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
     // residual of the non-square system
     CDenseVector<T> r = b - A*x;
 
-    double normrt, normr;
-    normr = r.Norm2();
+    // residuals
+    vector<double> res;
+    res.push_back(r.Norm2());
 
     // residual of the normal equation
     //A.Transpose();
@@ -327,7 +329,7 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
     T deltao = CDenseArray<T>::InnerProduct(z,rnormal);
 
     if(!m_silent)
-        cout << "k=" << k << ": " << normr << endl;
+        cout << "k=" << k << ": " << res.back() << endl;
 
     while(k<m_n) {
 
@@ -343,17 +345,15 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
         q.Scale(alpha);
         r = r - q;				// update residual of non-square system
 
-        normrt = r.Norm2();
+        res.push_back(r.Norm2());
 
         k++;
 
         if(!m_silent)
-            cout << "k=" << k << ": " << normrt << endl;
+            cout << "k=" << k << ": " << res.back() << endl;
 
-        if(fabs(normr-normrt)<m_eps)
+        if(fabs(res.at(res.size()-2)-res.back())<m_eps)
             break;
-
-        normr = normrt;
 
         // update residual of normal equation
         //A.Transpose();
@@ -374,7 +374,7 @@ double CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, 
 
     }
 
-    return normr;
+    return res;
 
 }
 

@@ -334,26 +334,108 @@ template class CLevenbergMarquardt<smatf,float>;
 
 
 template<class Matrix,typename T>
-CSplitBregman<Matrix,T>::CSplitBregman(const Matrix& Phi, const Matrix& A, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps):
+CSplitBregman<Matrix,T>::CSplitBregman(const Matrix& A, const Matrix& Phi, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps):
+    m_K(A),
+    m_nabla(A),
     m_f(f),
     m_u(u),
     m_solver(solver),
     m_mu(mu),
     m_lambda(lambda),
-    m_eps(eps) {
+    m_eps(eps),
+    m_total_error(),
+    m_constraint_violation() {
 
-    m_K(Phi.NRows()+A.NRows(),u.NRows());
+    assert(lambda>0);
 
-    // build K
-    // scale and cocatenate
-    // resize and concatenate in matrix classes
-    // shrinkage in densemat, vector valued
+    // scale
+    m_K.Scale(mu/lambda);
 
-    // sample app in qt -> denoising!
+    // stack on top of m_Phi
+    m_K.Concatenate(Phi,0);
+
+    // scale again
+    m_K.Scale(lambda);
 
 }
 
+template<class Matrix,typename T>
+void CSplitBregman<Matrix,T>::Iterate(size_t n) {
+
+    // initialize
+    size_t k = 0;
+
+    // nabla u and b
+    CDenseArray<T> nablau = m_nabla*m_u;
+    CDenseArray<T> b(m_K.NRows()-m_f.NRows(),m_f.NCols());
+
+    // residuals
+    m_constraint_violation.push_back(nablau.Norm2());              // \|\nabla u-d\|=\|\nabla u\|
+
+    // main loop
+    do {
+
+        // create rhs
+        CDenseArray<T> rhs(m_K.NRows(),m_f.NCols());
+
+        // fill in m_f and b
+        for(size_t i=0; i<m_K.NRows(); i++) {
+
+            for(size_t j=0; j<m_f.NCols(); j++) {
+
+                if(i<m_f.NRows())
+                    rhs.Set(i,j,m_f.Get(i,j)*m_mu);
+                else
+                    rhs.Set(i,j,b.Get(i,j)*m_lambda);
+
+            }
+
+        }
+
+        // get half residual of data term and constraint violation from linear solver
+        vector<double> rt = m_solver.Iterate(m_K,rhs,m_u);
+
+        // if k=0, we need compute the initial residual
+        if(k==0) {
+
+            m_total_error.push_back(rt.front()-m_constraint_violation.back()/m_lambda + nablau.Norm1());
+
+            cout << "k" << "\t" << "Total error" << "\t" << "Feasability" << endl;
+            cout << k << "\t" << m_total_error.back() << "\t" << m_constraint_violation.back() << endl;
+
+        }
+
+        // update gradient
+        nablau = m_nabla*m_u;
+
+        // shrinkage
+        CDenseArray<T> d = b + nablau;
+        d.Shrink(1/m_lambda);
+
+        // constraint violation
+        CDenseArray<T> rphi = nablau - d;
+
+        // Bregman update
+        b = b + rphi;
+
+        // compute constraint violation
+        m_constraint_violation.push_back(rphi.Norm2());
+
+        // total error
+        double tv = nablau.Norm1();                                             // total variation
+        double rdata = rt.back() - m_constraint_violation.back()/m_lambda;      // residual of linear system - rphi/lambda
+        m_total_error.push_back(rdata+tv);
+
+        // increment
+        k++;
+
+        // plot errors
+        cout << k << "\t" << m_total_error.back() << "\t" << m_constraint_violation.back() << endl;
+
+    } while(k<n && fabs(m_total_error.back()-m_total_error.at(m_total_error.size()-2))<m_eps);
 
 }
+
+} // end of namespace
 
 

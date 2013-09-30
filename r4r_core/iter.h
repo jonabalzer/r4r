@@ -24,6 +24,8 @@
 #ifndef R4RITER_H_
 #define R4RITER_H_
 
+#include <vector>
+
 #include "sarray.h"
 #include  "darray.h"
 #include "precond.h"
@@ -77,7 +79,7 @@ public:
      * value of \f$X\f$ which is passed to the function.
      *
      */
-    virtual double Iterate(const Matrix& A, const CDenseArray<T>& b, CDenseArray<T>& x) = 0;
+    virtual std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& b, CDenseArray<T>& x) = 0;
 
     /*! \brief Iterate.
      *
@@ -90,7 +92,7 @@ public:
      * optimized for this special case.
      *
      */
-    virtual double Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) = 0;
+    virtual std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) = 0;
 
 protected:
 
@@ -117,10 +119,10 @@ public:
     CConjugateGradientMethod() = delete;
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseArray<T>&,CDenseArray<T>&)
-    double Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X);
+    std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X);
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseVector<T>&,CDenseVector<T>&)
-    double Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
+    std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
 
 private:
 
@@ -148,10 +150,10 @@ public:
     CConjugateGradientMethodLeastSquares() = delete;
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseArray<T>&,CDenseArray<T>&)
-    double Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X);
+    std::vector<double> Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X);
 
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseVector<T>&,CDenseVector<T>&)
-    double Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
+    std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x);
 
 private:
 
