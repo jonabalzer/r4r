@@ -46,7 +46,7 @@ CSparseArray<T>::CSparseArray():
 	m_nrows(0),
 	m_ncols(0),
 	m_transpose(false),
-	m_data() {
+    m_data(new spdata) {
 
 }
 
@@ -55,9 +55,56 @@ CSparseArray<T>::CSparseArray(size_t nrows, size_t ncols):
 	m_nrows(nrows),
 	m_ncols(ncols),
 	m_transpose(false),
-	m_data() {
+    m_data(new spdata) {
 
 }
+
+template <class T>
+CSparseArray<T>::CSparseArray(const CSparseArray<T>& x):
+    m_nrows(x.m_nrows),
+    m_ncols(x.m_ncols),
+    m_transpose(x.m_transpose),
+    m_data(x.m_data) {}
+
+template <class T>
+CSparseArray<T>::CSparseArray(size_t nrows, size_t ncols, shared_ptr<spdata> data):
+    m_nrows(nrows),
+    m_ncols(ncols),
+    m_transpose(false),
+    m_data(data) {}
+
+template <class T>
+CSparseArray<T>& CSparseArray<T>::operator =(const CSparseArray<T>& x) {
+
+    if(this != &x) {
+
+        m_nrows = x.m_nrows;
+        m_ncols = x.m_ncols;
+        m_transpose = x.m_transpose;
+        m_data = x.m_data;
+    }
+
+    return *this;
+
+}
+
+
+template <class T>
+CSparseArray<T> CSparseArray<T>::Clone() {
+
+    // make copy of data
+    spdata* data = new spdata;
+    *data = *m_data;
+
+    CSparseArray<T> result(m_nrows,m_ncols,shared_ptr<spdata>(data));
+
+    if(m_transpose)
+        result.Transpose();
+
+    return result;
+
+}
+
 
 template <class T>
 void CSparseArray<T>::Eye() {
@@ -66,8 +113,8 @@ void CSparseArray<T>::Eye() {
 
         typename map<size_t,map<size_t,T> >::iterator it;
 
-        for(it=m_data.begin(); it!=m_data.end(); ++it)
-            m_data.erase(it);
+        for(it=m_data->begin(); it!=m_data->end(); ++it)
+            m_data->erase(it);
 
     }
 
@@ -75,7 +122,6 @@ void CSparseArray<T>::Eye() {
         this->Set(i,i,1.0);
 
 }
-
 
 template <class T>
 void CSparseArray<T>::Concatenate(const CSparseArray& array, bool direction) {
@@ -95,35 +141,35 @@ void CSparseArray<T>::Concatenate(const CSparseArray& array, bool direction) {
         // if both are not transposed, stack row maps
         if(!m_transpose && !array.m_transpose) {
 
-            for(it=array.m_data.begin(); it!=array.m_data.end(); ++it)
-                m_data[nrowsold+it->first] = it->second;
+            for(it=array.m_data->begin(); it!=array.m_data->end(); ++it)
+                (*m_data)[nrowsold+it->first] = it->second;
 
         } // go through rows of input linearly, input col = output row
         else if(m_transpose && !array.m_transpose) {
 
-            for(it=array.m_data.begin(); it!=array.m_data.end(); ++it) {
+            for(it=array.m_data->begin(); it!=array.m_data->end(); ++it) {
 
                 for(it_col=it->second.begin(); it_col!=it->second.end(); ++it_col)
-                    m_data[it_col->first][nrowsold+it->first]= it_col->second;
+                    (*m_data)[it_col->first][nrowsold+it->first]= it_col->second;
 
             } // go through input maps (cols) and inject into row maps
         }
         else if(!m_transpose && array.m_transpose) {
 
-            for(it=array.m_data.begin(); it!=array.m_data.end(); ++it) {
+            for(it=array.m_data->begin(); it!=array.m_data->end(); ++it) {
 
                 for(it_col=it->second.begin(); it_col!=it->second.end(); ++it_col)
-                    m_data[nrowsold+it_col->first][it->first] = it_col->second;
+                    (*m_data)[nrowsold+it_col->first][it->first] = it_col->second;
 
             }
 
         } // both transposed,append rows of input to rows of output
         else {
 
-            for(it=array.m_data.begin(); it!=array.m_data.end(); ++it) {
+            for(it=array.m_data->begin(); it!=array.m_data->end(); ++it) {
 
                 for(it_col=it->second.begin(); it_col!=it->second.end(); ++it_col) {
-                    m_data[it->first][nrowsold+it_col->first] = it_col->second;
+                    (*m_data)[it->first][nrowsold+it_col->first] = it_col->second;
 
                 }
 
@@ -146,35 +192,35 @@ void CSparseArray<T>::Concatenate(const CSparseArray& array, bool direction) {
         // if both are transposed, stack row maps
         if(m_transpose && array.m_transpose) {
 
-            for(it=array.m_data.begin(); it!=array.m_data.end(); ++it)
-                m_data[ncolsold+it->first] = it->second;
+            for(it=array.m_data->begin(); it!=array.m_data->end(); ++it)
+                (*m_data)[ncolsold+it->first] = it->second;
 
         } // go through rows of input linearly, input col = output row
         else if(!m_transpose && array.m_transpose) {
 
-            for(it=array.m_data.begin(); it!=array.m_data.end(); ++it) {
+            for(it=array.m_data->begin(); it!=array.m_data->end(); ++it) {
 
                 for(it_col=it->second.begin(); it_col!=it->second.end(); ++it_col)
-                    m_data[it_col->first][ncolsold+it->first]= it_col->second;
+                    (*m_data)[it_col->first][ncolsold+it->first]= it_col->second;
 
             } // go through input maps (cols) and inject into row maps
         }
         else if(m_transpose && !array.m_transpose) {
 
-            for(it=array.m_data.begin(); it!=array.m_data.end(); ++it) {
+            for(it=array.m_data->begin(); it!=array.m_data->end(); ++it) {
 
                 for(it_col=it->second.begin(); it_col!=it->second.end(); ++it_col)
-                    m_data[ncolsold+it_col->first][it->first] = it_col->second;
+                    (*m_data)[ncolsold+it_col->first][it->first] = it_col->second;
 
             }
 
         } // both not transposed, append rows of input to rows of output
         else {
 
-            for(it=array.m_data.begin(); it!=array.m_data.end(); ++it) {
+            for(it=array.m_data->begin(); it!=array.m_data->end(); ++it) {
 
                 for(it_col=it->second.begin(); it_col!=it->second.end(); ++it_col) {
-                    m_data[it->first][ncolsold+it_col->first] = it_col->second;
+                    (*m_data)[it->first][ncolsold+it_col->first] = it_col->second;
 
                 }
 
@@ -194,9 +240,9 @@ ostream& operator << (ostream& os, CSparseArray<U>& x) {
 	typename map<size_t,map<size_t,U> >::iterator it_row;
 	typename map<size_t,U>::iterator it_col;
 
-	it_row = x.m_data.begin();
+    it_row = x.m_data->begin();
 
-	while(it_row != x.m_data.end()) {
+    while(it_row != x.m_data->end()) {
 
 		it_col = it_row->second.begin();
 
@@ -229,9 +275,9 @@ T CSparseArray<T>::Norm2() {
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 	typename map<size_t,T>::iterator it_col;
 
-	it_row = m_data.begin();
+    it_row = m_data->begin();
 
-	while(it_row != m_data.end()) {
+    while(it_row != m_data->end()) {
 
 		it_col = it_row->second.begin();
 
@@ -267,7 +313,7 @@ T& CSparseArray<T>::operator()(size_t i, size_t j) {
 	if(m_transpose)
         std::swap(i,j);
 
-	return m_data[i][j];
+    return (*m_data)[i][j];
 
 }
 
@@ -283,9 +329,9 @@ T CSparseArray<T>::Get(size_t i, size_t j) const {
 
     typename map<size_t,map<size_t,T> >::const_iterator it_row;
 
-	it_row = m_data.find(i);
+    it_row = m_data->find(i);
 
-	if(it_row == m_data.end())
+    if(it_row == m_data->end())
 		return (T)0;
 
     typename map<size_t,T>::const_iterator it_col;
@@ -308,19 +354,19 @@ map<size_t,T> CSparseArray<T>::GetRow(size_t i) const {
 
 	if(!m_transpose) {
 
-        typename map<size_t,map<size_t,T> >::const_iterator loc = m_data.find(i);
+        typename map<size_t,map<size_t,T> >::const_iterator loc = m_data->find(i);
 
 
-        if(loc!=m_data.end())
+        if(loc!=m_data->end())
             row = loc->second;
 
 	}
 	else {
 
-        typename map<size_t,map<size_t,T> >::const_iterator it_col = m_data.begin();
+        typename map<size_t,map<size_t,T> >::const_iterator it_col = m_data->begin();
         typename map<size_t,T>::const_iterator it_row;
 
-		while(it_col!=m_data.end()) {
+        while(it_col!=m_data->end()) {
 
 			it_row = it_col->second.begin();
 
@@ -359,9 +405,9 @@ void CSparseArray<T>::Set(size_t i, size_t j, T v) {
 		typename map<size_t,map<size_t,T> >::iterator it_row;
 		typename map<size_t,T>::iterator it_col;
 
-		it_row = m_data.find(i);
+        it_row = m_data->find(i);
 
-		if(it_row == m_data.end())
+        if(it_row == m_data->end())
 			return;
 
 		it_col = it_row->second.find(j);
@@ -372,11 +418,11 @@ void CSparseArray<T>::Set(size_t i, size_t j, T v) {
 		it_row->second.erase(it_col);
 
 		if(it_row->second.empty())
-			m_data.erase(it_row);
+            m_data->erase(it_row);
 
 	}
 	else
-		m_data[i][j] = v;
+        (*m_data)[i][j] = v;
 
 }
 
@@ -388,9 +434,9 @@ CSparseArray<T> CSparseArray<T>::operator*(const T& scalar) {
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 	typename map<size_t,T>::iterator it_col;
 
-	it_row = result.m_data.begin();
+    it_row = result.m_data->begin();
 
-	while(it_row != result.m_data.end()) {
+    while(it_row != result.m_data->end()) {
 
 		it_col = it_row->second.begin();
 
@@ -421,9 +467,9 @@ CSparseArray<T> CSparseArray<T>::operator+(const CSparseArray& array) {
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 	typename map<size_t,T>::iterator it_col;
 
-	it_row = m_data.begin();
+    it_row = m_data->begin();
 
-	while(it_row != m_data.end()) {
+    while(it_row != m_data->end()) {
 
 		it_col = it_row->second.begin();
 
@@ -453,9 +499,9 @@ CSparseArray<T> CSparseArray<T>::operator-(const CSparseArray& array) {
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 	typename map<size_t,T>::iterator it_col;
 
-	it_row = m_data.begin();
+    it_row = m_data->begin();
 
-	while(it_row != m_data.end()) {
+    while(it_row != m_data->end()) {
 
 		it_col = it_row->second.begin();
 
@@ -485,9 +531,9 @@ T CSparseArray<T>::InnerProduct(const CSparseArray<T>& x, const CSparseArray<T>&
     typename map<size_t,map<size_t,T> >::const_iterator it_row;
     typename map<size_t,T>::const_iterator it_col;
 
-	it_row = x.m_data.begin();
+    it_row = x.m_data->begin();
 
-	while(it_row!=x.m_data.end()) {
+    while(it_row!=x.m_data->end()) {
 
 		map<size_t,T> rowx = x.GetRow(it_row->first);
 		map<size_t,T> rowy = y.GetRow(it_row->first);
@@ -506,76 +552,76 @@ T CSparseArray<T>::InnerProduct(const CSparseArray<T>& x, const CSparseArray<T>&
 template <class T>
 template<class Matrix> Matrix CSparseArray<T>::operator*(const Matrix& array) const {
 
-/*#ifdef _OPENMP
-    assert(m_ncols==array.NRows());
+//#ifdef _OPENMP
+//    assert(m_ncols==array.NRows());
 
-    Matrix result(m_nrows,array.NCols());;
+//    Matrix result(m_nrows,array.NCols());;
 
-    if(!m_transpose) {
+//    if(!m_transpose) {
 
-        typename map<size_t,T>::iterator it_col;
+//        typename map<size_t,T>::iterator it_col;
 
-#pragma omp parallel for private(it_col), shared(result)
-        for(size_t i=0; i<m_nrows; i++) {
+//#pragma omp parallel for private(it_col), shared(result)
+//        for(size_t i=0; i<m_nrows; i++) {
 
-            for(size_t j=0; j<array.NCols(); j++) {
+//            for(size_t j=0; j<array.NCols(); j++) {
 
-                if(m_data[i].size()>0) {
+//                if(m_data[i].size()>0) {
 
-                    T sum = 0;
+//                    T sum = 0;
 
-                    for(it_col=m_data[i].begin(); it_col!=m_data[i].end(); it_col++)
-                        sum+= (it_col->second)*array.Get(it_col->first,j);
+//                    for(it_col=m_data[i].begin(); it_col!=m_data[i].end(); it_col++)
+//                        sum+= (it_col->second)*array.Get(it_col->first,j);
 
-                    if(sum!=0)
-                        result(i,j) = sum;
+//                    if(sum!=0)
+//                        result(i,j) = sum;
 
-                }
+//                }
 
-            }
+//            }
 
-        }
+//        }
 
-    }
-    else {
+//    }
+//    else {
 
-        typename map<size_t,T>::iterator it_row;
+//        typename map<size_t,T>::iterator it_row;
 
-        for(size_t j=0; j<array.NCols(); j++) {
+//        for(size_t j=0; j<array.NCols(); j++) {
 
-#pragma omp parallel for private(it_row), shared(result)
-            for(size_t i=0; i<m_ncols; i++) {
-
-
-                if(m_data[i].size()>0) {
-
-                    for(it_row=m_data[i].begin(); it_row!=m_data[i].end(); it_row++) {
+//#pragma omp parallel for private(it_row), shared(result)
+//            for(size_t i=0; i<m_ncols; i++) {
 
 
+//                if(m_data[i].size()>0) {
+
+//                    for(it_row=m_data[i].begin(); it_row!=m_data[i].end(); it_row++) {
 
 
-#pragma omp critical
-                        {
-                        T val = it_row->second*array.Get(i,j);
 
-                        // check this to avoid fill-in
-                        if(val!=0)
-                            result(it_row->first,j) += val;
 
-                        }
+//#pragma omp critical
+//                        {
+//                        T val = it_row->second*array.Get(i,j);
 
-                    }
+//                        // check this to avoid fill-in
+//                        if(val!=0)
+//                            result(it_row->first,j) += val;
 
-                }
+//                        }
 
-            }
+//                    }
 
-        }
+//                }
 
-    }
+//            }
 
-    return result;
-#else*/
+//        }
+
+//    }
+
+//    return result;
+// #else
 
 
 	assert(m_ncols==array.NRows());
@@ -587,7 +633,7 @@ template<class Matrix> Matrix CSparseArray<T>::operator*(const Matrix& array) co
         typename map<size_t,map<size_t,T> >::const_iterator it_row;
         typename map<size_t,T>::const_iterator it_col;
 
-		for(it_row=m_data.begin(); it_row!=m_data.end(); it_row++) {
+        for(it_row=m_data->begin(); it_row!=m_data->end(); it_row++) {
 
 			for(size_t j=0; j<array.NCols(); j++) {
 
@@ -611,7 +657,7 @@ template<class Matrix> Matrix CSparseArray<T>::operator*(const Matrix& array) co
 
 		for(size_t j=0; j<array.NCols(); j++) {
 
-				for(it_col=m_data.begin(); it_col!=m_data.end(); it_col++) {
+                for(it_col=m_data->begin(); it_col!=m_data->end(); it_col++) {
 
 				for(it_row=it_col->second.begin(); it_row!=it_col->second.end(); it_row++) {
 
@@ -633,8 +679,8 @@ template<class Matrix> Matrix CSparseArray<T>::operator*(const Matrix& array) co
 
 }
 
-/*template <class T>
-CDenseVector<T> CSparseArray<T>::operator*(const CDenseVector<T>& vector) {
+//template <class T>
+// CDenseVector<T> CSparseArray<T>::operator*(const CDenseVector<T>& vector) {
 
 //#ifdef _OPENMP
 //    assert(m_ncols==vector.NRows());
@@ -687,45 +733,45 @@ CDenseVector<T> CSparseArray<T>::operator*(const CDenseVector<T>& vector) {
 //    return result;
 //#else
 
-    assert(m_ncols==vector.NRows());
+//    assert(m_ncols==vector.NRows());
 
-	CDenseVector<T> result = CDenseVector<T>(m_nrows);
+//	CDenseVector<T> result = CDenseVector<T>(m_nrows);
 
-	if(!m_transpose) {
+//	if(!m_transpose) {
 
-		typename map<size_t,map<size_t,T> >::iterator it_row;
-		typename map<size_t,T>::iterator it_col;
+//		typename map<size_t,map<size_t,T> >::iterator it_row;
+//		typename map<size_t,T>::iterator it_col;
 
-		for(it_row=m_data.begin(); it_row!=m_data.end(); it_row++) {
+//		for(it_row=m_data.begin(); it_row!=m_data.end(); it_row++) {
 
-			T sum = 0;
+//			T sum = 0;
 
-			for(it_col=it_row->second.begin(); it_col!=it_row->second.end(); it_col++)
-				sum+= (it_col->second)*vector.Get(it_col->first);
+//			for(it_col=it_row->second.begin(); it_col!=it_row->second.end(); it_col++)
+//				sum+= (it_col->second)*vector.Get(it_col->first);
 
-			result(it_row->first) = sum;
+//			result(it_row->first) = sum;
 
-		}
+//		}
 
-	}
-	else {
+//	}
+//	else {
 
-		typename map<size_t,map<size_t,T> >::iterator it_col;
-		typename map<size_t,T>::iterator it_row;
+//		typename map<size_t,map<size_t,T> >::iterator it_col;
+//		typename map<size_t,T>::iterator it_row;
 
-		for(it_col=m_data.begin(); it_col!=m_data.end(); it_col++) {
+//		for(it_col=m_data.begin(); it_col!=m_data.end(); it_col++) {
 
-			for(it_row=it_col->second.begin(); it_row!=it_col->second.end(); it_row++)
-				result(it_row->first) += it_row->second*vector.Get(it_col->first);
+//			for(it_row=it_col->second.begin(); it_row!=it_col->second.end(); it_row++)
+//				result(it_row->first) += it_row->second*vector.Get(it_col->first);
 
-		}
+//		}
 
-	}
+//	}
 
-	return result;
+//	return result;
 //#endif
 
-}*/
+//}
 
 template <class T>
 void CSparseArray<T>::Scale(T scalar) {
@@ -733,9 +779,9 @@ void CSparseArray<T>::Scale(T scalar) {
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 	typename map<size_t,T>::iterator it_col;
 
-	it_row = m_data.begin();
+    it_row = m_data->begin();
 
-	while(it_row != m_data.end()) {
+    while(it_row != m_data->end()) {
 
 		it_col = it_row->second.begin();
 
@@ -756,6 +802,7 @@ void CSparseArray<T>::Scale(T scalar) {
 template <class T>
 CSparseArray<T> CSparseArray<T>::Transpose(const CSparseArray<T>& array) {
 
+    // shallow copy
 	CSparseArray<T> result = array;
 
 	result.Transpose();
@@ -774,9 +821,9 @@ CSparseArray<T> CSparseArray<T>::Square(CSparseArray<T>& array) {
 	typename map<size_t,T>::iterator it_el;
 
 	// multiply each row with itself if there is enough overlap
-	for(it_row1 = array.m_data.begin(); it_row1 != array.m_data.end(); it_row1++) {
+    for(it_row1 = array.m_data->begin(); it_row1 != array.m_data->end(); it_row1++) {
 
-		for(it_row2 = array.m_data.begin(); it_row2 != array.m_data.end(); it_row2++) {
+        for(it_row2 = array.m_data->begin(); it_row2 != array.m_data->end(); it_row2++) {
 
 			// check if there is overlap
 			if(it_row1->second.rbegin()->first >= it_row2->second.begin()->first) {
@@ -810,9 +857,9 @@ size_t CSparseArray<T>::Nonzeros() {
 
 	size_t nnz = 0;
 
-	it_row = m_data.begin();
+    it_row = m_data->begin();
 
-	while(it_row!=m_data.end()){
+    while(it_row!=m_data->end()){
 
 		nnz += it_row->second.size();
 
@@ -832,9 +879,9 @@ bool CSparseArray<T>::Symmetric() {
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 	typename map<size_t,T>::iterator it_col;
 
-	it_row = m_data.begin();
+    it_row = m_data->begin();
 
-	while(it_row!=m_data.end()){
+    while(it_row!=m_data->end()){
 
 		it_col = it_row->second.begin();
 
@@ -864,10 +911,10 @@ void CSparseArray<T>::DeleteRow(size_t i) {
 
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 
-	it_row = m_data.find(i);
+    it_row = m_data->find(i);
 
-	if(it_row!=m_data.end())
-		m_data.erase(it_row);
+    if(it_row!=m_data->end())
+        m_data->erase(it_row);
 
 }
 
@@ -877,9 +924,9 @@ void CSparseArray<T>::DeleteColumn(size_t j) {
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 	typename map<size_t,T>::iterator it_col;
 
-	it_row = m_data.begin();
+    it_row = m_data->begin();
 
-	while(it_row!=m_data.end()){
+    while(it_row!=m_data->end()){
 
 		it_col = it_row->second.find(j);
 
@@ -895,12 +942,12 @@ void CSparseArray<T>::DeleteColumn(size_t j) {
 template <class T>
 void CSparseArray<T>::GetCSR(vector<size_t>& nz, vector<size_t>& j, vector<T>& v, bool ibase) {
 
-	typename map<size_t,map<size_t,T> >::iterator it_row = m_data.begin();
+    typename map<size_t,map<size_t,T> >::iterator it_row = m_data->begin();
 	typename map<size_t,T>::iterator it_col;
 
 	size_t nnz = ibase;
 
-	while(it_row!=m_data.end()){
+    while(it_row!=m_data->end()){
 
 		nz.push_back(nnz);
 
@@ -925,10 +972,10 @@ void CSparseArray<T>::GetCSR(vector<size_t>& nz, vector<size_t>& j, vector<T>& v
 template <class T>
 void CSparseArray<T>::GetCOO(std::vector<size_t>& i, std::vector<size_t>& j, std::vector<T>& v, bool ibase) {
 
-	typename map<size_t,map<size_t,T> >::iterator it_row = m_data.begin();
+    typename map<size_t,map<size_t,T> >::iterator it_row = m_data->begin();
 	typename map<size_t,T>::iterator it_col;
 
-	while(it_row!=m_data.end()){
+    while(it_row!=m_data->end()){
 
 		for (it_col=it_row->second.begin(); it_col!=it_row->second.end(); it_col++) {
 
@@ -963,9 +1010,9 @@ bool CSparseArray<T>::SaveToFile(const char* filename) {
 	typename map<size_t,map<size_t,T> >::iterator it_row;
 	typename map<size_t,T>::iterator it_col;
 
-	it_row = m_data.begin();
+    it_row = m_data->begin();
 
-	while(it_row != m_data.end()) {
+    while(it_row != m_data->end()) {
 
 		it_col = it_row->second.begin();
 
@@ -1003,7 +1050,6 @@ void CSparseArray<T>::Rand(size_t nnz) {
 
 }
 
-
 template class CSparseArray<float>;
 template class CSparseArray<double>;
 template class CSparseArray<int>;
@@ -1013,8 +1059,6 @@ template CSparseArray<double> CSparseArray<double>::operator *(const CSparseArra
 template CDenseArray<float> CSparseArray<float>::operator *(const CDenseArray<float>& x) const;
 template CDenseVector<float> CSparseArray<float>::operator *(const CDenseVector<float>& x) const;
 template CSparseArray<float> CSparseArray<float>::operator *(const CSparseArray<float>& x) const;
-
-
 template ostream& operator<< (ostream& os, CSparseArray<double>& x);
 template ostream& operator<< (ostream& os, CSparseArray<float>& x);
 

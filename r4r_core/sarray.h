@@ -47,6 +47,8 @@ class CSparseArray {
 	friend class CSparseLowerTriangularArray<T>;
 	friend class CSparseUpperTriangularArray<T>;
 
+    typedef std::map<size_t,std::map<size_t,T> > spdata;
+
 public:
 
 	//! Constructor
@@ -54,6 +56,21 @@ public:
 
 	//! Constructor
 	CSparseArray(size_t nrows, size_t ncols);
+
+    //! Copy constructor
+    CSparseArray(const CSparseArray<T>& x);
+
+    //! Copy constructor.
+    CSparseArray(size_t nrows, size_t ncols, std::shared_ptr<spdata> data);
+
+    //! Assignment operator for shallow copies.
+    CSparseArray<T>& operator =(const CSparseArray<T>& x);
+
+    //! Makes a deep copy.
+    CSparseArray<T> Clone();
+
+    //! Access to the data container.
+    std::shared_ptr<spdata> Data() { return m_data; }
 
     //! Creates an identiy matrix.
     void Eye();
@@ -167,10 +184,10 @@ public:
 
 protected:
 
-	size_t m_nrows;												//!< number of rows
-	size_t m_ncols;												//!< number of cols
-	bool m_transpose;											//!< transpose flag
-	std::map<size_t,std::map<size_t,T> > m_data;				//!< container that holds the array data
+    size_t m_nrows;                      //!< number of rows
+    size_t m_ncols;                      //!< number of cols
+    bool m_transpose;                    //!< transpose flag
+    std::shared_ptr<spdata> m_data;      //!< container that holds the array data
 
 };
 
