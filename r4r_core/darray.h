@@ -90,7 +90,6 @@ public:
     //! Constructor.
     CDenseArray(size_t nrows, size_t ncols, T val = T(0));
 
-
     //! Re-allocation.
     void Resize(size_t nrows, size_t ncols);
 

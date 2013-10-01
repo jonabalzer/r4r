@@ -11,7 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = tvdenoising
 TEMPLATE = app
 
-QMAKE_CXXFLAGS += -std=c++0x -O3
+QMAKE_CXXFLAGS += -std=c++0x -O2
 
 SOURCES += main.cpp\
            mainwindow.cpp \
