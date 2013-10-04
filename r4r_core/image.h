@@ -38,6 +38,53 @@ namespace R4R {
  */
 class CImage {
 
+    //! Image width.
+    virtual size_t Width() = 0;
+
+    //! Image width.
+    virtual size_t Height() = 0;
+
+};
+
+
+/*! \brief R4R's own gray value image class
+ *
+ *
+ *
+ */
+class CGrayValueImage: public CDenseArray<unsigned char> {
+
+public:
+
+    //! Constructor.
+    CGrayValueImage():CDenseArray<unsigned char>(){}
+
+    //! Constructor.
+    CGrayValueImage(size_t w, size_t h):CDenseArray<unsigned char>(h,w){}
+
+    //! Constructor.
+    template<class Array>
+    CGrayValueImage(const Array& img);
+
+#ifdef QT_GUI_LIB
+    //! Construct from QT image.
+    //CGrayValueImage(const QImage& img);
+
+    //! Cast to a QT image.
+    operator QImage() const;
+#endif
+
+    //! Get the width of the image.
+    size_t Width() { return NCols(); }
+
+    //! Get the height of the image.
+    size_t Height() { return NRows(); }
+
+    //! Compute gradient with centered differences.
+    std::vector<double> Gradient(const vec2& p) { return CDenseArray::Gradient<double>(p); }
+
+    //! Compute gradient with centered differences.
+    CVector<short,2> Gradient(size_t x, size_t y);
 
 };
 
@@ -71,17 +118,17 @@ public:
     operator QImage() const;
 #endif
 
-    //! Access using bilinear interpolation.
-    template<typename T> CVector<T,3> Get(const CVector<T,2>& p);
-
-    //! Compute gradient with centered differences.
-    template<typename T> CVector<T,3> Gradient(const CVector<T,2>& p, bool dir);
-
     //! Get the width of the image.
     size_t Width() { return NCols(); }
 
     //! Get the height of the image.
     size_t Height() { return NRows(); }
+
+    //! Compute gradient with centered differences.
+    std::vector<vec3> Gradient(const vec2& p) { return CDenseArray::Gradient<vec3>(p); }
+
+    //! Compute gradient with centered differences.
+    //CVector<short,2> Gradient(size_t x, size_t y);
 
     //! Creates a deep copy of a region of interest.
     //CRGBImage Clone(CRectangle<int> roi);
@@ -90,36 +137,6 @@ public:
     //template<typename T> CRGBImage Clone(CRectangle<T> roi);
 
 private:
-
-};
-
-/*! \brief R4R's own gray value image class
- *
- *
- *
- */
-class CGrayValueImage: public CDenseArray<unsigned char> {
-
-public:
-
-    //! Constructor.
-    CGrayValueImage():CDenseArray<unsigned char>(){}
-
-    //! Constructor.
-    CGrayValueImage(size_t w, size_t h):CDenseArray<unsigned char>(h,w){}
-
-    //! Constructor.
-    template<class Array>
-    CGrayValueImage(const Array& img);
-
-#ifdef QT_GUI_LIB
-    //! Construct from QT image.
-    //CGrayValueImage(const QImage& img);
-
-    //! Cast to a QT image.
-    operator QImage() const;
-#endif
-
 
 };
 

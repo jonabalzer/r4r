@@ -336,14 +336,18 @@ template class CLevenbergMarquardt<smatf,float>;
 
 template<class Matrix,typename T>
 CSplitBregman<Matrix,T>::CSplitBregman(const Matrix& A, const Matrix& nabla, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps):
-    m_K(A),
+    m_K(A.Clone()),
     m_nabla(nabla),
     m_f(f),
     m_u(u),
+    m_nablau(),
+    m_b(nabla.NRows(),f.NCols()),
+    m_d(nabla.NRows(),f.NCols()),
     m_solver(solver),
     m_mu(mu),
     m_lambda(lambda),
     m_eps(eps),
+    m_k(0),
     m_total_error(),
     m_constraint_violation() {
 
@@ -358,23 +362,16 @@ CSplitBregman<Matrix,T>::CSplitBregman(const Matrix& A, const Matrix& nabla, con
     // scale again
     m_K.Scale(-lambda);
 
+    // nabla u and b
+    m_nablau = m_nabla*m_u;
 
+    // store first constraint violation: \|\nabla u-d\|=\|\nabla u\|
+    m_constraint_violation.push_back(m_nablau.Norm2());
 
 }
 
 template<class Matrix,typename T>
 void CSplitBregman<Matrix,T>::Iterate(size_t n) {
-
-    // initialize
-    size_t k = 0;
-
-    // nabla u and b
-    CDenseArray<T> nablau = m_nabla*m_u;
-    CDenseArray<T> b(m_K.NRows()-m_f.NRows(),m_f.NCols());
-    CDenseArray<T> d = b.Clone();
-
-    // residuals
-    m_constraint_violation.push_back(nablau.Norm2());              // \|\nabla u-d\|=\|\nabla u\|
 
     // main loop
     do {
@@ -390,7 +387,7 @@ void CSplitBregman<Matrix,T>::Iterate(size_t n) {
                 if(i<m_f.NRows())
                     rhs.Set(i,j,m_f.Get(i,j)*m_mu);
                 else
-                    rhs.Set(i,j,(b.Get(i-m_f.NRows(),j)-d.Get(i-m_f.NRows(),j))*m_lambda);
+                    rhs.Set(i,j,(m_b.Get(i-m_f.NRows(),j)-m_d.Get(i-m_f.NRows(),j))*m_lambda);
 
             }
 
@@ -400,30 +397,30 @@ void CSplitBregman<Matrix,T>::Iterate(size_t n) {
         vector<double> rt = m_solver.Iterate(m_K,rhs,m_u);
 
         // if k=0, we need compute the initial residual
-        if(k==0) {
+        if(m_k==0) {
 
             double rtotal = rt.front()*rt.front(); //mu|Au-f|^2+\lambda\|nabla u-d\|^2
             double cv = m_constraint_violation.back()*m_constraint_violation.back()*m_lambda*m_lambda;
-            double temp = 0.5*(rtotal - cv)/m_mu + nablau.Norm1();   // remove one mu
+            double temp = 0.5*(rtotal - cv)/m_mu + m_nablau.Norm1();   // remove one mu
             m_total_error.push_back(temp);
 
             cout << "k" << "\t\t" << "Total error" << "\t\t" << "Feasability" << endl;
-            cout << k << "\t\t" << m_total_error.back() << "\t\t" << m_constraint_violation.back() << endl;
+            cout << m_k << "\t\t" << m_total_error.back() << "\t\t" << m_constraint_violation.back() << endl;
 
         }
 
         // update gradient
-        nablau = m_nabla*m_u;
+        m_nablau = m_nabla*m_u;
 
         // shrinkage
-        d = b + nablau;
-        d.Shrink(1/m_lambda);
+        m_d = m_b + m_nablau;
+        m_d.Shrink(1/m_lambda);
 
         // constraint violation
-        CDenseArray<T> rphi = nablau - d;
+        CDenseArray<T> rphi = m_nablau - m_d;
 
         // Bregman update
-        b = b + rphi;
+        m_b = m_b + rphi;
 
         // compute constraint violation
         m_constraint_violation.push_back(rphi.Norm2());
@@ -431,16 +428,16 @@ void CSplitBregman<Matrix,T>::Iterate(size_t n) {
         // total error
         double rtotal = rt.back()*rt.back(); //mu|Au-f|^2+\lambda\|nabla u-d\|^2
         double cv = m_constraint_violation.back()*m_constraint_violation.back()*m_lambda*m_lambda;
-        double temp = 0.5*(rtotal - cv)/m_mu + nablau.Norm1();   // remove one mu
+        double temp = 0.5*(rtotal - cv)/m_mu + m_nablau.Norm1();   // remove one mu
         m_total_error.push_back(temp);
 
         // increment
-        k++;
+        m_k++;
 
         // plot errors
-        cout << k << "\t\t" << m_total_error.back() << "\t\t" << m_constraint_violation.back() << endl;
+        cout << m_k << "\t\t" << m_total_error.back() << "\t\t" << m_constraint_violation.back() << endl;
 
-    } while(k<n && fabs(m_total_error.back()-m_total_error.at(m_total_error.size()-2))>m_eps);
+    } while(m_k<n && fabs(m_total_error.back()-m_total_error.at(m_total_error.size()-2))>m_eps);
 }
 
 template class CSplitBregman<smatf,float>;

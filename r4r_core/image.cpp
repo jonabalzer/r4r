@@ -37,7 +37,7 @@ CGrayValueImage::operator QImage() const {
 
         for(size_t j=0; j<NCols(); j++) {
 
-            unsigned char val = this->Get(i,j);
+            unsigned char val = CDenseArray<unsigned char>::Get(i,j);
 
             qimg.setPixel(j,i,qRgb(val,val,val));
 
@@ -89,6 +89,37 @@ CGrayValueImage::CGrayValueImage(const QImage& img):
 }
 #endif
 
+CVector<short,2> CGrayValueImage::Gradient(size_t x, size_t y) {
+
+    if(x<1 && y<1 && x>=Width()-1 && y>=Height()-1)
+        return CVector<short,2>();
+
+        short I0x, I0y, I1x, I1y;
+        I0x = short(this->Get(y,x-1));
+        I0y = short(this->Get(y-1,x));
+        I1x = short(this->Get(y,x+1));
+        I1y = short(this->Get(y+1,x));
+
+        short dIx, dIy;
+        dIx = I1x - I0x;
+        dIy = I1y - I0y;
+
+        if(!(dIx&1)) // even number
+            dIx /= 2;
+        else
+            dIx = (dIx-1)/2;
+
+        if(!(dIy&1)) // even number
+            dIy /= 2;
+        else
+            dIy = (dIy-1)/2;
+
+        CVector<short,2> grad = { dIx, dIy };
+
+        return grad;
+
+}
+
 CRGBImage::CRGBImage(size_t w, size_t h, unsigned char* data):
     CDenseArray<rgb>::CDenseArray(h,w) {
 
@@ -97,59 +128,6 @@ CRGBImage::CRGBImage(size_t w, size_t h, unsigned char* data):
     memcpy(pdata,data,3*w*h);
 
 }
-
-template<typename T>
-CVector<T,3> CRGBImage::Get(const CVector<T,2>& p) {
-
-    double u, v;
-    u = p.Get(0);
-    v = p.Get(1);
-
-    int i = (int)floor(v);
-    int j = (int)floor(u);
-
-    if(i<0 || i>=NRows()-1 || j<0 || j>=NCols()-1)
-        return vec3();
-
-    double vd = v - i;
-    double ud = u - j;
-
-    vec3 A00, A01, A10, A11, A0, A1;
-    A00 = vec3(CDenseArray<rgb>::Get(i,j));
-    A01 = vec3(CDenseArray<rgb>::Get(i,j+1));
-    A10 = vec3(CDenseArray<rgb>::Get(i+1,j));
-    A11 = vec3(CDenseArray<rgb>::Get(i+1,j+1));
-
-    A0 = A00*(1-ud) + A01*ud;
-    A1 = A10*(1-ud) + A11*ud;
-
-    return A0*(1-vd) + A1*vd;
-
-}
-
-template CVector<double,3> CRGBImage::Get<double>(const CVector<double,2>& p);
-template CVector<float,3> CRGBImage::Get<float>(const CVector<float,2>& p);
-
-template<typename T>
-CVector<T,3> CRGBImage::Gradient(const CVector<T,2>& p, bool dir) {
-
-    CVector<T,2> dp;
-
-    if(dir)
-        dp = { 0, 1 };
-    else
-        dp = { 1, 0 };
-
-    CVector<T,3> I0, I1;
-    I1 = Get(p+dp);
-    I0 = Get(p-dp);
-
-    return 0.5*(I1-I0);
-
-}
-
-template CVector<double,3> CRGBImage::Gradient<double>(const CVector<double,2>& p, bool dir);
-template CVector<float,3> CRGBImage::Gradient<float>(const CVector<float,2>& p, bool dir);
 
 #ifdef QT_GUI_LIB
 CRGBImage::CRGBImage(const QImage& img):

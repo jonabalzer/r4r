@@ -28,6 +28,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <vector>
 
 #ifdef __SSE4_1__
 #include <xmmintrin.h>
@@ -40,6 +41,11 @@
 
 namespace R4R {
 
+/*! \brief helper class for de-allocation of 16-byte aligned memory
+ *
+ *
+ *
+ */
 template<class T>
 class  CDenseMatrixDeallocator {
 
@@ -53,16 +59,25 @@ public:
 
 };
 
+/*! interace for bi-variate function objects
+ */
+class CBivariateFunction {
+
+public:
+
+    virtual double operator ()(double x, double y) const = 0;
+
+};
+
 // use typesafe enums in C++11
 enum class ETYPE {  NA = 0,
                     B1U = 1,
-                    C1U = 2, C1S = 3,
+                    C1U = 2, C1S = 3, C1U3 = 102,
                     S2U = 4, S2S = 5,
                     I4S = 6, I4U = 7,
                     F4S = 8,
                     L8S = 9, L8U = 10,
-                    D8S = 11,
-                    C3U = 12 };
+                    D8S = 11, D8S3 = 111 };
 
 template<class T> class CDenseVector;
 
@@ -106,7 +121,7 @@ public:
     CDenseArray(size_t nrows, size_t ncols, std::shared_ptr<T> data);
 
     //! Hardcopy.
-    CDenseArray<T> Clone();
+    CDenseArray<T> Clone() const;
 
 	//! Destructor.
 	virtual ~CDenseArray();
@@ -141,11 +156,27 @@ public:
 	//! Non-destructive element access.
 	T Get(size_t i, size_t j) const;
 
+    //! Non-destructive element access.
+    T Get(const CVector<int,2>& p) const { return this->Get(p.Get(0),p.Get(1)); }
+
+    /*! Non-destructive element access.
+     *
+     * Bilinear interpolation of inter-grid points.
+     *
+     */
+    template<typename U> U Get(const CVector<double,2>& p);
+
+    //! Compute central-difference approximation of the gradient of the array data.
+    template<typename U> std::vector<U> Gradient(const CVector<double,2>& p);
+
 	//! Overwrites data.
     void Set(std::shared_ptr<T> data);
 
     //! Access methods whose purpose is to provide a common interface with sparse matrix classes.
     void Set(size_t i, size_t j, T val) { this->operator()(i,j) = val; }
+
+    //! Set the array data according to an analytical function.
+    void Set(const CBivariateFunction& f);
 
 	//! Returns a column.
     CDenseVector<T> GetColumn(size_t j) const;
@@ -264,6 +295,9 @@ public:
     //! Writes a boolean matrix to a file stream.
     friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<bool>& x);
 
+    //! Writes a byte matrix to a file stream.
+    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<unsigned char>& x);
+
     //! Writes an integer matrix to a file stream.
     friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<int>& x);
 
@@ -276,11 +310,17 @@ public:
     //! Writes a double matrix to a file stream.
     friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<double>& x);
 
+    //! Writes a double vector field to a file stream.
+    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<CVector<double,3> >& x);
+
 	//! Reads matrix from a stream.
 	template <class U> friend std::istream& operator >> (std::istream& is, CDenseArray<U>& x);
 
     //! Reads matrix from a file stream.
     template <class U> friend std::ifstream& operator >> (std::ifstream& is, CDenseArray<U>& x);
+
+    //! Reads a vector field from a file stream.
+    friend std::ifstream& operator >> (std::ifstream& is, CDenseArray<CVector<double,3> >& x);
 
     //! Writes a matrix to a file.
     bool WriteToFile(const char* filename);
@@ -311,9 +351,6 @@ public:
 
     //! Returns the numerical type.
     ETYPE GetType();
-
-    //! Bilinear interpolation.
-    double InterpolateBilinearly(double u, double v) const;
 
     //! Matrix inversion.
     bool Invert();

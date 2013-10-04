@@ -65,6 +65,19 @@ double CMercerKernel<rgb>::Evaluate(rgb* x, rgb* y) {
 
 }
 
+template <>
+double CMercerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
+
+    double result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += InnerProduct(x[i],y[i]);
+
+    return result;
+
+}
+
+
 template<>
 double CMercerKernel<float>::Evaluate(float* x, float* y) {
 
@@ -493,6 +506,24 @@ double CHellingerKernel<rgb>::Evaluate(rgb* x, rgb* y) {
 
 }
 
+template <>
+double CHellingerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
+
+    double result = 0;
+    double xi, yi;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        vec3 xy = x[i]*y[i];
+
+        for(size_t j=0; j<3; j++)
+            result += sqrt(xy.Get(j));
+
+    }
+
+    return result;
+
+}
 template <>
 double CHellingerKernel<float>::Evaluate(float* x, float* y) {
 

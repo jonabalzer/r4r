@@ -90,7 +90,7 @@ CSparseArray<T>& CSparseArray<T>::operator =(const CSparseArray<T>& x) {
 
 
 template <class T>
-CSparseArray<T> CSparseArray<T>::Clone() {
+CSparseArray<T> CSparseArray<T>::Clone() const {
 
     // make copy of data
     spdata* data = new spdata;

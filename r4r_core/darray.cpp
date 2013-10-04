@@ -184,7 +184,20 @@ void CDenseArray<T>::Set(shared_ptr<T> data) {
 }
 
 template <class T>
-CDenseArray<T> CDenseArray<T>::Clone() {
+void CDenseArray<T>::Set(const CBivariateFunction& f) {
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++)
+            this->Set(i,j,f(j,i));
+
+    }
+
+}
+
+
+template <class T>
+CDenseArray<T> CDenseArray<T>::Clone() const {
 
     CDenseArray<T> result(m_nrows,m_ncols);
 
@@ -379,6 +392,17 @@ ofstream& operator<< (ofstream& os, const CDenseArray<bool>& x) {
 
 }
 
+ofstream& operator << (ofstream& os, const CDenseArray<unsigned char>& x) {
+
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::C1U << endl;
+
+    os.write((char*)(x.m_data.get()),sizeof(unsigned char)*x.NElems());
+
+    return os;
+
+}
+
+
 ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
 
     os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::I4S << endl;
@@ -419,6 +443,16 @@ ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
 
 }
 
+ofstream& operator<< (ofstream& os, const CDenseArray<vec3>& x) {
+
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::D8S3 << endl;
+
+    os.write((char*)(x.m_data.get()),sizeof(vec3)*x.NElems());
+
+    return os;
+
+}
+
 template<>
 ETYPE CDenseArray<bool>::GetType() { return ETYPE::B1U; }
 
@@ -433,6 +467,9 @@ ETYPE CDenseArray<float>::GetType() { return ETYPE::F4S; }
 
 template<>
 ETYPE CDenseArray<double>::GetType() { return ETYPE::D8S; }
+
+template<>
+ETYPE CDenseArray<vec3>::GetType() { return ETYPE::D8S3; }
 
 template<class U>
 istream& operator >> (istream& is, CDenseArray<U>& x) {
@@ -671,6 +708,46 @@ ifstream& operator >> (ifstream& in, CDenseArray<U>& x) {
 
 }
 
+ifstream& operator >> (ifstream& in, CDenseArray<vec3>& x) {
+
+    // read information
+    size_t nrows, ncols;
+    in >> nrows;
+    in >> ncols;
+
+    // resize storage if necessary
+    if(nrows!=x.NRows() || ncols!=x.NCols()) {
+
+        x.m_data.reset();
+
+#ifndef __SSE4_1__
+        x.m_data.reset(new vec3[nrows*ncols]);
+#else
+        x.m_data.reset((vec3*)_mm_malloc(nrows*ncols*sizeof(vec3),16));
+#endif
+        x.m_nrows = nrows;
+        x.m_ncols = ncols;
+        x.m_transpose = false;
+
+    }
+
+    int temp;
+    in >> temp;
+    ETYPE type = (ETYPE)temp;
+    in.get();
+
+    if(type!=ETYPE::D8S3) {
+
+        cerr << "Could not read file..." << endl;
+
+    }
+
+    in.read((char*)x.m_data.get(),nrows*ncols*sizeof(vec3));
+
+    return in;
+
+}
+
 template <class T>
 bool CDenseArray<T>::WriteToFile(const char* filename) {
 
@@ -833,6 +910,33 @@ void CDenseArray<T>::Shrink(double lambda) {
 
 }
 
+template <>
+void CDenseArray<vec3>::Shrink(double lambda) {
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++) {
+
+            vec3 x = this->Get(i,j);
+
+            double xabs = x.Norm2();
+
+            if(xabs<lambda)
+                this->Set(i,j,vec3());
+            else {
+
+                x.Normalize();
+
+                this->Set(i,j,(xabs-lambda)*x);
+
+            }
+
+        }
+
+    }
+
+}
+
 template <class T>
 bool CDenseArray<T>::Invert() {
 
@@ -974,6 +1078,27 @@ double CDenseArray<T>::Norm(double p) const {
 }
 
 template <>
+double CDenseArray<vec3>::Norm(double p) const {
+
+    assert(p>0);
+
+    double sum = 0;
+
+    vec3* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            sum += pow(fabs(pdata[i].Get(j)),p);
+
+    }
+
+    return pow(sum,1/p);
+
+}
+
+
+template <>
 double CDenseArray<rgb>::Norm(double p) const {
 
     assert(p>0);
@@ -1019,6 +1144,16 @@ void CDenseArray<T>::Abs() {
 }
 
 template <>
+void CDenseArray<vec3>::Abs() {
+
+    vec3* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pdata[i] = pdata[i].Abs();
+
+}
+
+template <>
 void CDenseArray<rgb>::Abs() {
 
     // unsigned char are positive already, so do nothing
@@ -1040,38 +1175,71 @@ T CDenseArray<T>::Get(size_t i, size_t j) const {
 
 }
 
-template <>
-double CDenseArray<rgb>::InterpolateBilinearly(double u, double v) const {
-
-    // this is just a method stump because the return type is not supported
-    return -1;
-
-}
-
-
 template <class T>
-double CDenseArray<T>::InterpolateBilinearly(double u, double v) const {
+template<typename U>
+U CDenseArray<T>::Get(const CVector<double,2> &p) {
 
-    if(u<0 || u>=(double)(NRows()-1) || v<0 || v>=(double)(NCols()-1))
-        return T();
+    double u, v;
+    u = p.Get(0);
+    v = p.Get(1);
 
-    int i = (int)(v + 0.5);
-    int j = (int)(u + 0.5);
+    int i = (int)floor(v);
+    int j = (int)floor(u);
+
+    if(i<0 || i>NRows()-2 || j<0 || j>NCols()-2)
+        return U(0);
 
     double vd = v - i;
     double ud = u - j;
 
-    double A00, A01, A10, A11, A0, A1;
-    A00 = (double)Get(i,j);
-    A01 = (double)Get(i,j+1);
-    A10 = (double)Get(i+1,j);
-    A11 = (double)Get(i+1,j+1);
+    U A00, A01, A10, A11, A0, A1;
+    A00 = U(Get(i,j));
+    A01 = U(Get(i,j+1));
+    A10 = U(Get(i+1,j));
+    A11 = U(Get(i+1,j+1));
+
     A0 = A00*(1-ud) + A01*ud;
     A1 = A10*(1-ud) + A11*ud;
 
     return A0*(1-vd) + A1*vd;
 
 }
+
+template double CDenseArray<double>::Get<double>(const CVector<double,2>& p);
+template double CDenseArray<unsigned char>::Get<double>(const CVector<double,2>& p);
+template vec3 CDenseArray<rgb>::Get<vec3>(const CVector<double,2>& p);
+template vec3 CDenseArray<vec3>::Get<vec3>(const CVector<double,2>& p);
+
+
+template <class T>
+template<typename U>
+vector<U> CDenseArray<T>::Gradient(const CVector<double,2>& p) {
+
+    if(p.Get(0)<1 || p.Get(1)<1 || p.Get(0)>=NCols()-2 || p.Get(1)>=NRows()-2)
+        return vector<U>(2);
+
+    vec2 dx = { 1, 0 };
+    vec2 dy = { 0, 1 };
+
+    U I0x, I0y, I1x, I1y;
+    I0x = this->Get<U>(p-dx);
+    I0y = this->Get<U>(p-dy);
+    I1x = this->Get<U>(p+dx);
+    I1y = this->Get<U>(p+dy);
+
+    cout << I0x << " " << I1x << endl;
+    vector<U> grad;
+    grad.push_back(0.5*(I1x-I0x));
+    grad.push_back(0.5*(I1y-I0y));
+    cout << grad[0] << " " << grad[1] << endl;
+
+    return grad;
+
+}
+
+template vector<double> CDenseArray<double>::Gradient<double>(const CVector<double,2>& p);
+template vector<double> CDenseArray<unsigned char>::Gradient<double>(const CVector<double,2>& p);
+template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(const CVector<double,2>& p);
 
 template <class T>
 CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {
@@ -1602,6 +1770,27 @@ rgb CDenseArray<rgb>::MAD() {
 
 }
 
+template <>
+vec3 CDenseArray<vec3>::MAD() {
+
+    vec3 median = Median();
+
+    CDenseArray<vec3> temp = this->Clone();
+
+    vec3* pdata = temp.m_data.get();
+    vec3* pthisdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            pdata[i](j) = fabs(pthisdata[i].Get(j)-median.Get(j));
+
+    }
+
+    return temp.Median();
+
+}
+
 template <class T>
 T CDenseArray<T>::Min() const {
 
@@ -1651,7 +1840,7 @@ T CDenseArray<T>::Max() const {
 
 	for(size_t i=0; i<m_nrows*m_ncols; i++) {
 
-        if(pdata[i]>=max)
+        if(max<=pdata[i])
             max = pdata[i];
 
 	}
@@ -1688,6 +1877,7 @@ template class CDenseArray<int>;
 template class CDenseArray<size_t>;
 template class CDenseArray<bool>;
 template class CDenseArray<rgb>;
+template class CDenseArray<vec3>;
 template class CDenseArray<unsigned char>;
 
 template ostream& operator<< (ostream& os, const CDenseArray<double>& x);
@@ -1706,6 +1896,8 @@ template ostream& operator<< (ostream& os, const CDenseArray<bool>& x);
 template istream& operator>> (istream& is, CDenseArray<bool>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<bool>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<rgb>& x);
+template ostream& operator<< (ostream& os, const CDenseArray<vec3>& x);
+
 template CVector<double,2> CDenseArray<double>::operator*(const CVector<double,2>& vector) const;
 template CVector<double,3> CDenseArray<double>::operator*(const CVector<double,3>& vector) const;
 template CVector<float,2> CDenseArray<float>::operator*(const CVector<float,2>& vector) const;

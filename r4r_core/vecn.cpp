@@ -127,6 +127,19 @@ double CVector<T,n>::Norm2() const {
 
 }
 
+
+template <typename T, u_int n>
+CVector<T,n> CVector<T,n>::Abs() const {
+
+    CVector<T,n> result;
+
+    for(u_int i=0; i<n; i++)
+        result(i) = (T)fabs(this->Get(i));
+
+    return result;
+
+}
+
 template<typename T,u_int n>
 bool CVector<T,n>::Normalize() {
 
@@ -171,19 +184,6 @@ istream& operator >> (istream& is, CVector<U,m>& x) {
 
 }
 
-// why is this explicitly instantiated?
-/*template <typename T,u_int n,typename U>
-CVector<U,n> operator*(const U& s, const CVector<T,n>& x) {
-
-    CVector<U,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = (U)x.Get(i)*s;
-
-    return result;
-
-}*/
-
 
 template class CVector<float,3>;
 template class CVector<double,3>;
@@ -194,6 +194,7 @@ template class CVector<unsigned char,2>;
 template class CVector<size_t,3>;
 template class CVector<size_t,2>;
 template class CVector<int,2>;
+template class CVector<short,2>;
 
 template ostream& operator << (ostream& os, const CVector<float,3>& x);
 template ostream& operator << (ostream& os, const CVector<double,3>& x);
@@ -201,6 +202,8 @@ template ostream& operator << (ostream& os, const CVector<unsigned char,3>& x);
 template ostream& operator << (ostream& os, const CVector<float,2>& x);
 template ostream& operator << (ostream& os, const CVector<double,2>& x);
 template ostream& operator << (ostream& os, const CVector<unsigned char,2>& x);
+template ostream& operator << (ostream& os, const CVector<int,2>& x);
+template ostream& operator << (ostream& os, const CVector<short,2>& x);
 template istream& operator >> (istream& is, CVector<float,3>& x);
 template istream& operator >> (istream& is, CVector<double,3>& x);
 template istream& operator >> (istream& is, CVector<unsigned char,3>& x);
@@ -208,14 +211,5 @@ template istream& operator >> (istream& is, CVector<float,2>& x);
 template istream& operator >> (istream& is, CVector<double,2>& x);
 template istream& operator >> (istream& is, CVector<unsigned char,2>& x);
 
-/*template CVector<double,2> operator*(const double& s, const CVector<double,2>& x);
-template CVector<double,3> operator*(const double& s, const CVector<double,3>& x);
-template CVector<float,2> operator*(const float& s, const CVector<float,2>& x);
-template CVector<float,3> operator*(const float& s, const CVector<float,3>& x);
-template CVector<unsigned char,3> operator*(const unsigned char& s, const CVector<unsigned char,3>& x);
-template CVector<double,3> operator*(const double& s, const CVector<unsigned char,3>& x);
-template CVector<double,2> operator*(const double& s, const CVector<unsigned char,2>& x);
-template CVector<double,3> operator*(const double& s, const CVector<float,3>& x);
-template CVector<double,2> operator*(const double& s, const CVector<float,2>& x);*/
 
 }

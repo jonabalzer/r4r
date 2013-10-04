@@ -106,7 +106,15 @@ public:
 	//! Constructor.
     CLevenbergMarquardt(CLeastSquaresProblem<Matrix,T>& problem, CIterativeLinearSolver<Matrix,T>& solver, T tau = 1.0);
 
-	//! Triggers execution of Levenberg-Marquardt steps.
+    /*! Triggers execution of Levenberg-Marquardt steps.
+     *
+     * \param[in] n maximum number of steps
+     * \param[in] epsilon1 bound on the gradient of the objective functional
+     * \param[in] epsilon2 bound on step size
+     * \param[in] silent verbosity flag
+     * \returns residual vector
+     *
+     */
     CDenseVector<T> Iterate(size_t n, T epsilon1, T epsilon2, bool silent = true);
 
 	//! Starts robust re-weighted Levenberg-Marquardt algorithm.
@@ -162,10 +170,14 @@ private:
     const Matrix& m_nabla;                                  //! gradient operator
     const CDenseArray<T>& m_f;                              //! force vector
     CDenseArray<T>& m_u;                                    //! solution vector
+    CDenseArray<T> m_nablau;
+    CDenseArray<T> m_d;
+    CDenseArray<T> m_b;
     const CIterativeLinearSolver<Matrix,T>& m_solver;       //! linear solver
     T m_mu;                                                 //! \f$\mu\f$
     T m_lambda;                                             //! \f$\lambda\f$
     double m_eps;                                           //! tolerance
+    size_t m_k;
     std::vector<double> m_total_error;                      //! total error over time
     std::vector<double> m_constraint_violation;             //! constraint violation over time
 
@@ -181,6 +193,9 @@ public:
 
     //! Computes residual and Jacobian.
     virtual void ComputeJacobian(Matrix& J) = 0;
+
+    //! Computes residual and Jacobian.
+    virtual void ComputeJacobianAndResidual(Matrix& J, CDenseArray<T>& r) = 0;
 
     //! Computes representation of gradient operator.
     virtual void ComputeGradientOperator(Matrix& nabla) = 0;

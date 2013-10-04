@@ -67,7 +67,7 @@ public:
     CSparseArray<T>& operator =(const CSparseArray<T>& x);
 
     //! Makes a deep copy.
-    CSparseArray<T> Clone();
+    CSparseArray<T> Clone() const;
 
     //! Access to the data container.
     std::shared_ptr<spdata> Data() { return m_data; }

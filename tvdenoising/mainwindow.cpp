@@ -40,6 +40,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_u()
 {
     ui->setupUi(this);
+    this->setFixedSize(this->width(),this->height());
+
 }
 
 MainWindow::~MainWindow()
@@ -159,7 +161,7 @@ void MainWindow::on_iterButton_clicked()
                                       ui->lambdaEdit->text().toFloat(),
                                       ui->epsEdit->text().toFloat());
 
-    // do one iteration step
+    // iterate
     solver.Iterate(ui->niterSpinBox->value());
 
     // convert back to image

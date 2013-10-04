@@ -38,6 +38,9 @@ public:
     //! \copydoc CLMTVMatrices::ComputeJacobian(R4R::smatf&)
     void ComputeJacobian(R4R::smatf& J);
 
+    //! \copydoc CLMTVMatrices::ComputeJacobianAndResidual(R4R::smatf&,R4R::CDenseArray<float>&)
+    void ComputeJacobianAndResidual(R4R::smatf& J, R4R::CDenseArray<float>& r) {}
+
     //! \copydoc CLMTVMatrices::ComputeGradientOperator(R4R::smatf&)
     void ComputeGradientOperator(R4R::smatf& nabla);
 
