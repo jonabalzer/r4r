@@ -146,7 +146,7 @@ class CSplitBregman {
 public:
 
     //! Constructor.
-    CSplitBregman(const Matrix& A, const Matrix& nabla, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps);
+    CSplitBregman(const Matrix& A, const Matrix& nabla, const CDenseArray<T>& f, CDenseArray<T>& u, const DIM& dim, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps);
 
     //! Deleted standard constructor.
     CSplitBregman() = delete;
@@ -173,6 +173,7 @@ private:
     CDenseArray<T> m_nablau;
     CDenseArray<T> m_d;
     CDenseArray<T> m_b;
+    DIM m_dim_grad;                                         //! dimensionality of the gradient
     const CIterativeLinearSolver<Matrix,T>& m_solver;       //! linear solver
     T m_mu;                                                 //! \f$\mu\f$
     T m_lambda;                                             //! \f$\lambda\f$
@@ -180,6 +181,9 @@ private:
     size_t m_k;
     std::vector<double> m_total_error;                      //! total error over time
     std::vector<double> m_constraint_violation;             //! constraint violation over time
+
+    //! Dimensionality-specific shrinking operator.
+    void Shrink();
 
 };
 

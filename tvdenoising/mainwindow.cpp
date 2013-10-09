@@ -156,6 +156,7 @@ void MainWindow::on_iterButton_clicked()
                                       m_nabla,
                                       f,
                                       u,
+                                      R4R::DIM::TWO,
                                       linsolver,
                                       ui->muEdit->text().toFloat(),
                                       ui->lambdaEdit->text().toFloat(),

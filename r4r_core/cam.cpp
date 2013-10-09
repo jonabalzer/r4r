@@ -540,6 +540,15 @@ ostream& operator << (ostream& os, const CView<U>& x) {
 
 }
 
+template <typename T>
+CVector<T,3> CView<T>::GetLocation() {
+
+    // F is always world->cam, but the origin is translation of cam->world Finv
+    return m_Finv.GetTranslation();
+
+}
+
+
 template class CView<float>;
 template class CView<double>;
 template ostream& operator << (ostream& os, const CView<float>& x);

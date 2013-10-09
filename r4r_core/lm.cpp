@@ -335,7 +335,7 @@ template class CLevenbergMarquardt<smatf,float>;
 
 
 template<class Matrix,typename T>
-CSplitBregman<Matrix,T>::CSplitBregman(const Matrix& A, const Matrix& nabla, const CDenseArray<T>& f, CDenseArray<T>& u, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps):
+CSplitBregman<Matrix,T>::CSplitBregman(const Matrix& A, const Matrix& nabla, const CDenseArray<T>& f, CDenseArray<T>& u, const DIM& dim, const CIterativeLinearSolver<Matrix,T>& solver, T mu, T lambda, double eps):
     m_K(A.Clone()),
     m_nabla(nabla),
     m_f(f),
@@ -343,6 +343,7 @@ CSplitBregman<Matrix,T>::CSplitBregman(const Matrix& A, const Matrix& nabla, con
     m_nablau(),
     m_b(nabla.NRows(),f.NCols()),
     m_d(nabla.NRows(),f.NCols()),
+    m_dim_grad(dim),
     m_solver(solver),
     m_mu(mu),
     m_lambda(lambda),
@@ -414,7 +415,8 @@ void CSplitBregman<Matrix,T>::Iterate(size_t n) {
 
         // shrinkage
         m_d = m_b + m_nablau;
-        m_d.Shrink(1/m_lambda);
+        //m_d.Shrink(1/m_lambda);
+        this->Shrink();
 
         // constraint violation
         CDenseArray<T> rphi = m_nablau - m_d;
@@ -438,7 +440,47 @@ void CSplitBregman<Matrix,T>::Iterate(size_t n) {
         cout << m_k << "\t\t" << m_total_error.back() << "\t\t" << m_constraint_violation.back() << endl;
 
     } while(m_k<n && fabs(m_total_error.back()-m_total_error.at(m_total_error.size()-2))>m_eps);
+
 }
+
+template<class Matrix,typename T>
+void CSplitBregman<Matrix,T>::Shrink() {
+
+    u_int dim = u_int(m_dim_grad);
+
+    assert(m_d.NRows()%dim==0);
+
+    size_t npts = m_d.NRows()/dim;
+
+    T li = 1/m_lambda;
+
+    for(size_t j=0; j<m_d.NCols(); j++) {
+
+        for(size_t i=0; i<npts; i++) {
+
+            T norm = 0;
+
+            for(u_int k=0; k<dim; k++)
+                norm += m_d.Get(i+k*npts,j)*m_d.Get(i+k*npts,j);
+
+            norm = sqrt(norm);
+
+            T factor;
+            if(norm<=li)
+                factor = 0;
+            else
+                factor = (norm - li)/norm;
+
+            for(u_int k=0; k<dim; k++)
+                m_d(i+k*npts,j) *= factor;
+
+        }
+
+    }
+
+}
+
+
 
 template class CSplitBregman<smatf,float>;
 

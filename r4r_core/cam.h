@@ -264,6 +264,9 @@ public:
      *
      * \param[in] filename file name
      *
+     * The world-to-cam transformation is stored only. Upon reading, the inverse
+     * can be re-computed.
+     *
      */
     bool SaveToFile(const char* filename);
 
@@ -284,6 +287,9 @@ public:
 
     //! Access to the cam.
     const CAbstractCam& GetCam() const { return m_cam; }
+
+    //! Gets the location of the projection center in world coordinates.
+    CVector<T,3> GetLocation();
 
 protected:
 

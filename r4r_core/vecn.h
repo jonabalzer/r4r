@@ -31,6 +31,8 @@ namespace R4R {
 
 template<typename T> class CDenseVector;
 
+enum class DIM {  ZERO = 0, ONE = 1, TWO = 2, THREE = 3 };
+
 /*! \brief short vectors of length \f$n\f$
  *
  *
