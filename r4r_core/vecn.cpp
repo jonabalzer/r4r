@@ -25,6 +25,8 @@
 #include <assert.h>
 #include <iostream>
 #include <string.h>
+#include <limits>
+
 
 #include "vecn.h"
 #include "darray.h"
@@ -157,6 +159,22 @@ bool CVector<T,n>::Normalize() {
     }
 
     return 1;
+
+}
+
+template<typename T,u_int n>
+T CVector<T,n>::Max() {
+
+    T max = std::numeric_limits<T>::min();
+
+    for(u_int i=0; i<n; i++) {
+
+        if(m_data[i]>max)
+            max = m_data[i];
+
+    }
+
+    return max;
 
 }
 

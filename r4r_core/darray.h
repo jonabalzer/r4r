@@ -164,10 +164,10 @@ public:
      * Bilinear interpolation of inter-grid points.
      *
      */
-    template<typename U> U Get(const CVector<double,2>& p);
+    template<typename U> U Get(const CVector<double,2>& p) const;
 
     //! Compute central-difference approximation of the gradient of the array data.
-    template<typename U> std::vector<U> Gradient(const CVector<double,2>& p);
+    template<typename U> std::vector<U> Gradient(const CVector<double,2>& p) const;
 
 	//! Overwrites data.
     void Set(std::shared_ptr<T> data);

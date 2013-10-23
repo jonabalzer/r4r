@@ -193,10 +193,10 @@ class CView {
 public:
 
     //! Constructor.
-    CView(CAbstractCam& cam);
+    CView(CAbstractCam& cam, u_int index = -1);
 
     //! Constructor.
-    CView(CAbstractCam& cam, const CRigidMotion<T,3>& F);
+    CView(CAbstractCam& cam, const CRigidMotion<T,3>& F, u_int index = -1);
 
     //! Copy constructor.
     CView(const CView<T>& view);
@@ -210,7 +210,7 @@ public:
      * \returns point in pixel coordinates
      *
      */
-    CVector<T,2> Project(const CVector<T,3>& x);
+    CVector<T,2> Project(const CVector<T,3>& x) const;
 
     /*! \brief Projects a set of points into the image plane.
      *
@@ -218,7 +218,7 @@ public:
      * \returns points in pixel coordinates
      *
      */
-    std::vector<CVector<T,2> > Project(const std::vector<CVector<T,3> >& x);
+    std::vector<CVector<T,2> > Project(const std::vector<CVector<T,3> >& x) const;
 
     /*! \brief Computes the projection of a point into the image plane and its Jacobian.
      *
@@ -227,7 +227,7 @@ public:
      * \param[out] J Jacobian of the projection mapping in u
      *
      */
-    void Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J);
+    void Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J) const;
 
     /*! \brief Converts a pixel into a viewing direction.
      *
@@ -236,7 +236,7 @@ public:
      * to world coordinates
      *
      */
-    CVector<T,3> Normalize(const CVector<T,2>& u);
+    CVector<T,3> Normalize(const CVector<T,2>& u) const;
 
     /*! \brief Converts a set of pixels into viewing directions.
      *
@@ -245,13 +245,13 @@ public:
      * to world coordinates
      *
      */
-    std::vector<CVector<T,3> > Normalize(const std::vector<CVector<T,2> >& u);
+    std::vector<CVector<T,3> > Normalize(const std::vector<CVector<T,2> >& u) const;
 
     //! Computes flow from differential motion in world coordinates.
-    CVector<T,2> Flow(const CVector<T,3>& x, const CVector<T,3>& dx);
+    CVector<T,2> Flow(const CVector<T,3>& x, const CVector<T,3>& dx) const;
 
     //! Computes flow from differential motion in world coordinates.
-    std::vector<CVector<T,2> > Flow(const std::vector<CVector<T,3> >& x,const std::vector<CVector<T,3> >& dx);
+    std::vector<CVector<T,2> > Flow(const std::vector<CVector<T,3> >& x,const std::vector<CVector<T,3> >& dx) const;
 
     /*! \brief Reads a intrisic/extrinsic parameters from a file.
      *
@@ -289,16 +289,91 @@ public:
     const CAbstractCam& GetCam() const { return m_cam; }
 
     //! Gets the location of the projection center in world coordinates.
-    CVector<T,3> GetLocation();
+    CVector<T,3> GetLocation() const;
+
+    //! Gets the principal axis of the projection device in world coordinates.
+    CVector<T,3> GetPrincipalAxis() const;
+
+    //! Return index of the view.
+    int GetIndex() const { return m_index; }
+
 
 protected:
 
     CAbstractCam& m_cam;               //!< intrinsic parameters
     CRigidMotion<T,3> m_F;             //!< extrinsic parameters
     CRigidMotion<T,3> m_Finv;          //!< inverse extrinsic parameters
+    int m_index;                       //!< view counter
 
 };
 
+/*! functor for comparing two views */
+template <typename T=double>
+class CIndexViewComparator {
+
+    //! Compares two views based on their index.
+    bool operator()(const CView<T>& x, const CView<T>& y) { return x.GetIndex() <= y.GetIndex(); }
+
+};
+
+/*! functor for comparing two views */
+template <typename T=double>
+class CDistanceViewComparator {
+
+public:
+
+    //! Constructor.
+    CDistanceViewComparator(const CVector<T,3>& x): m_x(x) {}
+
+    //! Rates two views based on the distance to a given point.
+    bool operator()(const CView<T>& x, const CView<T>& y);
+
+protected:
+
+    CVector<T,3> m_x;  //! point in space
+
+};
+
+/*! functor for comparing two views */
+template <typename T=double>
+class CAngleViewComparator: public CDistanceViewComparator<T> {
+
+public:
+
+    //! Constructor.
+    CAngleViewComparator(const CVector<T,3>& x, const CVector<T,3>& n): CDistanceViewComparator<T>::CDistanceViewComparator(x), m_n(n) {}
+
+    //! Rates two views based on the angle of their principal axes with the normal at that point.
+    bool operator()(const CView<T>& x, const CView<T>& y);
+
+private:
+
+    CVector<T,3> m_n;  //! normal
+
+    using CDistanceViewComparator<T>::m_x;
+
+};
+
+/*! functor for comparing two pairs of views */
+template <typename T=double>
+class CDistanceViewPairComparator {
+
+public:
+
+    //! Rates a pair based on the distance between its two views.
+    bool operator()(const std::pair<CView<T>,CView<T> > & x, const std::pair<CView<T>,CView<T> >& y);
+
+};
+
+template <typename T=double>
+class CAngleViewPairComparator {
+
+public:
+
+    //! Rates a pair based on the angle between their principal axes.
+    bool operator()(const std::pair<CView<T>,CView<T> > & x, const std::pair<CView<T>,CView<T> >& y);
+
+};
 
 }
 

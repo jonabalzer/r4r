@@ -1177,7 +1177,7 @@ T CDenseArray<T>::Get(size_t i, size_t j) const {
 
 template <class T>
 template<typename U>
-U CDenseArray<T>::Get(const CVector<double,2> &p) {
+U CDenseArray<T>::Get(const CVector<double,2> &p) const {
 
     double u, v;
     u = p.Get(0);
@@ -1205,15 +1205,15 @@ U CDenseArray<T>::Get(const CVector<double,2> &p) {
 
 }
 
-template double CDenseArray<double>::Get<double>(const CVector<double,2>& p);
-template double CDenseArray<unsigned char>::Get<double>(const CVector<double,2>& p);
-template vec3 CDenseArray<rgb>::Get<vec3>(const CVector<double,2>& p);
-template vec3 CDenseArray<vec3>::Get<vec3>(const CVector<double,2>& p);
+template double CDenseArray<double>::Get<double>(const CVector<double,2>& p) const;
+template double CDenseArray<unsigned char>::Get<double>(const CVector<double,2>& p) const;
+template vec3 CDenseArray<rgb>::Get<vec3>(const CVector<double,2>& p) const;
+template vec3 CDenseArray<vec3>::Get<vec3>(const CVector<double,2>& p) const;
 
 
 template <class T>
 template<typename U>
-vector<U> CDenseArray<T>::Gradient(const CVector<double,2>& p) {
+vector<U> CDenseArray<T>::Gradient(const CVector<double,2>& p) const {
 
     if(p.Get(0)<1 || p.Get(1)<1 || p.Get(0)>=NCols()-2 || p.Get(1)>=NRows()-2)
         return vector<U>(2);
@@ -1227,19 +1227,17 @@ vector<U> CDenseArray<T>::Gradient(const CVector<double,2>& p) {
     I1x = this->Get<U>(p+dx);
     I1y = this->Get<U>(p+dy);
 
-    cout << I0x << " " << I1x << endl;
     vector<U> grad;
     grad.push_back(0.5*(I1x-I0x));
     grad.push_back(0.5*(I1y-I0y));
-    cout << grad[0] << " " << grad[1] << endl;
 
     return grad;
 
 }
 
-template vector<double> CDenseArray<double>::Gradient<double>(const CVector<double,2>& p);
-template vector<double> CDenseArray<unsigned char>::Gradient<double>(const CVector<double,2>& p);
-template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(const CVector<double,2>& p);
+template vector<double> CDenseArray<double>::Gradient<double>(const CVector<double,2>& p) const;
+template vector<double> CDenseArray<unsigned char>::Gradient<double>(const CVector<double,2>& p) const;
+template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(const CVector<double,2>& p) const;
 
 template <class T>
 CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {

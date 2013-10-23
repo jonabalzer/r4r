@@ -177,7 +177,7 @@ vector<CVector<T,n> > CTransformation<T,n>::Transform(const vector<CVector<T,n> 
 }
 
 template <typename T,u_int n>
-vector<CVector<T,n> > CTransformation<T,n>::DifferentialTransform(const vector<CVector<T,n> >& x) {
+vector<CVector<T,n> > CTransformation<T,n>::DifferentialTransform(const vector<CVector<T,n> >& x) const {
 
     vector<CVector<T,n> > result(x.size());
 
@@ -306,12 +306,24 @@ CDenseArray<T> CTransformation<T,n>::GetJacobian() {
 }
 
 template <typename T,u_int n>
-CVector<T,n> CTransformation<T,n>::GetTranslation() {
+CVector<T,n> CTransformation<T,n>::GetTranslation() const {
 
     CVector<T,n> result;
 
     for(u_int i=0; i<n; i++)
         result(i) = m_F[n*n+i];
+
+    return result;
+
+}
+
+template<typename T,u_int n>
+CVector<T,n> CTransformation<T,n>::GetPrincipalAxis() const {
+
+    CVector<T,n> result;
+
+    for(u_int i=0; i<n; i++)
+        result(i) = m_F[n*(n-1)+i];
 
     return result;
 
@@ -660,7 +672,6 @@ bool CRigidMotion<T,3>::Invert() {
     return 0;
 
 }
-
 
 template class CRigidMotion<double,3>;
 template class CRigidMotion<float,3>;

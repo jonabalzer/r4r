@@ -374,16 +374,18 @@ mat CPinholeCam::GetProjectionMatrix() const {
 
 
 template<typename T>
-CView<T>::CView(CAbstractCam& cam):
+CView<T>::CView(CAbstractCam& cam, u_int index):
     m_cam(cam),
     m_F(),
-    m_Finv() {}
+    m_Finv(),
+    m_index(index) {}
 
 template<typename T>
-CView<T>::CView(CAbstractCam& cam, const CRigidMotion<T,3> &F):
+CView<T>::CView(CAbstractCam& cam, const CRigidMotion<T,3> &F, u_int index):
     m_cam(cam),
     m_F(F),
-    m_Finv(F) {
+    m_Finv(F),
+    m_index(index) {
 
     m_Finv.Invert();
 
@@ -393,7 +395,8 @@ template<typename T>
 CView<T>::CView(const CView<T>& view):
     m_cam(view.m_cam),
     m_F(view.m_F),
-    m_Finv(view.m_Finv) {
+    m_Finv(view.m_Finv),
+    m_index(view.m_index) {
 
 }
 
@@ -405,6 +408,7 @@ CView<T> CView<T>::operator=(const CView<T>& view) {
         m_cam = view.m_cam;
         m_F = view.m_F;
         m_Finv = view.m_Finv;
+        m_index = view.m_index;
 
     }
 
@@ -413,7 +417,7 @@ CView<T> CView<T>::operator=(const CView<T>& view) {
 }
 
 template<typename T>
-CVector<T,2> CView<T>::Project(const CVector<T,3>& x) {
+CVector<T,2> CView<T>::Project(const CVector<T,3>& x) const {
 
     CVector<T,3> xc = m_F.Transform(x);
 
@@ -422,7 +426,7 @@ CVector<T,2> CView<T>::Project(const CVector<T,3>& x) {
 }
 
 template<typename T>
-void CView<T>::Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J) {
+void CView<T>::Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J) const {
 
     CVector<T,3> xc = m_F.Transform(x);
 
@@ -431,7 +435,7 @@ void CView<T>::Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J
 }
 
 template<typename T>
-CVector<T,2> CView<T>::Flow(const CVector<T,3>& x, const CVector<T,3>& dx) {
+CVector<T,2> CView<T>::Flow(const CVector<T,3>& x, const CVector<T,3>& dx) const {
 
     CVector<T,3> dxc = m_F.DifferentialTransform(dx);
     CVector<T,3> xc = m_F.Transform(x);
@@ -441,7 +445,7 @@ CVector<T,2> CView<T>::Flow(const CVector<T,3>& x, const CVector<T,3>& dx) {
 }
 
 template<typename T>
-vector<CVector<T,2> > CView<T>::Project(const std::vector<CVector<T,3> >& x) {
+vector<CVector<T,2> > CView<T>::Project(const std::vector<CVector<T,3> >& x) const {
 
     vector<CVector<T,3> > xc = m_F.Transform(x);
 
@@ -450,7 +454,7 @@ vector<CVector<T,2> > CView<T>::Project(const std::vector<CVector<T,3> >& x) {
 }
 
 template<typename T>
-CVector<T,3> CView<T>::Normalize(const CVector<T,2>& u) {
+CVector<T,3> CView<T>::Normalize(const CVector<T,2>& u) const {
 
     CVector<T,3> xc = m_cam.Normalize(u);
 
@@ -459,7 +463,7 @@ CVector<T,3> CView<T>::Normalize(const CVector<T,2>& u) {
 }
 
 template<typename T>
-vector<CVector<T,3> > CView<T>::Normalize(const std::vector<CVector<T,2> >& u) {
+vector<CVector<T,3> > CView<T>::Normalize(const std::vector<CVector<T,2> >& u) const {
 
     vector<CVector<T,3> > xc = m_cam.Normalize(u);
 
@@ -468,7 +472,7 @@ vector<CVector<T,3> > CView<T>::Normalize(const std::vector<CVector<T,2> >& u) {
 }
 
 template<typename T>
-vector<CVector<T,2> > CView<T>::Flow(const vector<CVector<T,3> >& x, const vector<CVector<T,3> >& dx) {
+vector<CVector<T,2> > CView<T>::Flow(const vector<CVector<T,3> >& x, const vector<CVector<T,3> >& dx) const {
 
      vector<CVector<T,3> > dxc = m_F.DifferentialTransform(dx);
      vector<CVector<T,3> > xc = m_F.Transform(x);
@@ -541,17 +545,75 @@ ostream& operator << (ostream& os, const CView<U>& x) {
 }
 
 template <typename T>
-CVector<T,3> CView<T>::GetLocation() {
+CVector<T,3> CView<T>::GetLocation() const {
 
     // F is always world->cam, but the origin is translation of cam->world Finv
     return m_Finv.GetTranslation();
 
 }
 
+template <typename T>
+CVector<T,3> CView<T>::GetPrincipalAxis() const {
+
+    // F is always world->cam, but the origin is translation of cam->world Finv
+    return m_Finv.GetPrincipalAxis();
+
+}
 
 template class CView<float>;
 template class CView<double>;
 template ostream& operator << (ostream& os, const CView<float>& x);
 template ostream& operator << (ostream& os, const CView<double>& x);
+
+
+template <typename T>
+bool CDistanceViewComparator<T>::operator ()(const CView<T>& x, const CView<T>& y) {
+
+    CVector<T,3> locx = x.GetLocation();
+    CVector<T,3> locy = y.GetLocation();
+
+    return (locx - m_x).Norm2() < (locy - m_x).Norm2();
+
+}
+
+template class CDistanceViewComparator<double>;
+
+template <typename T>
+bool CAngleViewComparator<T>::operator ()(const CView<T>& x, const CView<T>& y) {
+
+    CVector<T,3> dx = x.GetLocation() - m_x;
+    CVector<T,3> dy = y.GetLocation() - m_x;
+    dx.Normalize();
+    dy.Normalize();
+
+    return InnerProduct(dx,m_n) < InnerProduct(dy,m_n);
+
+}
+
+template class CAngleViewComparator<double>;
+
+template <typename T>
+bool CDistanceViewPairComparator<T>::operator ()(const std::pair<CView<T>,CView<T> >& x, const std::pair<CView<T>,CView<T> >& y) {
+
+    CVector<T,3> dx = x.first.GetLocation() - x.second.GetLocation();
+    CVector<T,3> dy = y.first.GetLocation() - y.second.GetLocation();
+
+    return dx.Norm2() < dy.Norm2();
+
+}
+
+template class CDistanceViewPairComparator<double>;
+
+template <typename T>
+bool CAngleViewPairComparator<T>::operator ()(const std::pair<CView<T>,CView<T> >& x, const std::pair<CView<T>,CView<T> >& y) {
+
+    T ax = InnerProduct(x.first.GetPrincipalAxis(),x.second.GetPrincipalAxis());
+    T ay = InnerProduct(y.first.GetPrincipalAxis(),y.second.GetPrincipalAxis());
+
+    return ay > ax;  // same as 1 - ax < 1 - ay
+
+}
+
+template class CAngleViewPairComparator<double>;
 
 }

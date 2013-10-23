@@ -83,16 +83,20 @@ public:
     std::vector<CVector<T,n> > Transform(const std::vector<CVector<T,n> >& x) const;
 
     //! Parallelized mass transformation.
-    std::vector<CVector<T,n> > DifferentialTransform(const std::vector<CVector<T,n> >& x);
+    std::vector<CVector<T,n> > DifferentialTransform(const std::vector<CVector<T,n> >& x) const;
 
     //! Returns Jacobian of the transformation, i.e., its linear part.
     CDenseArray<T> GetJacobian();
 
     //! Access to translation vector.
-    CVector<T,n> GetTranslation();
+    CVector<T,n> GetTranslation() const;
+
+    //! Access to the principal axis (e.g., of a pinhole camera).
+    CVector<T,n> GetPrincipalAxis() const;
 
     //! Checks if two transformations are equal.
     bool operator==(const CTransformation<T,n>& x);
+
 
 protected:
 
@@ -249,6 +253,8 @@ public:
     //! Checks if two transformations are equal.
     bool operator==(CRigidMotion<T,n>& x) { return CTransformation<T,n>::operator ==(x); }
 
+
+
 protected:
 
     using CTransformation<T,n>::m_F;
@@ -274,7 +280,7 @@ public:
     //! \copydoc CTransformation<T,n>::Invert()
     virtual bool Invert();
 
-protected:
+ protected:
 
     using CTransformation<T,2>::m_F;
 

@@ -98,7 +98,10 @@ public:
     template <class U,u_int m> friend std::istream& operator >> (std::istream& is, CVector<U,m>& x);
 
     //! Low-level acces to the data.
-    T* Data() { return m_data; }
+    const T* Data() const { return m_data; }
+
+    //! Maximum.
+    T Max();
 
 private:
 

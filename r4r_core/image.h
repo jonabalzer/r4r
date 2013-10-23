@@ -125,7 +125,7 @@ public:
     size_t Height() { return NRows(); }
 
     //! Compute gradient with centered differences.
-    std::vector<vec3> Gradient(const vec2& p) { return CDenseArray::Gradient<vec3>(p); }
+    std::vector<vec3> Gradient(const vec2& p) const { return CDenseArray::Gradient<vec3>(p); }
 
     //! Compute gradient with centered differences.
     //CVector<short,2> Gradient(size_t x, size_t y);
