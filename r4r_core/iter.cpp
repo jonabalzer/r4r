@@ -222,6 +222,7 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
     // residual of the non-square system
     CDenseArray<T> R = B - A*X;
 
+    // strore it
     vector<double> res;
     res.push_back(R.Norm2());
 
@@ -239,6 +240,9 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
 
     if(!m_silent)
         cout << "k=" << k << ": " << res.back() << endl;
+
+    if(res.back()<m_eps)
+        return res;
 
     while(k<m_n) {
 
@@ -263,7 +267,8 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
         if(!m_silent)
             cout << "k=" << k << ": " << res.back() << endl;
 
-        if(fabs(res.at(res.size()-2)-res.back())<m_eps)
+        // FIXME: add another constant that monitors absolute value of residual
+        if(fabs(res.at(res.size()-2)-res.back())<m_eps || res.back()<m_eps)
             break;
 
         // update residual of normal equation

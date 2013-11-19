@@ -146,10 +146,10 @@ CPinholeCam::CPinholeCam(size_t w, size_t h) {
 
     m_size[0] = w;
     m_size[1] = h;
-    m_f[0] = m_size[0];
-    m_f[1] = m_size[1];
-    m_c[0] = 0.5*m_f[0];
-    m_c[1] = 0.5*m_f[1];
+    m_f[0] = min(m_size[0],m_size[1]);
+    m_f[1] = m_f[0];
+    m_c[0] = 0.5*w;
+    m_c[1] = 0.5*h;
 
     for(size_t i=0;i<5;i++)
         m_k[i]=0;
@@ -560,6 +560,64 @@ CVector<T,3> CView<T>::GetPrincipalAxis() const {
 
 }
 
+template <typename T>
+void CView<T>::Translate(const CVector<T,3>& t) {
+
+    for(u_int i=0; i<3; i++)
+        m_Finv(i,3) += t.Get(i);
+
+    m_F = m_Finv;
+    m_F.Invert();
+
+}
+
+template <typename T>
+void CView<T>::DifferentialTranslate(const CVector<T,3>& t) {
+
+    // first convert into world coordinates
+    CVector<T,3> tw = m_Finv.DifferentialTransform(t);
+
+    // now modify frames
+    for(u_int i=0; i<3; i++)
+        m_Finv(i,3) += tw.Get(i);
+
+    m_F = m_Finv;
+    m_F.Invert();
+
+}
+
+template <typename T>
+void CView<T>::Orbit(const CVector<T,3>& center, const CVector<T,3>& axis) {
+
+    // first get location in world
+    CVector<T,3> origin = this->GetLocation();
+
+    // lever
+    CVector<T,3> d = origin - center;
+
+    // create rotation
+    CRigidMotion<T,3> R(0,0,0,axis.Get(0),axis.Get(1),axis.Get(2));
+
+    // rotate lever and convert it back into point
+    d = R.Transform(d);
+    origin = center + d;
+
+    // rotate axes
+    CTransformation<T,3> Finv = R*m_Finv;
+    m_Finv = reinterpret_cast<CRigidMotion<T,3>& >(Finv);
+
+    // set new origin
+    for(u_int i=0; i<3; i++)
+        m_Finv(i,3) = origin.Get(i);
+
+    // also set inverse
+    m_F = m_Finv;
+    m_F.Invert();
+
+}
+
+
+
 template class CView<float>;
 template class CView<double>;
 template ostream& operator << (ostream& os, const CView<float>& x);
@@ -581,12 +639,19 @@ template class CDistanceViewComparator<double>;
 template <typename T>
 bool CAngleViewComparator<T>::operator ()(const CView<T>& x, const CView<T>& y) {
 
-    CVector<T,3> dx = x.GetLocation() - m_x;
-    CVector<T,3> dy = y.GetLocation() - m_x;
-    dx.Normalize();
-    dy.Normalize();
+    // flip relation, cost is 1 - key
+    return this->GetKey(x) > this->GetKey(y);
 
-    return InnerProduct(dx,m_n) < InnerProduct(dy,m_n);
+}
+
+template <typename T>
+T CAngleViewComparator<T>::GetKey(const CView<T>& x) {
+
+    CVector<T,3> dx = x.GetLocation() - m_x;
+
+    dx.Normalize();
+
+    return InnerProduct(dx,m_n);
 
 }
 
@@ -607,6 +672,7 @@ template class CDistanceViewPairComparator<double>;
 template <typename T>
 bool CAngleViewPairComparator<T>::operator ()(const std::pair<CView<T>,CView<T> >& x, const std::pair<CView<T>,CView<T> >& y) {
 
+    // the principal axes are normalized!
     T ax = InnerProduct(x.first.GetPrincipalAxis(),x.second.GetPrincipalAxis());
     T ay = InnerProduct(y.first.GetPrincipalAxis(),y.second.GetPrincipalAxis());
 

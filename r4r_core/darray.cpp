@@ -49,7 +49,7 @@ template <class T>
 CDenseArray<T>::CDenseArray():
 	m_nrows(0),
 	m_ncols(0),
-	m_transpose(false),
+    m_transpose(false),
     m_data() {
 
 }
@@ -1206,6 +1206,7 @@ U CDenseArray<T>::Get(const CVector<double,2> &p) const {
 }
 
 template double CDenseArray<double>::Get<double>(const CVector<double,2>& p) const;
+template double CDenseArray<float>::Get<double>(const CVector<double,2>& p) const;
 template double CDenseArray<unsigned char>::Get<double>(const CVector<double,2>& p) const;
 template vec3 CDenseArray<rgb>::Get<vec3>(const CVector<double,2>& p) const;
 template vec3 CDenseArray<vec3>::Get<vec3>(const CVector<double,2>& p) const;
@@ -1681,9 +1682,6 @@ CDenseArray<T> CDenseArray<T>::ScaleColumns(const CDenseVector<T>& s) {
 
 }
 
-
-
-
 template <class T>
 void CDenseArray<T>::Add(const T& scalar) {
 
@@ -1691,6 +1689,16 @@ void CDenseArray<T>::Add(const T& scalar) {
 
     for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] += scalar;
+
+}
+
+template <class T>
+void CDenseArray<T>::Subtract(const T& scalar) {
+
+    T* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pdata[i] = pdata[i] - scalar;
 
 }
 
@@ -1721,7 +1729,6 @@ T CDenseArray<T>::Variance() {
 
     T* pdata = temp.m_data.get();
     T* pthisdata = m_data.get();
-
 
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] = (pthisdata[i] - mean)*(pthisdata[i] - mean);
@@ -1771,6 +1778,7 @@ rgb CDenseArray<rgb>::MAD() {
 template <>
 vec3 CDenseArray<vec3>::MAD() {
 
+    //! FIXME: This is not per channel but w.r.t. to order-relation of vec3.
     vec3 median = Median();
 
     CDenseArray<vec3> temp = this->Clone();
@@ -1832,7 +1840,7 @@ rgb CDenseArray<rgb>::Min() const {
 template <class T>
 T CDenseArray<T>::Max() const {
 
-	T max = numeric_limits<T>::min();
+    T max = numeric_limits<T>::max()*(-1);
 
     T* pdata = m_data.get();
 

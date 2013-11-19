@@ -24,11 +24,18 @@ end
 if(type==111)
     data = fread(fid,[1,nrows*ncols*3],'double');
     
-    x = reshape(data(1:3:length(data)),[nrows,ncols]);
-    y = reshape(data(2:3:length(data)),[nrows,ncols]);
-    z = reshape(data(3:3:length(data)),[nrows,ncols]);
+    if(numel(data)==nrows*ncols*3)
     
-    data = cat(3,x,y,z);
+        x = reshape(data(1:3:length(data)),[nrows,ncols]);
+        y = reshape(data(2:3:length(data)),[nrows,ncols]);
+        z = reshape(data(3:3:length(data)),[nrows,ncols]);
+    
+        data = cat(3,x,y,z);
+        
+    else
+        data = zeros([nrows,ncols,3]);
+    end
+    
 end
 
 

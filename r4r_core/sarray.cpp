@@ -800,6 +800,24 @@ void CSparseArray<T>::Scale(T scalar) {
 }
 
 template <class T>
+void CSparseArray<T>::ScaleRow(size_t i, T scalar) {
+
+    typename map<size_t,map<size_t,T> >::iterator it_row;
+
+    it_row = m_data->find(i);
+
+    if(it_row!=m_data->end()) {
+
+        typename map<size_t,T>::iterator it_col;
+
+        for(it_col=it_row->second.begin(); it_col !=it_row->second.end(); ++it_col)
+            it_col->second *= scalar;
+
+    }
+
+}
+
+template <class T>
 CSparseArray<T> CSparseArray<T>::Transpose(const CSparseArray<T>& array) {
 
     // shallow copy
@@ -812,13 +830,14 @@ CSparseArray<T> CSparseArray<T>::Transpose(const CSparseArray<T>& array) {
 }
 
 template <class T>
-CSparseArray<T> CSparseArray<T>::Square(CSparseArray<T>& array) {
+CSparseArray<T> CSparseArray<T>::Square(const CSparseArray<T> &array) {
+
 
 	CSparseArray<T> result(array.m_nrows,array.m_nrows);
 
-	typename map<size_t,map<size_t,T> >::iterator it_row1;
-	typename map<size_t,map<size_t,T> >::iterator it_row2;
-	typename map<size_t,T>::iterator it_el;
+    typename map<size_t,map<size_t,T> >::const_iterator it_row1;
+    typename map<size_t,map<size_t,T> >::const_iterator it_row2;
+    typename map<size_t,T>::const_iterator it_el;
 
 	// multiply each row with itself if there is enough overlap
     for(it_row1 = array.m_data->begin(); it_row1 != array.m_data->end(); it_row1++) {
@@ -992,7 +1011,7 @@ void CSparseArray<T>::GetCOO(std::vector<size_t>& i, std::vector<size_t>& j, std
 }
 
 template <class T>
-bool CSparseArray<T>::SaveToFile(const char* filename) {
+bool CSparseArray<T>::WriteToFile(const char* filename) {
 
 	ofstream out(filename);
 

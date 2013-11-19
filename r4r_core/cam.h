@@ -297,6 +297,29 @@ public:
     //! Return index of the view.
     int GetIndex() const { return m_index; }
 
+    /*! Translates the origin of the view.
+     *
+     * \param[in] t translation vector in world coordinates
+     *
+     */
+    void Translate(const CVector<T,3>& t);
+
+    /*! Translates the origin of the view.
+     *
+     * \param[in] t translation vector in camera coordinates
+     *
+     */
+    void DifferentialTranslate(const CVector<T,3>& t);
+
+    /*! Orbits the camera around a point.
+     *
+     * \param[in] center center of orbit in world coordinates
+     * \param[in] axis rotation axis in world coordinates
+     */
+    void Orbit(const CVector<T,3>& center, const CVector<T,3>& axis);
+
+    //! Rotates the view so that it looks at a given point.
+    void LookAt(CVector<T,3> x);
 
 protected:
 
@@ -341,10 +364,14 @@ class CAngleViewComparator: public CDistanceViewComparator<T> {
 public:
 
     //! Constructor.
-    CAngleViewComparator(const CVector<T,3>& x, const CVector<T,3>& n): CDistanceViewComparator<T>::CDistanceViewComparator(x), m_n(n) {}
+    CAngleViewComparator(const CVector<T,3>& x, const CVector<T,3>& n): CDistanceViewComparator<T>::CDistanceViewComparator(x), m_n(n) { m_n.Normalize(); }
 
     //! Rates two views based on the angle of their principal axes with the normal at that point.
     bool operator()(const CView<T>& x, const CView<T>& y);
+
+    /*! Computes the key for comparison.
+     */
+    T GetKey(const CView<T>& x);
 
 private:
 

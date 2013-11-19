@@ -202,7 +202,6 @@ istream& operator >> (istream& is, CVector<U,m>& x) {
 
 }
 
-
 template class CVector<float,3>;
 template class CVector<double,3>;
 template class CVector<unsigned char,3>;
@@ -228,6 +227,24 @@ template istream& operator >> (istream& is, CVector<unsigned char,3>& x);
 template istream& operator >> (istream& is, CVector<float,2>& x);
 template istream& operator >> (istream& is, CVector<double,2>& x);
 template istream& operator >> (istream& is, CVector<unsigned char,2>& x);
+
+
+template<typename T,u_int n,typename U>
+CVector<T,n> operator*(const U& s, const CVector<T,n>& x) {
+
+    CVector<T,n> result;
+
+    for(u_int i=0; i<n; i++)
+        result(i) = x.Get(i)*(T)s;
+
+    return result;
+
+}
+
+template CVector<double,3> operator*(const float& s, const CVector<double,3>& x);
+template CVector<double,3> operator*(const double& s, const CVector<double,3>& x);
+template CVector<unsigned char,3> operator*(const float& s, const CVector<unsigned char,3>& x);
+template CVector<unsigned char,3> operator*(const double& s, const CVector<unsigned char,3>& x);
 
 
 }

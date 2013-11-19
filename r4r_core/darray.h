@@ -96,7 +96,7 @@ public:
 
     /*! \brief Constructor.
      *
-     * Creates a new header for a vector, reshaping it into a row-major
+     * Creates a new header for a vector, reshaping it into a col-major
      * layout.
      *
      */
@@ -265,6 +265,9 @@ public:
     //! In-place addition of a scalar.
     void Add(const T& scalar);
 
+    //! In-place subtraction of a scalar.
+    void Subtract(const T& scalar);
+
 	//! Sums up all elements.
 	T Sum() const;
 
@@ -374,8 +377,8 @@ public:
 protected:
 
 	size_t m_nrows;				//!< number of rows
-	size_t m_ncols;				//!< number of cols
-	bool m_transpose;			//!< transpose flag
+    size_t m_ncols;				//!< number of cols
+    bool m_transpose;			//!< transpose flag
     std::shared_ptr<T> m_data;  //!< container that holds the array data
 
 };

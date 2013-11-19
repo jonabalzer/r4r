@@ -41,6 +41,10 @@ enum class DIM {  ZERO = 0, ONE = 1, TWO = 2, THREE = 3 };
 template<typename T,u_int n>
 class CVector {
 
+private:
+
+    T m_data[n];
+
 public:
 
     //! Constructor.
@@ -54,18 +58,6 @@ public:
 
     //! Initializer list constructor.
     CVector(std::initializer_list<T> list);
-
-    //! Typecast operator.
-    template<typename U> operator CVector<U,n>() const {
-
-        CVector<U,n> result;
-
-        for(u_int i=0; i<n; i++)
-            result(i) = U(Get(i));
-
-        return result;
-
-    }
 
     //! Computes \f$l_p\f$-norm.
     double Norm(double p) const;
@@ -103,272 +95,317 @@ public:
     //! Maximum.
     T Max();
 
-private:
+    //! Typecast operator.
+    template<typename U> operator CVector<U,n>() const {
 
-    T m_data[n];
+        CVector<U,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = U(Get(i));
+
+        return result;
+
+    }
+
+    //! Elementwise maximum.
+    friend CVector<T,n> Max(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = std::max<T>(x.Get(i),y.Get(i));
+
+        return result;
+
+    }
+
+    //! Elementwise minimum.
+    friend CVector<T,n> Min(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = std::min<T>(x.Get(i),y.Get(i));
+
+        return result;
+
+    }
+
+    //! Adds two vectors.
+    friend CVector<T,n> operator+(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+          CVector<T,n> result;
+
+          for(u_int i=0; i<n; i++)
+              result(i) = x.Get(i) + y.Get(i);
+
+          return result;
+    }
+
+    /*! Dot product between to vectors.
+     *
+     * \TODO Add template parameter for return type.
+     *
+     */
+    friend T InnerProduct(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        T result = 0;
+
+        for(u_int i=0; i<n; i++)
+            result += x.Get(i)*y.Get(i);
+
+        return result;
+
+    }
+
+    //! Cross-product between to vectors
+    friend CVector<T,n> Cross(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        // only defined for n=3
+        if(n==3) {
+
+            CVector<T,3> result;
+
+            result(0) = x.Get(1)*y.Get(2) - x.Get(2)*y.Get(1);
+            result(1) = x.Get(2)*y.Get(0) - x.Get(0)*y.Get(2);
+            result(2) = x.Get(0)*y.Get(1) - x.Get(1)*y.Get(0);
+
+            return result;
+
+        }
+
+        return CVector<T,n>();
+
+    }
+
+    //! Subtracts two vectors.
+    friend CVector<T,n> operator-(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = x.Get(i) - y.Get(i);
+
+        return result;
+
+    }
+
+    //! Multiplies two vectors element-wise.
+    friend CVector<T,n> operator*(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = x.Get(i)*y.Get(i);
+
+        return result;
+
+    }
+
+    //! Divides two vectors element-wise.
+    friend CVector<T,n> operator/(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = x.Get(i)/y.Get(i);
+
+        return result;
+
+    }
+
+    /*! Post-multiplies a vector by a scalar.
+     *
+     */
+    template <typename U>
+    friend CVector<T,n> operator*(const CVector<T,n>& x, const U& s) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = x.Get(i)*(T)s;
+
+        return result;
+
+    }
+
+    //! Post-divides a vector by a scalar.
+    template <typename U>
+    friend CVector<T,n> operator/(const CVector<T,n>& x, const U& s) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = x.Get(i)/(T)s;
+
+        return result;
+
+    }
+
+
+    //! Post-adds a scalar to the vector.
+    template <typename U>
+    friend CVector<T,n> operator+(const CVector<T,n>& x, const U& s) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = x.Get(i) + (T)s;
+
+        return result;
+
+    }
+
+    //! Pre-adds a scalar to the vector.
+    template <typename U>
+    friend CVector<T,n> operator+(const U& s, const CVector<T,n>& x) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = x.Get(i) + (T)s;
+
+        return result;
+
+    }
+
+    //! Post-subtracts a scalar from the vector.
+    template<typename U>
+    friend CVector<T,n> operator-(const CVector<T,n>& x, const U& s) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = x.Get(i) - (T)s;
+
+        return result;
+
+    }
+
+    //! Pre-subtracts a scalar from the vector.
+    template<typename U>
+    friend CVector<T,n> operator-(const U& s, const CVector<T,n>& x) {
+
+        CVector<T,n> result;
+
+        for(u_int i=0; i<n; i++)
+            result(i) = (T)s - x.Get(i);
+
+        return result;
+
+    }
+
+    //! Checks two vectors for equality.
+    friend bool operator==(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        bool result = true;
+
+        for(u_int i=0; i<n; i++)
+            result = result && (x.Get(i)==y.Get(i));
+
+        return result;
+
+    }
+
+    //! Checks two vectors for inequality.
+    friend bool operator!=(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        return !(x==y);
+
+    }
+
+    /*! Checks two vectors for inequality.
+     *
+     * This is default order relation is induced by the positive cone. Use comparator
+     * class for a lexicographical order relation.
+     *
+     */
+    friend bool operator<(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        bool result = true;
+
+        for(u_int i=0; i<n; i++)
+            result = result && (x.Get(i)<y.Get(i));
+
+        return result;
+
+    }
+
+    /*! Checks two vectors for inequality.
+     *
+     * This is default order relation is induced by the positive cone. Use comparator
+     * class for a lexicographical order relation.
+     *
+     */
+    friend bool operator<=(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+        bool result = true;
+
+        for(u_int i=0; i<n; i++)
+            result = result && (x.Get(i)<=y.Get(i));
+
+        return result;
+
+    }
 
 };
 
-template <typename T>
-inline CVector<T,3> Cross(const CVector<T,3>& x, const CVector<T,3>& y) {
 
-    CVector<T,3> result;
+template<typename T,u_int n>
+class CConeOrder {
 
-    result(0) = x.Get(1)*y.Get(2) - x.Get(2)*y.Get(1);
-    result(1) = x.Get(2)*y.Get(0) - x.Get(0)*y.Get(2);
-    result(2) = x.Get(0)*y.Get(1) - x.Get(1)*y.Get(0);
+    //! Compares two views based on their index.
+    bool operator()(const CVector<T,n>& x, const CVector<T,n>& y) {
 
-    return result;
+        bool result = true;
 
-}
+        for(u_int i=0; i<n; i++)
+            result = result && (x.Get(i)<=y.Get(i));
 
-//! Dot product between to vectors.
-template <typename T,u_int n>
-inline double InnerProduct(const CVector<T,n>& x, const CVector<T,n>& y) {
+        return result;
 
-    double result = 0;
+    }
 
-    for(u_int i=0; i<n; i++)
-        result += (double)x.Get(i)*(double)y.Get(i);
+};
 
-    return result;
-
-}
-
-
-//! Adds two vectors.
-template <typename T,u_int n>
-inline CVector<T,n> operator+(const CVector<T,n>& x, const CVector<T,n>& y) {
-
-      CVector<T,n> result;
-
-      for(u_int i=0; i<n; i++)
-          result(i) = x.Get(i) + y.Get(i);
-
-      return result;
-
-}
-
-//! Subtracts two vectors.
-template <typename T,u_int n>
-inline CVector<T,n> operator-(const CVector<T,n>& x, const CVector<T,n>& y) {
-
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i) - y.Get(i);
-
-    return result;
-
-}
-
-//! Multiplies two vectors element-wise.
-template <typename T,u_int n>
-inline CVector<T,n> operator*(const CVector<T,n>& x, const CVector<T,n>& y) {
-
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i)*y.Get(i);
-
-    return result;
-
-}
-
-//! Divides two vectors element-wise.
-template <typename T,u_int n>
-inline CVector<T,n> operator/(const CVector<T,n>& x, const CVector<T,n>& y) {
-
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i)/y.Get(i);
-
-    return result;
-
-}
-
-//! Post-multiplies a vector by a scalar.
-template <typename T,u_int n, typename U>
-inline CVector<T,n> operator*(const CVector<T,n>& x, const U& s) {
-
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i)*(T)s;
-
-    return result;
-
-}
-
-//! Pre-multiplies a vector by a scalar.
+/*! Pre-multiplies a vector by a scalar.
+ *
+ * This is instantiated explicitly to avoid conflicts with matrix-vector
+ * multiplication of #CDenseArray.
+ *
+ */
 template <typename T,u_int n,typename U>
-CVector<U,n> operator*(const U& s, const CVector<T,n>& x) {
+CVector<T,n> operator*(const U& s, const CVector<T,n>& x);
 
-       CVector<U,n> result;
+template<typename T,u_int n>
+class CLexicographicOrder {
 
-       for(u_int i=0; i<n; i++)
-           result(i) = (U)x.Get(i)*s;
+public:
 
-       return result;
+    //! Lexicographic order relation.
+    bool operator()(const CVector<T,n>& x, const CVector<T,n>& y) {
 
-}
+        // start recursion
+        return this->Compare(x,y,0);
 
-//! Post-divides a vector by a scalar.
-template <typename T,u_int n, typename U>
-inline CVector<T,n> operator/(const CVector<T,n>& x, const U& s) {
+    }
 
-    CVector<T,n> result;
+private:
 
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i)/(T)s;
+    bool Compare(const CVector<T,n>& x, const CVector<T,n>& y, u_int i) {
 
-    return result;
+        // components are equal?
+        if(i==n-1)
+            return x.Get(i)<=y.Get(i);
 
-}
+        if (x.Get(i)>y.Get(i))
+            return false;
+        else
+            return Compare(x,y,i+1);
 
-//! Post-adds a scalar to the vector.
-template <typename T,u_int n, typename U>
-inline CVector<T,n> operator+(const CVector<T,n>& x, const U& s) {
+    }
 
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i) + (T)s;
-
-    return result;
-
-}
-
-//! Pre-adds a scalar to the vector.
-template <typename T,u_int n,typename U>
-inline CVector<T,n> operator+(const U& s, const CVector<T,n>& x) {
-
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i) + (T)s;
-
-    return result;
-
-}
-
-//! Post-subtracts a scalar from the vector.
-template <typename T,u_int n, typename U>
-inline CVector<T,n> operator-(const CVector<T,n>& x, const U& s) {
-
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i) - (T)s;
-
-    return result;
-
-}
-
-//! Pre-subtracts a scalar from the vector.
-template <typename T,u_int n,typename U>
-inline CVector<T,n> operator-(const U& s, const CVector<T,n>& x) {
-
-    CVector<T,n> result;
-
-    for(u_int i=0; i<n; i++)
-        result(i) = (T)s - x.Get(i);
-
-    return result;
-
-}
-
-//! Checks two vectors for equality.
-template <typename T,u_int n>
-inline bool operator==(const CVector<T,n>& x, const CVector<T,n>& y) {
-
-    bool result = true;
-
-    for(u_int i=0; i<n; i++)
-        result = result && (x.Get(i)==y.Get(i));
-
-    return result;
-
-}
-
-//! Checks two vectors for inequality.
-template <typename T,u_int n>
-inline bool operator<(const CVector<T,n>& x, const CVector<T,n>& y) {
-
-    bool result = true;
-
-    for(u_int i=0; i<n; i++)
-        result = result && (x.Get(i)<y.Get(i));
-
-    return result;
-
-}
-
-//! Checks two vectors for inequality.
-template <typename T,u_int n>
-inline bool operator<=(const CVector<T,n>& x, const CVector<T,n>& y) {
-
-    bool result = true;
-
-    for(u_int i=0; i<n; i++)
-        result = result && (x.Get(i)<=y.Get(i));
-
-    return result;
-
-}
-
-//! Checks two vectors for inequality.
-template <typename T>
-inline bool operator<(const CVector<T,3>& x, const CVector<T,3>& y) {
-
-    if(x.Get(0)<y.Get(0))
-        return true;
-    else if(x.Get(0)>y.Get(0))
-        return false;
-
-    // if we got here, the first components are equal
-    if(x.Get(1)<y.Get(1))
-        return true;
-    else if(x.Get(1)>y.Get(1))
-        return false;
-
-    if(x.Get(2)<y.Get(2))
-        return true;
-
-    return false;
-
-}
-
-template <typename T>
-inline bool operator<=(const CVector<T,3>& x, const CVector<T,3>& y) {
-
-    if(x.Get(0)<=y.Get(0))
-        return true;
-    else if(x.Get(0)>=y.Get(0))
-        return false;
-
-    // if we got here, the first components are equal
-    if(x.Get(1)<=y.Get(1))
-        return true;
-    else if(x.Get(1)>=y.Get(1))
-        return false;
-
-    if(x.Get(2)<=y.Get(2))
-        return true;
-
-    return false;
-
-}
-
-
-//! Checks two vectors for inequality.
-template <typename T,u_int n>
-inline bool operator!=(const CVector<T,n>& x, const CVector<T,n>& y) {
-
-    return !(x==y);
-
-}
+};
 
 
 }

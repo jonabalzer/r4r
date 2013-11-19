@@ -94,7 +94,7 @@ public:
 	CSparseArray<T> static Transpose(const CSparseArray<T>& array);
 
 	//! Efficiently computes the square \f$A^{\top}A\f$ of a sparse matrix \f$A\f$.
-	CSparseArray<T> static Square(CSparseArray<T>& array);
+    CSparseArray<T> static Square(const CSparseArray<T>& array);
 
 	//! Non-destructive element access.
     T Get(size_t i, size_t j) const;
@@ -142,6 +142,9 @@ public:
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
 
+    //! In-place scaling of row.
+    void ScaleRow(size_t i, T scalar);
+
 	//! Counts the number of non-zero entries.
 	size_t Nonzeros();
 
@@ -161,7 +164,7 @@ public:
 	void GetCOO(std::vector<size_t>& i, std::vector<size_t>& j, std::vector<T>& v, bool ibase);
 
 	//! Saves the matrix in matrix market format.
-	bool SaveToFile(const char* filename);
+    bool WriteToFile(const char* filename);
 
 	//! Sets random entries in the matrix to random values.
 	void Rand(size_t nnz);
