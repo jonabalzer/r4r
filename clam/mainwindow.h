@@ -36,12 +36,6 @@
 
 #include "preferences.h"
 
-
-using namespace cv;
-using namespace std;
-using namespace R4R;
-
-
 namespace Ui {
 class MainWindow;
 }
@@ -89,7 +83,7 @@ private:
     Ui::MainWindow *ui;
     Preferences* m_preferences;
 
-    VideoCapture m_cap;
+    cv::VideoCapture m_cap;
     vector<cv::Mat> m_pyramid;
     QTimer m_timer;
     CParameters m_params;

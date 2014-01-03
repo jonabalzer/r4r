@@ -1,6 +1,5 @@
 TEMPLATE = app
 CONFIG += console
-CONFIG -= qt
 TARGET = lmtest
 
 SOURCES += main.cpp

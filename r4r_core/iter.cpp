@@ -326,7 +326,11 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
 
     // preconditioning
     CDenseVector<T> z = rnormal.Clone();
+    cout << "FICK MICH" << z << endl;
+    cout << "FICK MICH AUCH" << rnormal << endl;
+
     m_M.Solve(z,rnormal);
+
 
     // descent direction
     CDenseVector<T> p = z.Clone();
@@ -361,9 +365,7 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
             break;
 
         // update residual of normal equation
-        //A.Transpose();
         rnormal = At*r;
-        //A.Transpose();
 
         // apply preconditioner
         m_M.Solve(z,rnormal);

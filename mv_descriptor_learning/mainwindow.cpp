@@ -34,6 +34,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+using namespace cv;
+using namespace std;
+using namespace R4R;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -145,7 +148,7 @@ void MainWindow::on_actionOpen_triggered()
     else return;
 
     // convert
-    cvtColor(img, img_gray, CV_BGR2GRAY);
+    cvtColor(img, img_gray, COLOR_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
     // init tracker
@@ -192,7 +195,7 @@ void MainWindow::on_stepButton_clicked()
     }
 
     m_cap.retrieve(img);
-    cvtColor(img, img_gray, CV_BGR2GRAY);
+    cvtColor(img, img_gray, COLOR_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
     // start measuring time

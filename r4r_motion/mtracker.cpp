@@ -108,8 +108,10 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         cout << "No of correspondences (2d-2d/3d-2d): " << p0s.size() << " " << xs.size() << endl;
 
         // init linear solver
-        CConjugateGradientMethodLeastSquares<smatf,float> solver(CPreconditioner<smatf,float>(),
-                                                                 m_params->GetIntParameter("CGLS_NITER"),                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),                                                                                     true);
+        CPreconditioner<smatf,float> M;
+        CConjugateGradientMethodLeastSquares<smatf,float> solver(M,
+                                                                 m_params->GetIntParameter("CGLS_NITER"),                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),
+                                                                 true);
 
         // init least-squares problem
         CMagicSfM problem(m_cam,corri2i,corrs2i,F0inv);
@@ -131,7 +133,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
                              m_params->GetIntParameter("LM_NITER_INNER"),
                              m_params->GetDoubleParameter("LM_EPS"),
                              false,
-                             true);
+                             false);
 
         // add new points to the map
         float threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_DEPTH");

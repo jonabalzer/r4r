@@ -36,7 +36,8 @@ int main(int argc, char *argv[]) {
 
     if((unsigned int)option[0]==48) {  // LM demo on Rosenbrock function
 
-        CConjugateGradientMethodLeastSquares<mat,double> solver(CPreconditioner<mat,double>(),10,1e-20,true);
+        CPreconditioner<mat,double> M;
+        CConjugateGradientMethodLeastSquares<mat,double> solver(M,10,1e-20,true);
 
         CRosenbrockFunction problem = CRosenbrockFunction();
         CLevenbergMarquardt<mat,double> lms(problem,solver,0);
@@ -65,7 +66,8 @@ int main(int argc, char *argv[]) {
     }
     else if((unsigned int)option[0]==49) { // reweighted LS on Osbourne function
 
-        CConjugateGradientMethodLeastSquares<mat,double> solver(CPreconditioner<mat,double>(),20,1e-20,true);
+        CPreconditioner<mat,double> M;
+        CConjugateGradientMethodLeastSquares<mat,double> solver(M,20,1e-20,true);
 
         COsbourneFunction problem = COsbourneFunction();
         problem.DisturbSamplePoints(10,1);
