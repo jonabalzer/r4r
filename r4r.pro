@@ -4,14 +4,14 @@ CONFIG += ordered
 
 SUBDIRS += r4r_core \
            r4r_motion \
-           r4r_hardware \
-    tvdenoising
+           r4r_hardware
 
 equals( HAVE_EXAMPLES, 1 ) {
 
     SUBDIRS += robust_regression \
                mv_descriptor_learning \
-               clam
+               clam \
+               tvdenoising
 
 }
 
