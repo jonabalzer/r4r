@@ -148,7 +148,9 @@ static PyObject* evaluate_curve(PyObject* self, PyObject* args) {
 
     // evaluate basis function
     _cox_de_boor(p+1,pknots+span-(p-1),t,N);
-    _cox_de_boor_derivatives(p+1,pknots+span-(p-1),2,N);
+
+    if(p>1)
+        _cox_de_boor_derivatives(p+1,pknots+span-(p-1),2,N);
 
     for(int i=0; i<=p; i++) {
 
@@ -158,8 +160,13 @@ static PyObject* evaluate_curve(PyObject* self, PyObject* args) {
         for(int j=0; j<cp->dimensions[0]; j++) {
 
             px[j] = px[j] + pcp[j*cp->dimensions[1]+cpi]*N[i];
-            pxt[j] = pxt[j] + pcp[j*cp->dimensions[1]+cpi]*N[(p+1)+i];
-            pxtt[j] = pxtt[j] + pcp[j*cp->dimensions[1]+cpi]*N[2*(p+1)+i];
+
+            if(p>1) {
+
+                pxt[j] = pxt[j] + pcp[j*cp->dimensions[1]+cpi]*N[(p+1)+i];
+                pxtt[j] = pxtt[j] + pcp[j*cp->dimensions[1]+cpi]*N[2*(p+1)+i];
+
+            }
 
         }
 
@@ -466,8 +473,8 @@ int _find_knot_span(double t, double* knots, int lower, int upper) {
     int middle = lower + (upper - lower)/2;
 
     if (t<knots[middle])
-        return _find_knot_span(t,knots,lower,middle-1);
-    else if (t>knots[middle+1])     // if it is in the knot span right to middle, we are done
+        return _find_knot_span(t,knots,lower,middle);
+    else if (t>=knots[middle+1])     // if it is in the knot span right to middle, we are done
         return _find_knot_span(t,knots,middle+1,upper);
     else
         return middle;

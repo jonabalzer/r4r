@@ -30,6 +30,7 @@ class knot_vector:
         """
         if self.p==1:
             self.data = np.linspace(l,u,n)
+            print self.data
             
             if self.periodic:
                 self.ncp = self.data.size-1
@@ -189,12 +190,30 @@ class curve:
         if self.knots.p>=2:        
             return bs.evaluate_curve(self.knots.data,self.cp,self.knots.p,t)
         else:
-            print "ERROR: Degree must be greater than 2.\n"
-            x = np.zeros(self.cp.shape[0])
-            xt = np.zeros(self.cp.shape[0])
-            xtt = np.zeros(self.cp.shape[0])
+            x,xt,xtt = bs.evaluate_curve(self.knots.data,self.cp,self.knots.p,t)
+            xt = 0*xt
+            xtt = 0*xtt
             return x,xt,xtt
             
+    def evaluate_batch(self,t):
+        """
+        Evaluates the spline at multiple parameter locations.
+        """
+        x = np.zeros((self.cp.shape[0],t.size))
+        xt = np.zeros((self.cp.shape[0],t.size))
+        xtt = np.zeros((self.cp.shape[0],t.size))
+        
+        for i in range(0,t.size):
+        
+            temp = bs.evaluate_curve(self.knots.data,self.cp,self.knots.p,t[i])
+            x[:,i] = temp[0]
+            
+            if self.knots.p>=1:        
+                xt[:,i] = temp[1]
+                xtt[:,i] = temp[2]
+
+        return x,xt,xtt                
+        
     def distance(self,x0,n):
         """
         Sample the distance of a point to the curve.
