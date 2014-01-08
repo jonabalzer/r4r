@@ -21,14 +21,33 @@
 #
 ######################################################################################
 
-QT -= core gui
+QT += opengl
 
-TARGET = r4r_hardware
+QMAKE_CXXFLAGS += -std=c++0x
+
+TARGET = r4r_reconstruction
 TEMPLATE = lib
 
-DEFINES += R4R_HARDWARE_LIBRARY
+DEFINES += R4R_RECONSTRUCTION_LIBRARY
 
-SOURCES +=
+SOURCES += viewer.cpp
 
-HEADERS +=
+HEADERS += viewer.h
 
+# make sure that r4r_core is up to date
+DEPENDPATH += $$PWD/../r4r_core
+
+# local inlude path
+INCLUDEPATH += $$PWD/../r4r_core
+
+unix:!symbian|win32 {
+
+    headers.files = $$HEADERS
+    headers.path = /usr/include/r4r/
+
+    target.path = /usr/lib/
+
+    INSTALLS += target \
+                headers
+
+}

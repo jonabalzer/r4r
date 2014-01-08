@@ -192,6 +192,9 @@ class CView {
 
 public:
 
+    //! Deleted standard constructor. One always needs a reference to intrinsic camera model.
+    CView() = delete;
+
     //! Constructor.
     CView(CAbstractCam& cam, u_int index = -1);
 
