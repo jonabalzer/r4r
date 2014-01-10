@@ -28,7 +28,7 @@
 #include <QImage>
 #endif
 
-#include "types.h"
+#include "darray.h"
 #include "rect.h"
 
 namespace R4R {

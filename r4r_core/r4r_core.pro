@@ -49,7 +49,8 @@ SOURCES += \
     kernels.cpp \
     splinecurve.cpp \
     vecn.cpp \
-    image.cpp
+    image.cpp \
+    types.cpp
 
 HEADERS += \
     types.h \

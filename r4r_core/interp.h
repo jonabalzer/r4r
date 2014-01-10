@@ -24,8 +24,9 @@
 #ifndef R4RINTERP_H_
 #define R4RINTERP_H_
 
-#include "opencv2/opencv.hpp"
-#include "types.h"
+#include <opencv2/opencv.hpp>
+
+#include "darray.h"
 
 using namespace std;
 

@@ -85,7 +85,9 @@ unix:!symbian|win32 {
 
     LIBS += -L/usr/local/lib/ \
             -lopencv_features2d \
-            -lopencv_video
+            -lopencv_video \
+            -L$$OUT_PWD/../r4r_core \
+            -lr4r_core
 
     contains(DEFINES,HAVE_FFTW) {
 

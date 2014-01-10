@@ -282,15 +282,14 @@ void CViewer::loadProjectionMatrix() {
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixd(&proj[0]);
 
-
-
 }
 
 
 matf CViewer::getDepthMap(const CView<double>& view) {
 
     // load view and paint
-    loadView(view);
+    loadView(view);    
+    updateClipDepth(view,1.0);
     paintGL();
 
     // allocate result
@@ -303,15 +302,7 @@ matf CViewer::getDepthMap(const CView<double>& view) {
     // read depths
     glReadPixels(0, 0,z.NCols(),z.NRows(),GL_DEPTH_COMPONENT,GL_FLOAT,buffer);
 
-    //float proj[16];
-    //glGetFloatv(GL_PROJECTION_MATRIX, proj);            // FIXME: get this from members
-    //float z1 = proj[10];
-    //float z2 = proj[14];
-    //float zFar = z2 / (z1 + 1.0);
-    //float zNear = z2*zFar / (z2 - 2.0*zFar);
-    //float zFar = -m_zfar;
-    //float zNear = -m_znear;
-
+    // because we have updated the depths at the beginning, we don't need to grab them from the graphics card
     float zfmzn = m_zfar - m_znear;
     float zfpzn = m_zfar + m_znear;
     float zftzn = 2.0*m_zfar*m_znear;
@@ -334,6 +325,7 @@ matf CViewer::getDepthMap(const CView<double>& view) {
 
     // restore view and repaint
     loadView(m_view);
+    updateClipDepth(m_view,NEAR_PLANE_TOL);
     paintGL();
 
     return z;
@@ -355,7 +347,7 @@ void CTriMeshViewer::setMesh(CTriangleMesh* mesh) {
     m_bbox = mesh->BoundingBox();
 
     // update clip depths
-    updateClipDepth(m_view);
+    updateClipDepth(m_view,NEAR_PLANE_TOL);
 
 }
 
@@ -365,11 +357,11 @@ void CTriMeshViewer::updateBoundingBox() {
     m_bbox = m_mesh->BoundingBox();
 
     // update clip depths
-    updateClipDepth(m_view);
+    updateClipDepth(m_view,NEAR_PLANE_TOL);
 
 }
 
-void CTriMeshViewer::updateClipDepth(const CView<double>& view) {
+void CTriMeshViewer::updateClipDepth(const CView<double>& view, double tolerance) {
 
     vector<vec3f> corners = m_bbox.Corners();
 
@@ -390,8 +382,17 @@ void CTriMeshViewer::updateClipDepth(const CView<double>& view) {
 
     }
 
-    m_znear = NEAR_PLANE_TOL*minz;
-    m_zfar = FAR_PLANE_TOL*maxz;
+    double ntol, ftol;
+
+    if(tolerance==0)
+        ntol = 1.0;
+    else
+        ntol = tolerance;
+
+    ftol = 1.0/ntol;
+
+    m_znear = ntol*minz;
+    m_zfar = ftol*maxz;
 
     // send new projection matrix to graphics card
     loadProjectionMatrix();
@@ -401,7 +402,7 @@ void CTriMeshViewer::updateClipDepth(const CView<double>& view) {
 void CTriMeshViewer::mouseReleaseEvent(QMouseEvent *event) {
 
     // update clip depths
-    this->updateClipDepth(m_view);
+    this->updateClipDepth(m_view,NEAR_PLANE_TOL);
 
     updateGL();
 

@@ -24,9 +24,11 @@
 #ifndef R4RRECT_H_
 #define R4RRECT_H_
 
-#include <opencv2/opencv.hpp>
-#include "types.h"
 #include <iostream>
+
+#include <opencv2/opencv.hpp>
+
+#include "vecn.h"
 
 namespace R4R {
 

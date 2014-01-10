@@ -234,7 +234,7 @@ template class CPegasos<mat>;
 
 template ostream& operator<< (ostream& os, CPegasos<vec>& x);
 template ostream& operator<< (ostream& os, CPegasos<mat>& x);
-template ostream& operator<< (ostream& os, CPegasos<smat>& x);
+//template ostream& operator<< (ostream& os, CPegasos<smat>& x);
 
 template <class Vector>
 CPegasosMI<Vector>::CPegasosMI(vector<Vector>* features, vector<int>* labels, vector<int>* bags, Vector w, double lambda, size_t k, size_t I)

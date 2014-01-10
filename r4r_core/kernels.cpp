@@ -34,7 +34,7 @@
 #endif
 
 #include "kernels.h"
-#include "types.h"
+#include "darray.h"
 
 
 namespace R4R {

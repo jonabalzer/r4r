@@ -21,8 +21,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef BBOX_H
-#define BBOX_H
+#ifndef R4RBBOX_H
+#define R4RBBOX_H
 
 #include "vecn.h"
 #include <vector>

@@ -28,7 +28,8 @@
 #define ARMIJO_C 0.25
 
 #include <stdio.h>
-#include "types.h"
+
+#include "darray.h"
 
 namespace R4R {
 

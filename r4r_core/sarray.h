@@ -194,6 +194,9 @@ protected:
 
 };
 
+typedef CSparseArray<double> smat;
+typedef CSparseArray<float> smatf;
+
 /*! \brief sparse 2d matrix/array
  *
  *
@@ -343,7 +346,7 @@ protected:
 
 };
 
-
+typedef CSparseBandedArray<double> sbmat;
 
 /*! \brief sparse square diagonal matrix
  *

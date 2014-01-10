@@ -38,6 +38,7 @@
 
 #include "kernels.h"
 #include "vecn.h"
+#include "types.h"
 
 namespace R4R {
 
@@ -59,7 +60,7 @@ public:
 
 };
 
-/*! interace for bi-variate function objects
+/*! interface for bi-variate function objects
  */
 class CBivariateFunction {
 
@@ -68,16 +69,6 @@ public:
     virtual double operator ()(double x, double y) const = 0;
 
 };
-
-// use typesafe enums in C++11
-enum class ETYPE {  NA = 0,
-                    B1U = 1,
-                    C1U = 2, C1S = 3, C1U3 = 102,
-                    S2U = 4, S2S = 5,
-                    I4S = 6, I4U = 7,
-                    F4S = 8,
-                    L8S = 9, L8U = 10,
-                    D8S = 11, D8S3 = 111 };
 
 template<class T> class CDenseVector;
 
@@ -295,35 +286,11 @@ public:
     //! Writes matrix to a stream.
 	template <class U> friend std::ostream& operator << (std::ostream& os, const CDenseArray<U>& x);
 
-    //! Writes a boolean matrix to a file stream.
-    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<bool>& x);
-
-    //! Writes a byte matrix to a file stream.
-    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<unsigned char>& x);
-
-    //! Writes an integer matrix to a file stream.
-    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<int>& x);
-
-    //! Writes a float matrix to a file stream.
-    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<float>& x);
-
-    //! Writes a unsigned long integer matrix to a file stream.
-    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<size_t>& x);
-
-    //! Writes a double matrix to a file stream.
-    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<double>& x);
-
-    //! Writes a double vector field to a file stream.
-    friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<CVector<double,3> >& x);
-
-	//! Reads matrix from a stream.
-	template <class U> friend std::istream& operator >> (std::istream& is, CDenseArray<U>& x);
+    //! Writes matrix to a file stream.
+    template <class U> friend std::ofstream& operator << (std::ofstream& os, const CDenseArray<U>& x);
 
     //! Reads matrix from a file stream.
     template <class U> friend std::ifstream& operator >> (std::ifstream& is, CDenseArray<U>& x);
-
-    //! Reads a vector field from a file stream.
-    friend std::ifstream& operator >> (std::ifstream& is, CDenseArray<CVector<double,3> >& x);
 
     //! Writes a matrix to a file.
     bool WriteToFile(const char* filename);
@@ -353,7 +320,7 @@ public:
     size_t SizeOf() const { return sizeof(T); }
 
     //! Returns the numerical type.
-    ETYPE GetType();
+    ETYPE GetType() { return GetEType<T>(); }
 
     //! Matrix inversion.
     bool Invert();
@@ -382,6 +349,10 @@ protected:
     std::shared_ptr<T> m_data;  //!< container that holds the array data
 
 };
+
+typedef CDenseArray<double> mat;
+typedef CDenseArray<float> matf;
+typedef CDenseArray<unsigned char> mmat;
 
 /*! \brief dense vector
  *
@@ -472,6 +443,9 @@ protected:
 	using CDenseArray<T>::m_data;
 
 };
+
+typedef CDenseVector<double> vec;
+typedef CDenseVector<float> vecf;
 
 /*! \brief dense symmetric 2d matrix/array
  *

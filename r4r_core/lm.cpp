@@ -22,12 +22,14 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "lm.h"
-#include "rutils.h"
 
-
+#include <algorithm>
 #include <math.h>
 #include <limits>
 #include <assert.h>
+
+#include "rutils.h"
+
 
 using namespace std;
 

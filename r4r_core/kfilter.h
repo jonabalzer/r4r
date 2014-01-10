@@ -24,8 +24,7 @@
 #ifndef R4RKFILTER_H_
 #define R4RKFILTER_H_
 
-
-#include "types.h"
+#include "darray.h"
 
 namespace R4R {
 
@@ -57,10 +56,10 @@ public:
 	void Update(vec& y);
 
 	//! Access to state.
-	vec GetState() const { return m_x; };
+    vec GetState() const { return m_x; }
 
 	//! Access to covariance.
-	mat GetCovariance() const { return m_P; };
+    mat GetCovariance() const { return m_P; }
 
 
 protected:

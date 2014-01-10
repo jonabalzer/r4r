@@ -24,32 +24,23 @@
 #ifndef R4RTYPES_H_
 #define R4RTYPES_H_
 
-#include "vecn.h"
-#include "darray.h"
-#include "sarray.h"
-#include <complex>
-
 namespace R4R {
 
-typedef CVector<double,3> vec3;
-typedef CVector<float,3> vec3f;
-typedef CVector<double,2> vec2;
-typedef CVector<float,2> vec2f;
-typedef CVector<unsigned char,3> rgb;
+/*! \brief
+ * a list of data types commonly used in R4R
+ *
+ */
+enum class ETYPE {  NA = 0,
+                    B1U = 1,
+                    C1U = 2, C1S = 3, C1U3 = 102,
+                    S2U = 4, S2S = 5,
+                    I4S = 6, I4U = 7,
+                    F4S = 8,
+                    L8S = 9, L8U = 10,
+                    D8S = 11, D8S3 = 111,
+                    STRING = 19 };
 
-
-typedef CDenseVector<double> vec;
-typedef CDenseVector<std::complex<double> > vecc;
-typedef CDenseVector<float> vecf;
-
-
-typedef CDenseArray<double> mat;
-typedef CDenseArray<float> matf;
-typedef CDenseArray<unsigned char> mmat;
-
-typedef CSparseArray<double> smat;
-typedef CSparseArray<float> smatf;
-typedef CSparseBandedArray<double> sbmat;
+template<typename T> ETYPE GetEType();
 
 }
 

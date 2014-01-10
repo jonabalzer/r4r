@@ -21,8 +21,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef TRIMESH_H_
-#define TRIMESH_H_
+#ifndef R4RTRIMESH_H_
+#define R4RTRIMESH_H_
 
 #define COTAN_EPSILON 1e-10
 
@@ -35,7 +35,7 @@
 typedef OpenMesh::TriMesh_ArrayKernelT<OpenMesh::Subdivider::Adaptive::CompositeTraits> TriangleMesh;
 
 #include "bbox.h"
-#include "types.h"
+#include "sarray.h"
 
 namespace R4R {
 
@@ -122,7 +122,7 @@ public:
     OpenMesh::HalfedgeHandle OppositeHalfedgeHandle(FaceHandle fh, VertexHandle vh);
 
     //! Computes the discrete gradient operator for vertex-based functions.
-    void ComputeGradientOperator(R4R::smatf& nabla);
+    void ComputeGradientOperator(smatf& nabla);
 
     //! Cotangent of the angle opposite to a half edge.
     float CotanOppositeAngle(HalfedgeHandle heh);

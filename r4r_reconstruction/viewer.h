@@ -21,8 +21,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef VIEWER_H
-#define VIEWER_H
+#ifndef R4RVIEWER_H
+#define R4RVIEWER_H
 
 #ifdef QT_GUI_LIB
 
@@ -76,6 +76,9 @@ protected:
     //! Handling of keyboard inputs.
     virtual void keyPressEvent(QKeyEvent* event);
 
+    //! Method stump.
+    virtual void updateClipDepth(const CView<double>& view, double tolerance = 1.0) {}
+
 protected:
 
     CView<double> m_view;                  //!< camera view
@@ -90,6 +93,7 @@ protected:
 
     //! Updates projection matrix (e.e. if clip depths changed).
     void loadProjectionMatrix();
+
 
 };
 
@@ -130,10 +134,11 @@ protected:
     //! Handling of mouse release event.
     virtual void mouseReleaseEvent(QMouseEvent* event);
 
+    //! Update clip depth based on the bounding box approximation of the current mesh.
+    virtual void updateClipDepth(const CView<double>& view, double tolerance = 1.0);
+
 private:
 
-    //! Update clip depth based on the bounding box approximation of the current mesh.
-    void updateClipDepth(const CView<double>& view);
 
     CTriangleMesh* m_mesh;                      //!< pointer to a triangle mesh
     CBoundingBox<float> m_bbox;                 //!< bounding box of the mesh

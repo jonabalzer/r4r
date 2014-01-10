@@ -65,16 +65,6 @@ void CParameters::Set(const char* name, double val) {
 
 }
 
-void CParameters::Set(const char* name, const vector<int>& val) {
-
-    map<string,vector<int> >::iterator it = m_ints_params.find(name);
-
-    if(it!=m_ints_params.end())
-        m_ints_params.erase(it);
-
-    m_ints_params.insert(pair<string,vector<int> >(name,val));
-
-}
 
 string CParameters::GetStringParameter(const char* name) {
 
@@ -158,45 +148,6 @@ double CParameters::GetDoubleParameter(const char* name) {
 
 }
 
-vector<int> CParameters::GetIntsParameter(const char* name) {
-
-    vector<int> param;
-
-    try {
-
-        if(m_ints_params.find(name)==m_ints_params.end())
-            throw name;
-        else
-            param = m_ints_params[name];
-
-    }
-    catch(const char* str) {
-
-        cout << "ERROR: Parameter " << str << " was not loaded." << endl;
-        //cout << "Enter list of integers. Stop input by entering -1:" << endl;
-
-        /*int input;
-
-        while(true) {
-
-            cin >> input;
-
-            if(input==-1)
-              break;
-            else
-              param.push_back(input);
-
-        }*/
-
-        param.push_back(-1);
-
-        Set(name,param);
-
-    }
-
-    return param;
-
-}
 
 bool CParameters::SaveToFile(const char* filename) {
 
@@ -277,28 +228,6 @@ bool  CParameters::OpenFromFile(const char* filename) {
 
         }
 
-        case 4:
-
-        {
-
-            // read size
-            size_t n;
-            in >> n;
-
-            vector<int> ints;
-
-            for(size_t i=0; i<n; i++) {
-
-                int val;
-                in >> val;
-                ints.push_back(val);
-
-            }
-
-            m_ints_params.insert(pair<string,vector<int> >(name,ints));
-
-        }
-
         default:
 
             break;
@@ -329,19 +258,6 @@ ostream& operator<< (ostream& os, CParameters& x) {
 
 	for(it3=x.m_double_params.begin(); it3!=x.m_double_params.end(); it3++)
 		os << it3->first << " " << 3 << " " << it3->second << endl;
-
-    map<string,vector<int> >::iterator it4;
-
-    for(it4=x.m_ints_params.begin(); it4!=x.m_ints_params.end(); it4++) {
-
-        os << it4->first << " " << 4 << " " << it4->second.size();
-
-        for(size_t i=0; i<it4->second.size(); i++)
-            os << " " << it4->second.at(i);
-
-        os << endl;
-
-    }
 
 	return os;
 

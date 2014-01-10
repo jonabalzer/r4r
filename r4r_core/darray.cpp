@@ -382,109 +382,14 @@ ostream& operator<< (ostream& os, const CDenseArray<unsigned char>& x) {
 
 }
 
-ofstream& operator<< (ofstream& os, const CDenseArray<bool>& x) {
+template <class U>
+ofstream& operator<< (ofstream& os, const CDenseArray<U>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::B1U << endl;
+    os << x.NRows() << " " << x.NCols() << " " << int(GetEType<U>()) << endl;
 
-    os.write((char*)(x.m_data.get()),sizeof(bool)*x.NElems());
-
-    return os;
-
-}
-
-ofstream& operator << (ofstream& os, const CDenseArray<unsigned char>& x) {
-
-    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::C1U << endl;
-
-    os.write((char*)(x.m_data.get()),sizeof(unsigned char)*x.NElems());
+    os.write((char*)(x.m_data.get()),sizeof(U)*x.NElems());
 
     return os;
-
-}
-
-
-ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
-
-    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::I4S << endl;
-
-    os.write((char*)(x.m_data.get()),sizeof(int)*x.NElems());
-
-    return os;
-
-}
-
-ofstream& operator<< (ofstream& os, const CDenseArray<float>& x) {
-
-    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::F4S << endl;
-
-    os.write((char*)(x.m_data.get()),sizeof(float)*x.NElems());
-
-    return os;
-
-}
-
-ofstream& operator<< (ofstream& os, const CDenseArray<size_t>& x) {
-
-    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::L8U << endl;
-
-    os.write((char*)(x.m_data.get()),sizeof(size_t)*x.NElems());
-
-    return os;
-
-}
-
-ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
-
-    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::D8S << endl;
-
-    os.write((char*)(x.m_data.get()),sizeof(double)*x.NElems());
-
-    return os;
-
-}
-
-ofstream& operator<< (ofstream& os, const CDenseArray<vec3>& x) {
-
-    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::D8S3 << endl;
-
-    os.write((char*)(x.m_data.get()),sizeof(vec3)*x.NElems());
-
-    return os;
-
-}
-
-template<>
-ETYPE CDenseArray<bool>::GetType() { return ETYPE::B1U; }
-
-template<>
-ETYPE CDenseArray<int>::GetType() { return ETYPE::I4S; }
-
-template<>
-ETYPE CDenseArray<size_t>::GetType() { return ETYPE::L8U; }
-
-template<>
-ETYPE CDenseArray<float>::GetType() { return ETYPE::F4S; }
-
-template<>
-ETYPE CDenseArray<double>::GetType() { return ETYPE::D8S; }
-
-template<>
-ETYPE CDenseArray<vec3>::GetType() { return ETYPE::D8S3; }
-
-template<class U>
-istream& operator >> (istream& is, CDenseArray<U>& x) {
-
-	for(size_t i=0; i<x.m_nrows; i++) {
-
-		for(size_t j=0; j<x.m_ncols; j++) {
-
-			 is >> x(i,j);
-
-		}
-
-	}
-
-	return is;
 
 }
 
@@ -708,6 +613,7 @@ ifstream& operator >> (ifstream& in, CDenseArray<U>& x) {
 
 }
 
+template <>
 ifstream& operator >> (ifstream& in, CDenseArray<vec3>& x) {
 
     // read information
@@ -1887,19 +1793,14 @@ template class CDenseArray<vec3>;
 template class CDenseArray<unsigned char>;
 
 template ostream& operator<< (ostream& os, const CDenseArray<double>& x);
-template istream& operator>> (istream& is, CDenseArray<double>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<double>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<float>& x);
-template istream& operator>> (istream& is, CDenseArray<float>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<float>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<int>& x);
-template istream& operator>> (istream& is, CDenseArray<int>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<int>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<size_t>& x);
-template istream& operator>> (istream& is, CDenseArray<size_t>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<size_t>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<bool>& x);
-template istream& operator>> (istream& is, CDenseArray<bool>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<bool>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<rgb>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<vec3>& x);
