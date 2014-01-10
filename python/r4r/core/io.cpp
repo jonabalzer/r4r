@@ -67,7 +67,9 @@ static PyObject* read_dense_matrix(PyObject* self, PyObject* args) {
     size_t nrows, ncols;
     in >> nrows;
     in >> ncols;
-    int dims[] = { nrows, ncols };
+
+    // we need to transpose as numpy seems to store data in col-major format
+    int dims[] = { ncols, nrows };
 
     // read type
     int temp;
@@ -202,6 +204,7 @@ static PyObject* read_dense_matrix(PyObject* self, PyObject* args) {
 
     }
 
-    return PyArray_Return(matout);
+    // we need to transpose as numpy seems to store data in col-major format
+    return PyArray_Transpose(matout,nullptr);
 
 }

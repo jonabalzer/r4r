@@ -24,7 +24,9 @@
 QMAKE_CXXFLAGS += -std=c++0x -O3
 
 # add last flag depending on whether FFTW is present
-DEFINES += HAVE_FFTW
+packagesExist(fftw3) {
+    DEFINES += HAVE_FFTW
+}
 
 TARGET = r4r_motion
 TEMPLATE = lib
@@ -65,6 +67,9 @@ DEPENDPATH += $$PWD/../r4r_core
 # local inlude path
 INCLUDEPATH += $$PWD/../r4r_core
 
+# since we have dependencies, create a pc file
+CONFIG += create_prl no_install_prl create_pc
+
 unix:!symbian|win32 {
 
     # set install path
@@ -82,7 +87,7 @@ unix:!symbian|win32 {
             -lopencv_features2d \
             -lopencv_video
 
-    contains( DEFINES, HAVE_FFTW ) {
+    contains(DEFINES,HAVE_FFTW) {
 
         LIBS += -lfftw3
 

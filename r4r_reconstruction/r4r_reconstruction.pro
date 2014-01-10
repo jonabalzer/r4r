@@ -30,15 +30,33 @@ TEMPLATE = lib
 
 DEFINES += R4R_RECONSTRUCTION_LIBRARY
 
-SOURCES += viewer.cpp
+SOURCES += viewer.cpp \
+    trimesh.cpp \
+    bbox.cpp
 
-HEADERS += viewer.h
+HEADERS += viewer.h \
+    trimesh.h \
+    bbox.h
+
+# find OpenMesh library
+OM = $$system(find /usr -name libOpenMeshCore* 2>/dev/null)
+isEmpty(OM) {
+    error("Could not resolve dependency on OpenMesh.")
+}
+OM = $$first(OM)
+OMLIBPATH = $$dirname(OM)
+
+LIBS += -L$$OMLIBPATH \
+        -lOpenMeshCore \
+        -lOpenMeshTools
+
+# local inlude path
+INCLUDEPATH += $$PWD/../r4r_core
 
 # make sure that r4r_core is up to date
 DEPENDPATH += $$PWD/../r4r_core
 
-# local inlude path
-INCLUDEPATH += $$PWD/../r4r_core
+CONFIG += create_prl no_install_prl create_pc
 
 unix:!symbian|win32 {
 

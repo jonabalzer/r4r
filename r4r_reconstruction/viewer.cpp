@@ -22,18 +22,25 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "viewer.h"
+
 #include <iostream>
 
-using namespace R4R;
+
+#define NEAR_PLANE_TOL 0.8
+#define FAR_PLANE_TOL 1.6
+
 using namespace std;
+
+namespace R4R {
 
 CViewer::CViewer(const R4R::CView<double>& view, QWidget* parent):
     QGLWidget(parent),
     m_view(view),
-    m_znear(0.0001),
+    m_znear(1),
     m_zfar(10.0),
     m_last_point(),
-    m_center() {
+    m_center(),
+    m_show_color(true) {
 
     // set up window size according to resolution of camera
     const CPinholeCam& cam = dynamic_cast<const CPinholeCam&>(m_view.GetCam());
@@ -48,7 +55,9 @@ CViewer::CViewer(const R4R::CView<double>& view, QWidget* parent):
 
 void CViewer::initializeGL(){
 
-    glClearColor(0, 0, 0, 1.0);
+    glClearColor(0.1, 0.1, 0.1, 1.0);
+
+    // this is in normalized device coordinates
     glClearDepth(1.0);
 
     glEnable(GL_DEPTH_TEST);
@@ -63,20 +72,8 @@ void CViewer::initializeGL(){
     // set viewport size != window size
     glViewport(0,0,ws.width(),ws.height());
 
-    // set intrinsics
-    double proj[16];
-    proj[0] = 2.0*K.Get(0,0) / double(ws.width());
-    proj[8] = 2.0*(K.Get(0,2)/ double(ws.width())) - 1.0;
-    proj[5] = 2.0*K.Get(1,1) /  double(ws.height());
-    proj[9] = 2.0*(K.Get(1,2)/  double(ws.height())) - 1.0;
-    proj[10] = (-m_zfar - m_znear)/(m_zfar - m_znear);
-    proj[14] = -2*m_zfar*m_znear/(m_zfar - m_znear);
-    proj[11] = -1.0;
-    proj[15] = 0.0;
-
-    // load them
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixd(&proj[0]);
+    // load intrinsics
+    loadProjectionMatrix();
 
     // load extrinsics
     loadView(m_view);
@@ -115,12 +112,24 @@ void CViewer::paintGL(){
 
     // paint some dummy object
     glBegin(GL_TRIANGLES);
-    glColor3f(0.0f,0.0f,1.0f);
+
+    if(m_show_color)
+        glColor3f(0.0f,0.0f,1.0f);
+    else
+        glColor3f(0.5f,0.5f,0.5f);
+
     glVertex3f(0.0f,0.0f,2.0f);
-    glColor3f(0.0f,1.0f,0.0f);
+
+    if(m_show_color)
+        glColor3f(0.0f,1.0f,0.0f);
+
     glVertex3f(1.0f,0.0f,2.0f);
-    glColor3f(1.0f,0.0f,0.0f);
+
+    if(m_show_color)
+        glColor3f(1.0f,0.0f,0.0f);
+
     glVertex3f(0.0f,1.0f,2.0f);
+
     glEnd();
 
 }
@@ -213,9 +222,17 @@ void CViewer::keyPressEvent(QKeyEvent* event) {
 
     }
 
+    // turn color rendering on/off
+    if(event->key() == Qt::Key_C) {
+
+        m_show_color = !m_show_color;
+
+        updateGL();
+
+    }
 }
 
-void CViewer::loadView(const R4R::CView<double>& view) {
+void CViewer::loadView(const CView<double>& view) {
 
     CRigidMotion<double,3> F = view.GetTransformation();
     mat mF = mat(F);
@@ -241,5 +258,227 @@ void CViewer::loadView(const R4R::CView<double>& view) {
 
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixd(&mv[0]);
+
+}
+
+void CViewer::loadProjectionMatrix() {
+
+    // get camera intrinsics
+    const CPinholeCam& cam = dynamic_cast<const CPinholeCam&>(m_view.GetCam());
+    mat K = cam.GetProjectionMatrix();
+    QSize ws = this->size();
+
+    double proj[16];
+    fill_n(&proj[0],16,0.0);
+    proj[0] = 2.0*K.Get(0,0) / double(ws.width());
+    proj[8] = 2.0*(K.Get(0,2)/ double(ws.width())) - 1.0;
+    proj[5] = 2.0*K.Get(1,1) /  double(ws.height());
+    proj[9] = 2.0*(K.Get(1,2)/  double(ws.height())) - 1.0;
+    proj[10] = (-m_zfar - m_znear)/(m_zfar - m_znear);
+    proj[14] = -2*m_zfar*m_znear/(m_zfar - m_znear);
+    proj[11] = -1.0;
+    proj[15] = 0.0;
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixd(&proj[0]);
+
+
+
+}
+
+
+matf CViewer::getDepthMap(const CView<double>& view) {
+
+    // load view and paint
+    loadView(view);
+    paintGL();
+
+    // allocate result
+    QSize ws = this->size();
+    matf z(ws.height(),ws.width());
+
+    // we need buffer in order to flip the array
+    float* buffer = new float[z.NElems()];
+
+    // read depths
+    glReadPixels(0, 0,z.NCols(),z.NRows(),GL_DEPTH_COMPONENT,GL_FLOAT,buffer);
+
+    //float proj[16];
+    //glGetFloatv(GL_PROJECTION_MATRIX, proj);            // FIXME: get this from members
+    //float z1 = proj[10];
+    //float z2 = proj[14];
+    //float zFar = z2 / (z1 + 1.0);
+    //float zNear = z2*zFar / (z2 - 2.0*zFar);
+    //float zFar = -m_zfar;
+    //float zNear = -m_znear;
+
+    float zfmzn = m_zfar - m_znear;
+    float zfpzn = m_zfar + m_znear;
+    float zftzn = 2.0*m_zfar*m_znear;
+
+    for(size_t i=0; i<z.NRows(); i++) {
+
+        for(size_t j=0; j<z.NCols(); j++) {
+
+            // normalized depth
+            float zn = 2.0*buffer[(z.NRows()-i-1)*z.NCols() + j] - 1.0;
+
+            z(i,j) = zftzn/(zfpzn - zn*zfmzn);
+
+        }
+
+
+    }
+
+    delete [] buffer;
+
+    // restore view and repaint
+    loadView(m_view);
+    paintGL();
+
+    return z;
+
+}
+
+CTriMeshViewer::CTriMeshViewer(const CView<double>& view):
+    R4R::CViewer(view),
+    m_mesh(nullptr),
+    m_bbox() {
+
+}
+
+void CTriMeshViewer::setMesh(CTriangleMesh* mesh) {
+
+    m_mesh = mesh;
+
+    // update bounding box
+    m_bbox = mesh->BoundingBox();
+
+    // update clip depths
+    updateClipDepth(m_view);
+
+}
+
+void CTriMeshViewer::updateBoundingBox() {
+
+    // recompute bounding box
+    m_bbox = m_mesh->BoundingBox();
+
+    // update clip depths
+    updateClipDepth(m_view);
+
+}
+
+void CTriMeshViewer::updateClipDepth(const CView<double>& view) {
+
+    vector<vec3f> corners = m_bbox.Corners();
+
+    float minz = std::numeric_limits<float>::max();
+    float maxz = -std::numeric_limits<float>::max();
+
+    CRigidMotion<double,3> F = view.GetTransformation();
+
+    for(u_int i=0; i<corners.size(); i++) {
+
+        vec3f lc = F.Transform(corners.at(i));
+
+        if(lc.Get(2)<minz)
+            minz = lc.Get(2);
+
+        if(lc.Get(2)>maxz)
+            maxz = lc.Get(2);
+
+    }
+
+    m_znear = NEAR_PLANE_TOL*minz;
+    m_zfar = FAR_PLANE_TOL*maxz;
+
+    // send new projection matrix to graphics card
+    loadProjectionMatrix();
+
+}
+
+void CTriMeshViewer::mouseReleaseEvent(QMouseEvent *event) {
+
+    // update clip depths
+    this->updateClipDepth(m_view);
+
+    updateGL();
+
+    event->accept();
+
+}
+
+void CTriMeshViewer::paintGL() {
+
+    if(m_mesh==nullptr)
+        return;
+
+    // set projection and modelview matrices from m_view
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // load mesh
+    TriangleMesh::FaceIter f_it;
+    TriangleMesh::FaceVertexIter fv_it;
+
+    glBegin(GL_TRIANGLES);
+
+    for (f_it=m_mesh->faces_begin(); f_it!=m_mesh->faces_end(); ++f_it) {
+
+        // load normal
+        glNormal3fv(&m_mesh->normal(f_it)[0]);
+
+        for (fv_it = m_mesh->fv_iter(f_it.handle()); fv_it; ++fv_it) {
+
+            // load color
+            if(m_show_color) {
+
+                OpenMesh::Vec3uc color = m_mesh->color(fv_it);
+                glColor3ub(color[0],color[1],color[2]);
+
+            }
+            else
+                glColor3ub(200,200,200);
+
+
+            // load vertex
+            glVertex3fv(&m_mesh->point(fv_it)[0]);
+
+        }
+
+    }
+
+    glEnd();
+
+}
+
+void CTriMeshViewer::loadView(const CView<double>& view) {
+
+    // load extrinsics
+    CRigidMotion<double,3> F = view.GetTransformation();
+    mat mF = mat(F);
+
+    double mv[16];
+    mv[0] = mF.Data().get()[0];
+    mv[1] = -mF.Data().get()[1];
+    mv[2] = -mF.Data().get()[2];
+    mv[3] = mF.Data().get()[3];
+    mv[4] = mF.Data().get()[4];
+    mv[5] = -mF.Data().get()[5];
+    mv[6] = -mF.Data().get()[6];
+    mv[7] = mF.Data().get()[7];
+    mv[8] = mF.Data().get()[8];
+    mv[9] = -mF.Data().get()[9];
+    mv[10] = -mF.Data().get()[10];
+    mv[11] = mF.Data().get()[11];
+    mv[12] = mF.Data().get()[12];
+    mv[13] = -mF.Data().get()[13];
+    mv[14] = -mF.Data().get()[14];
+    mv[15] = mF.Data().get()[15];
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixd(&mv[0]);
+
+}
 
 }
