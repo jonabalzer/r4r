@@ -29,17 +29,20 @@
 #include <smmintrin.h>
 #endif
 
-#ifdef _OPENMP
-#include <omp.h>
+#ifdef HAVE_TBB
+#include <tbb/tick_count.h>
+using namespace tbb;
 #endif
 
 #include "kernels.h"
 #include "darray.h"
 
 
-namespace R4R {
-
 using namespace std;
+
+
+
+namespace R4R {
 
 template <class T>
 double CMercerKernel<T>::Evaluate(T *x, T *y) {
@@ -127,28 +130,28 @@ void CMercerKernel<T>::Gradient(T* x, T* y, T* nablax) {
 }
 
 template <class T>
-CMercerKernel<T>* CMercerKernel<T>::Create(int no, int n) {
+CMercerKernel<T>* CMercerKernel<T>::Create(KERNEL no, int n) {
 
     CMercerKernel<T>* kernel;
 
     switch(no) {
 
-    case IDENTITY:
+    case KERNEL::IDENTITY:
     {
         kernel = new CMercerKernel<T>(n);
         break;
     }
-    case CHISQUARED:
+    case KERNEL::CHISQUARED:
     {
         kernel = new CChiSquaredKernel<T>(n);
         break;
     }
-    case INTERSECTION:
+    case KERNEL::INTERSECTION:
     {
         kernel = new CIntersectionKernel<T>(n);
         break;
     }
-    case HELLINGER:
+    case KERNEL::HELLINGER:
     {
         kernel = new CHellingerKernel<T>(n);
         break;
@@ -160,8 +163,8 @@ CMercerKernel<T>* CMercerKernel<T>::Create(int no, int n) {
 
 }
 
-template <class T>
-void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
+template <>
+void CMercerKernel<float>::TestKernel(KERNEL no, int n, size_t notests) {
 
     srand(time(NULL));
 
@@ -182,12 +185,11 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     }
 
-    CMercerKernel<float>* kernel = CMercerKernel<float>::Create(kn,n);
+    CMercerKernel<float>* kernel = CMercerKernel<float>::Create(no,n);
 
-    double t0, t1;
-
-#ifdef _OPENMP
-    t0 = omp_get_wtime();
+#ifdef HAVE_TBB
+    tick_count t0, t1;
+    t0 = tick_count::now();
 #endif
 
     float result;
@@ -195,22 +197,22 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
     for(size_t k=0; k<notests; k++)
         result = kernel->Evaluate(x,y);
 
-#ifdef _OPENMP
-    t1 = omp_get_wtime();
-    cout << "Time SIMD: " << t1-t0 << endl;
+#ifdef HAVE_TBB
+    t1 = tick_count::now();
+    cout << "Parallel evaluation time: " << (t1-t0).seconds() << " s" << endl;
 #endif
 
     cout << result << endl;
 
     float comparison = 0;
 
-#ifdef _OPENMP
-    t0 = omp_get_wtime();
+#ifdef HAVE_TBB
+    t0 = tick_count::now();
 #endif
 
-    switch(kn) {
+    switch(no) {
     {
-    case IDENTITY:
+    case KERNEL::IDENTITY:
 
         for(size_t k=0; k<notests; k++) {
 
@@ -223,7 +225,7 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
         break;
     }
-    case CHISQUARED:
+    case KERNEL::CHISQUARED:
     {
 
         for(size_t k=0; k<notests; k++) {
@@ -244,7 +246,7 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
         break;
 
     }
-    case INTERSECTION:
+    case KERNEL::INTERSECTION:
     {
 
         for(size_t k=0; k<notests; k++) {
@@ -259,7 +261,7 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
         break;
 
     }
-    case HELLINGER:
+    case KERNEL::HELLINGER:
     {
 
         for(size_t k=0; k<notests; k++) {
@@ -278,9 +280,9 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
     }
 
 
-#ifdef _OPENMP
-    t1 = omp_get_wtime();
-    cout << "Time: " << t1-t0 << endl;
+#ifdef HAVE_TBB
+    t1 = tick_count::now();
+    cout << "Sequential evaluation time: " << (t1-t0).seconds() << " s" << endl;
 #endif
 
     cout << comparison << endl;

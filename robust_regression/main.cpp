@@ -231,14 +231,7 @@ bool COsbourneFunction::SaveData(const char* filename) {
 
     }
 
-    ofstream out(filename);
-
-    if(!out.is_open())
-        return 1;
-
-    out << data;
-
-    out.close();
+    data.WriteToFile(filename);
 
     return 0;
 

@@ -23,11 +23,6 @@
 
 QMAKE_CXXFLAGS += -std=c++0x -O3
 
-# add last flag depending on whether FFTW is present
-packagesExist(fftw3) {
-    DEFINES += HAVE_FFTW
-}
-
 TARGET = r4r_motion
 TEMPLATE = lib
 
@@ -35,13 +30,11 @@ DEFINES += R4R_MOTION_LIBRARY
 
 SOURCES += tracker.cpp \
     stracker.cpp \
-    #ptracker.cpp \
     mtracker.cpp \
     lk.cpp \
     feature.cpp \
     descriptor.cpp \
     basic.cpp \
-    #tsttrack.cpp \
     tracklet.cpp \
     dagg.cpp \
     descspecial.cpp
@@ -49,17 +42,19 @@ SOURCES += tracker.cpp \
 HEADERS += \
     tracker.h \
     stracker.h \
-    #ptracker.h \
     mtracker.h \
     lk.h \
     feature.h \
     descriptor.h \
     basic.h \
-    #tsttrack.h \
     tracklet.h \
     dagg.h \
     descspecial.h
 
+# add last flag depending on whether FFTW is present
+packagesExist(fftw3) {
+    DEFINES += HAVE_FFTW
+}
 
 # make sure that r4r_core is up to date
 DEPENDPATH += $$PWD/../r4r_core

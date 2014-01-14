@@ -278,7 +278,7 @@ vector<size_t> CTracker::ComputeFeatureDensity(vector<CIntegralImage<size_t> >& 
 
 }
 
-CTracker::iterator::iterator(CTracker* tracker):
+/*CTracker::iterator::iterator(CTracker* tracker):
 	m_tracker(tracker),
 	m_t(0) {
 
@@ -355,9 +355,7 @@ void CTracker::iterator::Advance(size_t step) {
 
 	}
 
-}
-
-
+}*/
 
 
 } // end of namespace

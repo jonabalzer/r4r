@@ -219,5 +219,170 @@ CRGBImage CRGBImage::Clone(CRectangle<T> roi) {
 
 }*/
 
+
+template<typename T>
+CIntImage<T>::CIntImage(size_t width, size_t height):
+    CDenseArray<T>::CDenseArray(height,width) {}
+
+template<typename T>
+void CIntImage<T>::Compute() {
+
+    if(this->NCols()>=this->NRows()) {
+
+        for(size_t d=1; d<this->NRows(); d++) {
+
+            // process the quadratic part of the matrix
+            for(size_t i=0; i<d; i++) {
+
+                if(i==0) {
+
+                    // column above (d+d)
+                    this->operator ()(d,i) += this->Get(d-1,i);
+
+                    // row left of (d+d)
+                    this->operator ()(i,d) += this->Get(i,d-1);
+
+                }
+                else {
+
+                    // column above (d+d)
+                    this->operator ()(d,i) += this->Get(d,i-1) + this->Get(d-1,i) - this->Get(d-1,i-1);
+
+                    // row left of (d+d)
+                    this->operator ()(i,d) += this->Get(i,d-1) + this->Get(i-1,d) - this->Get(i-1,d-1);
+
+                }
+
+            }
+
+            // value at (d+d)
+            this->operator ()(d,d) += this->Get(d,d-1) + this->Get(d-1,d) - this->Get(d-1,d-1);
+
+        }
+
+        // process the remaining columns
+        for(size_t j=this->NRows(); j<this->NCols(); j++) {
+
+            for(size_t i=0; i<this->NRows(); i++) {
+
+                if(i==0)
+                    this->operator ()(i,j) += this->Get(i,j-1);
+                else
+                    this->operator ()(i,j) += this->Get(i,j-1) + this->Get(i-1,j) - this->Get(i-1,j-1);
+
+            }
+
+        }
+
+    }
+    else {
+
+        for(size_t d=1; d<this->NCols(); d++) {
+
+            for(size_t i=0; i<d; i++) {
+
+                if(i==0) {
+
+                    // column above (d+d)
+                    this->operator ()(d,i) += this->Get(d-1,i);
+
+                    // row left of (d+d)
+                    this->operator ()(i,d) += this->Get(i,d-1);
+
+                }
+                else {
+
+                    // column above (d+d)
+                    this->operator ()(d,i) += this->Get(d,i-1) + this->Get(d-1,i) - this->Get(d-1,i-1);
+
+                    // row left of (d+d)
+                    this->operator ()(i,d) += this->Get(i,d-1) + this->Get(i-1,d) - this->Get(i-1,d-1);
+
+                }
+
+
+            }
+
+            // value at (d+d)
+            this->operator ()(d,d) += this->Get(d,d-1) + this->Get(d-1,d) - this->Get(d-1,d-1);
+
+        }
+
+        // process the remaining row
+        for(size_t i=this->NCols(); i<this->NRows(); i++) {
+
+            for(size_t j=0; j<this->NCols(); j++) {
+
+                if(j==0)
+                    this->operator ()(i,j) += this->Get(i-1,j);
+                else
+                    this->operator ()(i,j) += this->Get(i,j-1) + this->Get(i-1,j) - this->Get(i-1,j-1);
+
+
+            }
+
+        }
+
+    }
+
+}
+
+template<typename T>
+void CIntImage<T>::AddMass(const CVector<double,2>& x, T val) {
+
+    double dx, dy;
+    dx = x.Get(0) - floor(x.Get(0));
+    dy = x.Get(1) - floor(x.Get(1));
+
+    size_t i, j;
+    i = size_t(x.Get(1));
+    j = size_t(x.Get(0));
+
+    this->operator ()(i,j) += T(dx*dy*val);
+    this->operator ()(i+1,j) += T(dx*(1-dy)*val);
+    this->operator ()(i,j+1) += T(dy*(1-dx)*val);
+    this->operator ()(i+1,j+1) += T((1-dx)*(1-dy)*val);
+
+}
+
+template<typename T>
+void CIntImage<T>::AddMass(const CVector<size_t,2>& x, T val) {
+
+    this->operator ()(x.Get(1),x.Get(0)) += val;
+
+}
+
+template<typename T>
+template<typename U>
+U CIntImage<T>::Evaluate(const CVector<double,2>& x, const CVector<double,2>& hsize) const {
+
+    CVector<double,2> tl = this->ProjectToBoundary(x - hsize);
+    CVector<double,2> br = this->ProjectToBoundary(x + hsize);
+    CVector<double,2> bl = { tl.Get(0), br.Get(1) };
+    CVector<double,2> tr = { br.Get(0), tl.Get(1) };
+
+    return this->template Get<U>(tl) + this->template Get<U>(br) - this->template Get<U>(bl) - this->template Get<U>(tr);
+
+}
+
+template double CIntImage<double>::Evaluate<double>(const CVector<double,2>& x, const CVector<double,2>& hsize) const;
+
+template<typename T>
+T CIntImage<T>::EvaluateApproximately(const CVector<double,2>& x, const CVector<double,2>& hsize) const {
+
+    CVector<double,2> tl = this->ProjectToBoundary(x - hsize);
+    CVector<double,2> br = this->ProjectToBoundary(x + hsize);
+    CVector<double,2> bl = { tl.Get(0), br.Get(1) };
+    CVector<double,2> tr = { br.Get(0), tl.Get(1) };
+
+    return this->Get(tl) + this->Get(br) - this->Get(bl) - this->Get(tr);
+
+}
+
+template class CIntImage<size_t>;
+template class CIntImage<double>;
+template class CIntImage<float>;
+
+
 } // end of namespace
 

@@ -26,11 +26,17 @@
 #include <fstream>
 #include <string>
 
+//#ifdef HAVE_TBB
+//#include <tbb/tbb.h>
+//using namespace tbb;
+//#endif
+
 #include "cam.h"
 #include "rutils.h"
 #include "factor.h"
 
 using namespace std;
+
 
 namespace R4R {
 
@@ -38,9 +44,18 @@ vector<vec2> CAbstractCam::Project(const vector<vec3>& x) const {
 
     vector<vec2> result(x.size());
 
-#pragma omp parallel for
+//#ifndef HAVE_TBB
     for(size_t i=0; i<x.size(); i++)
         result[i] = Project(x[i]);
+/* #else
+    parallel_for(blocked_range<size_t>(0,x.size()),[&](const blocked_range<size_t>& r){
+
+        for(size_t i=r.begin(); i!=r.end(); i++){
+            result[i] = Project(x[i]);
+        }
+
+    });
+#endif*/
 
     return result;
 
@@ -50,7 +65,6 @@ vector<vec2f> CAbstractCam::Project(const vector<vec3f>& x) const {
 
     vector<vec2f> result(x.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Project(x[i]);
 
@@ -62,7 +76,6 @@ vector<vec3> CAbstractCam::Normalize(const vector<vec2>& u) const {
 
     vector<vec3> result(u.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<u.size(); i++)
         result[i] = Normalize(u[i]);
 
@@ -74,7 +87,6 @@ vector<vec3f> CAbstractCam::Normalize(const std::vector<vec2f> &u) const {
 
     vector<vec3f> result(u.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<u.size(); i++)
         result[i] = Normalize(u[i]);
 
@@ -86,7 +98,6 @@ vector<vec2> CAbstractCam::Flow(const std::vector<vec3>& x, const std::vector<ve
 
     vector<vec2> result(x.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Flow(x[i],dx[i]);
 
@@ -98,7 +109,6 @@ vector<vec2f> CAbstractCam::Flow(const std::vector<vec3f>& x, const std::vector<
 
     vector<vec2f> result(x.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Flow(x[i],dx[i]);
 

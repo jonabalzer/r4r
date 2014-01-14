@@ -168,7 +168,6 @@ vector<CVector<T,n> > CTransformation<T,n>::Transform(const vector<CVector<T,n> 
 
     vector<CVector<T,n> > result(x.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Transform(x[i]);
 
@@ -181,7 +180,6 @@ vector<CVector<T,n> > CTransformation<T,n>::DifferentialTransform(const vector<C
 
     vector<CVector<T,n> > result(x.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = DifferentialTransform(x[i]);
 

@@ -23,7 +23,7 @@
 
 #QT -= core gui
 
-QMAKE_CXXFLAGS += -std=c++0x -fopenmp -O3 -msse4
+QMAKE_CXXFLAGS += -std=c++0x -O3 -msse4
 
 TARGET = r4r_core
 TEMPLATE = lib
@@ -72,7 +72,14 @@ HEADERS += \
     kernels.h \
     splinecurve.h \
     vecn.h \
-    image.h
+    image.h \
+    rbuffer.h
+
+# see if intel tbb existst
+packagesExist(tbb) {
+    DEFINES += HAVE_TBB
+    CONFIG(debug,debug|release):DEFINES += TBB_USE_DEBUG
+}
 
 unix:!symbian|win32 {
 
@@ -93,7 +100,15 @@ unix:!symbian|win32 {
             -lopencv_imgproc \
             -lopencv_features2d \
             -lopencv_calib3d \
-            -llapack \
-            -lgomp
+            -llapack
+
+    contains(DEFINES,HAVE_TBB) {
+            LIBS += -ltbb
+            #CONFIG(release,debug|release):LIBS+= -ltbb
+            #CONFIG(debug,debug|release):LIBS+= -ltbb_debug
+    }
+
+
+
 
 }

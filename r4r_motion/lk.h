@@ -59,7 +59,7 @@ public:
 private:
 
 	const vec m_u0;												//! pixel in frame 0
-	const size_t m_hsize;											//!< half of the LK search window
+    const size_t m_hsize;										//!< half of the LK search window
 	const cv::Mat& m_img0;										//!< frame 0
 	const cv::Mat& m_img1;										//!< frame 1
 

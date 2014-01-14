@@ -33,8 +33,8 @@
 #include <fstream>
 
 
-#ifdef _OPENMP
-#include <omp.h>
+#ifdef HAVE_TBB
+#include <tbb/tbb.h>
 #endif
 
 using namespace std;

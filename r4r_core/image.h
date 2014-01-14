@@ -33,20 +33,6 @@
 
 namespace R4R {
 
-/*! \brief image interface
- *
- */
-class CImage {
-
-    //! Image width.
-    virtual size_t Width() = 0;
-
-    //! Image width.
-    virtual size_t Height() = 0;
-
-};
-
-
 /*! \brief R4R's own gray value image class
  *
  *
@@ -94,7 +80,7 @@ public:
  *
  *
  */
-class CRGBImage: public CDenseArray<rgb>, public CImage {
+class CRGBImage: public CDenseArray<rgb> {
 
 public:
 
@@ -139,6 +125,74 @@ public:
 private:
 
 };
+
+/*! \brief integral image
+ *
+ *
+ *
+ */
+template<typename T>
+class CIntImage: public CDenseArray<T> {
+
+public:
+
+    //! Constructor.
+    CIntImage(size_t width, size_t height);
+
+    //! Computes the integral.
+    void Compute();
+
+    //! Image width.
+    size_t Width() { return this->NCols(); }
+
+    //! Image height.
+    size_t Height() { return this->NRows(); }
+
+    /*! \brief Increases the density at a point.
+     *
+     * \param[in] x point in the image plane
+     * \param[in] val amount of mass to add
+     *
+     * \details If the point falls between grid cells, the mass is distributed between the neighboring
+     * vertices according to the individual areas of the cell partition.
+     */
+    void AddMass(const CVector<double,2>& x, T val);
+
+    /*! \brief Increases the density at a point.
+     *
+     * \param[in] x point in the image plane
+     * \param[in] val amount of mass to add
+     *
+     */
+    void AddMass(const CVector<size_t,2>& x, T val);
+
+    /*! \brief Evaluates the integral image at corners of a rectangular window around a location.
+     *
+     * \param[in] x center of the integration domain
+     * \param[in] hsize half-size of the integration domain
+     *
+     * \details \f$x\f$ is the center pixel. Non-integral locations will be interpolated bi-linearly.
+     *
+     */
+    template<typename U> U Evaluate(const CVector<double,2>& x, const CVector<double,2>& hsize) const;
+
+    /*! \brief Evaluates the integral image at corners of a rectangular window around a location.
+     *
+     * \param[in] x center of the integration domain
+     * \param[in] hsize half-size of the integration domain
+     *
+     * \details \f$x\f$ is the center pixel. Non-integral locations will be rounded down.
+     *
+     */
+    T EvaluateApproximately(const CVector<double,2>& x, const CVector<double,2>& hsize) const;
+
+private:
+
+
+};
+
+
+
 
 
 }

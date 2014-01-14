@@ -57,51 +57,6 @@ class CTracker:public std::list<std::shared_ptr<CTracklet> >  {
 
 public:
 
-	/*! \brief iterator class for CTracker objects
-	 *
-	 *
-	 *
-	 */
-	class iterator {
-
-	public:
-
-		//! Constructor.
-		iterator(CTracker* tracker);
-
-		//! Increments iterator.
-		void operator++();
-
-		//! Increments by more than 1.
-		void Advance(size_t step);
-
-		//! Checks termination condition.
-        bool operator()() { return m_t<=m_tracker->m_global_t; }
-
-		//! Dereferencing operator.
-        std::map<shared_ptr<CTracklet>,std::list<imfeature>::iterator > operator*() { return m_data; }
-
-		//! Access to the internal counter.
-		size_t GetTime() const { return m_t; }
-
-	private:
-
-        CTracker* m_tracker;													//!< tracker to iterate through
-        std::map<shared_ptr<CTracklet>,std::list<imfeature>::iterator > m_data;	//!< data container
-        size_t m_t;																//!< global time variable
-
-		//! Advances the iterators that are currently alive.
-		void UpdateTracklets();
-
-		//! Looks for active tracklets at #m_t and adds them to the iterator.
-		void AddTracklets();
-
-		//! Removes dead tracks from iterator.
-		void Clean();
-
-	};
-
-	friend class CTracker::iterator;
 
 	//! Standard constructor.
 	CTracker();
@@ -218,6 +173,53 @@ public:
     void Draw(QImage& img, size_t length) const;
 
 #endif
+
+    /*! \brief iterator class for CTracker objects
+     *
+     *
+     *
+     */
+    /*class iterator {
+
+    public:
+
+        //! Constructor.
+        iterator(CTracker* tracker);
+
+        //! Increments iterator.
+        void operator++();
+
+        //! Increments by more than 1.
+        void Advance(size_t step);
+
+        //! Checks termination condition.
+        bool operator()() { return m_t<=m_tracker->m_global_t; }
+
+        //! Dereferencing operator.
+        std::map<shared_ptr<CTracklet>,std::list<imfeature>::iterator > operator*() { return m_data; }
+
+        //! Access to the internal counter.
+        size_t GetTime() const { return m_t; }
+
+    private:
+
+        CTracker* m_tracker;													//!< tracker to iterate through
+        std::map<shared_ptr<CTracklet>,std::list<imfeature>::iterator > m_data;	//!< data container
+        size_t m_t;																//!< global time variable
+
+        //! Advances the iterators that are currently alive.
+        void UpdateTracklets();
+
+        //! Looks for active tracklets at #m_t and adds them to the iterator.
+        void AddTracklets();
+
+        //! Removes dead tracks from iterator.
+        void Clean();
+
+    };
+
+    friend class CTracker::iterator;*/
+
 
 protected:
 

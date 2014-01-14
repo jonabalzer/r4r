@@ -70,14 +70,14 @@ public:
 
 };
 
-template<class T> class CDenseVector;
+template<typename T> class CDenseVector;
 
 /*! \brief dense 2d matrix/array
  *
  *
  *
  */
-template<class T>
+template<typename T>
 class CDenseArray {
 
 public:
@@ -147,18 +147,28 @@ public:
 	//! Non-destructive element access.
 	T Get(size_t i, size_t j) const;
 
-    //! Non-destructive element access.
+    /*! \brief Non-destructive element access.
+     *
+     * Unfortunately, this member cannot be templated because this would lead to
+     * ambiguities. But it rarely needs to be because thanks to implicit casting,
+     * this function can also be called with floating point input vectors.
+     */
     T Get(const CVector<int,2>& p) const { return this->Get(p.Get(0),p.Get(1)); }
 
     /*! Non-destructive element access.
      *
-     * Bilinear interpolation of inter-grid points.
+     * Bilinear interpolation of inter-grid points. Make sure to use the template
+     * parameter of the function because otherwise implicit rounding is performed
+     * and Get(const CVector<int,2>&) const is called.
      *
      */
     template<typename U> U Get(const CVector<double,2>& p) const;
 
     //! Compute central-difference approximation of the gradient of the array data.
     template<typename U> std::vector<U> Gradient(const CVector<double,2>& p) const;
+
+    //! Maps a point that is out of bounds to its closest points on the boundary.
+    CVector<double,2> ProjectToBoundary(const CVector<double,2>& x) const;
 
 	//! Overwrites data.
     void Set(std::shared_ptr<T> data);
@@ -313,9 +323,6 @@ public:
 	 */
 	T Determinant() const;
 
-    //! Column-wise shrinkage operator.
-    void Shrink(double lambda);
-
 	//! Returns the number of bytes of the data type.
     size_t SizeOf() const { return sizeof(T); }
 
@@ -359,7 +366,7 @@ typedef CDenseArray<unsigned char> mmat;
  *
  *
  */
-template<class T>
+template<typename T>
 class CDenseVector:public CDenseArray<T> {
 public:
 
@@ -452,7 +459,7 @@ typedef CDenseVector<float> vecf;
  *
  *
  */
-template<class T>
+template<typename T>
 class CDenseSymmetricArray {
 
 public:

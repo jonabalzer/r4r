@@ -29,7 +29,7 @@
 
 namespace R4R {
 
-enum KERNEL {  IDENTITY, CHISQUARED, INTERSECTION, HELLINGER };
+enum class KERNEL {  IDENTITY, CHISQUARED, INTERSECTION, HELLINGER };
 
 template <class T>
 class CMercerKernel {
@@ -52,10 +52,10 @@ public:
     void Gradient(T* x, T* y, T* nablax);
 
     //! Create a kernel by number. Make sure to de-allocate it later.
-    static CMercerKernel<T>* Create(int no, int n);
+    static CMercerKernel<T>* Create(KERNEL no, int n);
 
     //! Tests the kernel.
-    static void TestKernel(int kn, int n, size_t notests);
+    static void TestKernel(KERNEL no, int n, size_t notests);
 
     //! Access to the size.
     int GetN() { return m_n; }
