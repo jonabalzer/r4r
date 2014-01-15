@@ -68,6 +68,21 @@ CVector<T,n>::CVector(initializer_list<T> list) {
 
 }
 
+template<typename T, u_int n>
+bool CVector<T,n>::IsZero() const {
+
+    for(u_int i=0; i<n; i++) {
+
+        if(m_data[i])
+            return false;
+
+    }
+
+    return true;
+
+}
+
+
 template <typename T, u_int n>
 T& CVector<T,n>::operator ()(u_int i) {
 

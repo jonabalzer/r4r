@@ -22,77 +22,90 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "tracker.h"
+
 #include <iostream>
 #include <fstream>
 #include <set>
+#include <typeinfo>
 
 using namespace std;
 using namespace cv;
 
 namespace R4R {
 
-CTracker::CTracker():
-    list<shared_ptr<CTracklet> >(),
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+CTracker<Container>::CTracker():
+    m_data(),
+    m_params(nullptr),
     m_global_t(0),
     m_n_active_tracks(0) {}
 
-CTracker::CTracker(CParameters* params):
-    list<shared_ptr<CTracklet> >(),
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+CTracker<Container>::CTracker(CParameters* params):
+    m_data(),
     m_params(params),
-    m_global_t(0) {}
+    m_global_t(0),
+    m_n_active_tracks(0) {}
 
-CTracker::~CTracker() {
 
-	list<shared_ptr<CTracklet> >::iterator it;
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+CTracker<Container>::~CTracker() {
 
-    for(it=begin(); it!=end(); it++)
+    typename Container<shared_ptr<CTracklet> >::iterator it;
+
+    for(it=m_data.begin(); it!=m_data.end(); it++)
         it->reset();
 
-	clear();
-
 }
 
-void CTracker::DeleteInvalidTracks() {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+void CTracker<Container>::DeleteInvalidTracks() {
 
-    list<shared_ptr<CTracklet> >::iterator it;
-    vector<shared_ptr<CTracklet> > todel;
+    // make a copy of the valid ones, linear complexity
+    Container<shared_ptr<CTracklet> > valid;
 
-    // mark for deletion
-    for(it=begin(); it!=end(); it++) {
+    typename Container<shared_ptr<CTracklet> >::iterator it;
 
-         if(!(*it)->GetStatus() && (*it)!=nullptr)
-             todel.push_back(move(*it));
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
+
+        if((*it)->GetStatus())
+            valid.push_back((*it));
+        else // reset shared ptr
+            it->reset();
 
     }
 
-    // delete and remove from list
-    for(size_t i=0; i<todel.size(); i++) {
-
-        // the tracklet will be destroyed if this is the last reference
-        todel[i].reset();
-        remove(todel[i]);
-
-    }
+    // replace data
+    m_data = valid;
 
 }
 
-shared_ptr<CTracklet> CTracker::AddTracklet(imfeature x) {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+shared_ptr<CTracklet> CTracker<Container>::AddTracklet(const imfeature& x) {
 
     shared_ptr<CTracklet> tracklet(new CTracklet(m_global_t,x));
 
-    push_back(tracklet);
+    m_data.push_back(tracklet);
 
 	return tracklet;
 
 }
 
-size_t CTracker::ActiveCapacity() const {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+void CTracker<Container>::AddTracklet(CTracklet* tracklet) {
+
+    m_data.push_back(shared_ptr<CTracklet>(tracklet));
+
+}
+
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+size_t CTracker<Container>::ActiveCapacity() const {
 
 	size_t result = 0;
 
-    list<shared_ptr<CTracklet> >::const_iterator it;
+    typename Container<shared_ptr<CTracklet> >::const_iterator it;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         if((*it)->GetStatus())
             result++;
@@ -105,11 +118,12 @@ size_t CTracker::ActiveCapacity() const {
 
 #ifdef QT_GUI_LIB
 
-void CTracker::Draw(QImage& img, size_t length) const {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+void CTracker<Container>::Draw(QImage& img, size_t length) const {
 
-    list<shared_ptr<CTracklet> >::const_iterator it;
+    typename Container<shared_ptr<CTracklet> >::const_iterator it;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         if((*it)->GetStatus()) {
 
@@ -123,15 +137,14 @@ void CTracker::Draw(QImage& img, size_t length) const {
 
 #endif
 
-bool CTracker::SaveToFile(const char* dir, const char* prefix) {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+bool CTracker<Container>::SaveToFile(const char* dir, const char* prefix) {
 
-	cout << "Writing tracks to file..." << endl;
-
-	list<shared_ptr<CTracklet> >::iterator it;
+    typename Container<shared_ptr<CTracklet> >::iterator it;
 
 	size_t counter = 0;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         stringstream no;
         no.fill('0');
@@ -142,7 +155,14 @@ bool CTracker::SaveToFile(const char* dir, const char* prefix) {
         stringstream filename;
         filename << string(dir) << string(prefix) << no.str() << ".dat";
 
-        imfeature::SaveToFile(filename.str().c_str(),*(*it));
+        // compress tracklet and reverse order
+        (*it)->CompressAndReverse();
+
+        // get access to data
+        const vector<imfeature>& data = (*it)->GetData();
+
+        // save to file
+        imfeature::SaveToFile<vector>(filename.str().c_str(),data);
 
     }
 
@@ -150,15 +170,16 @@ bool CTracker::SaveToFile(const char* dir, const char* prefix) {
 
 }
 
-shared_ptr<CTracklet> CTracker::SearchTracklet(imfeature x0, size_t t0) {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+shared_ptr<CTracklet> CTracker<Container>::SearchTracklet(string hash) {
 
-	list<shared_ptr<CTracklet> >::iterator it;
+    typename Container<shared_ptr<CTracklet> >::iterator it;
 
 	shared_ptr<CTracklet> result;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
-        if((*it)->GetCreationTime()==t0 && (*it)->front()==x0)
+        if((*it)->GetHash()==hash)
             result = *it;
 
     }
@@ -167,21 +188,23 @@ shared_ptr<CTracklet> CTracker::SearchTracklet(imfeature x0, size_t t0) {
 
 }
 
-shared_ptr<CTracklet> CTracker::SearchFittestTracklet() {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+shared_ptr<CTracklet> CTracker<Container>::SearchFittestTracklet() {
 
-	list<shared_ptr<CTracklet> >::iterator it;
+    typename Container<shared_ptr<CTracklet> >::iterator it;
 
 	size_t max = 0;
 
 	shared_ptr<CTracklet> result;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
-        if((*it)->size()>max) {
+        size_t lifetime = m_global_t - (*it)->GetCreationTime();
+
+        if(lifetime>max) {
 
             result = *it;
-
-            max = result->size();
+            max = lifetime;
 
         }
 
@@ -191,37 +214,33 @@ shared_ptr<CTracklet> CTracker::SearchFittestTracklet() {
 
 }
 
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+map<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > > CTracker<Container>::ComputeCovisibilityGraph() {
 
-map<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > > CTracker::ComputeCovisibilityGraph() {
-
-	cout << "Computing covisibility graph..." << endl;
 
 	map<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > > graph;
 
-	list<shared_ptr<CTracklet> >::iterator it, it2;
+    typename Container<shared_ptr<CTracklet> >::iterator it, it2;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         list<shared_ptr<CTracklet> > adjlist;
         adjlist.push_back(*it);
 
+        // insert an empty list of neighbors for each tracklet
         graph.insert(pair<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > >(*it,adjlist));
 
     }
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
-        for(size_t t=0; t<size(); t++) {
+        for(it2=m_data.begin(); it2!=m_data.end(); it2++) {
 
-            for(it2=begin(); it2!=end(); it2++) {
+            size_t t01 = (*it)->GetCreationTime();
+            size_t t02 = (*it2)->GetCreationTime();
 
-                size_t t01 = (*it)->GetCreationTime();
-                size_t t02 = (*it2)->GetCreationTime();
-
-                if((*it)!=(*it2) && (t01+(*it)->size()-1>=t02 || t01<=t02+(*it2)->size()-1))
-                    graph[*it].push_back(*it2);
-
-            }
+            if((*it)!=(*it2) && (t01+(*it)->Size()-1>=t02 || t01<=t02+(*it2)->Size()-1))
+                graph[*it].push_back(*it2);
 
         }
 
@@ -231,12 +250,12 @@ map<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > > CTracker::ComputeCovisi
 
 }
 
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+void CTracker<Container>::SetAllTrackletsActive() {
 
-void CTracker::SetAllTrackletsActive() {
+    typename Container<shared_ptr<CTracklet> >::iterator it;
 
-	list<shared_ptr<CTracklet> >::iterator it;
-
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         (*it)->SetStatus(true);
 
@@ -244,12 +263,13 @@ void CTracker::SetAllTrackletsActive() {
 
 }
 
-vector<size_t> CTracker::ComputeFeatureDensity(vector<CIntegralImage<size_t> >& imgs) {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+vector<size_t> CTracker<Container>::ComputeFeatureDensity(vector<CIntegralImage<size_t> >& imgs) {
 
-    list<shared_ptr<CTracklet> >::iterator it;
+    typename Container<shared_ptr<CTracklet> >::iterator it;
     vector<size_t> n(imgs.size());
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         // only consider active tracklets
         if((*it)->GetStatus()) {
@@ -278,84 +298,8 @@ vector<size_t> CTracker::ComputeFeatureDensity(vector<CIntegralImage<size_t> >& 
 
 }
 
-/*CTracker::iterator::iterator(CTracker* tracker):
-	m_tracker(tracker),
-	m_t(0) {
-
-	AddTracklets();
-
-}
-
-
-void CTracker::iterator::UpdateTracklets() {
-
-    map<shared_ptr<CTracklet>,list<imfeature>::iterator >::iterator it;
-
-	for(it=m_data.begin(); it!=m_data.end(); it++)
-		(it->second)++;
-
-}
-
-void CTracker::iterator::AddTracklets() {
-
-	list<shared_ptr<CTracklet> >::iterator it;
-
-    for(it=m_tracker->begin(); it!=m_tracker->end(); it++) {
-
-        if((*it)->GetCreationTime()==m_t) {
-
-            list<imfeature>::iterator itt = it->get()->begin();
-
-            m_data.insert(pair<shared_ptr<CTracklet>,list<imfeature>::iterator >(*it,itt));
-
-        }
-
-    }
-
-}
-
-void CTracker::iterator::Clean() {
-
-	list<shared_ptr<CTracklet> >::iterator it;
-
-    for(it=m_tracker->begin(); it!=m_tracker->end(); it++) {
-
-        if(m_t>(*it)->GetCreationTime()+(*it)->size()-1)
-            m_data.erase(*it);
-
-    }
-
-}
-
-void CTracker::iterator::operator++() {
-
-	m_t++;
-
-	UpdateTracklets();
-
-	Clean();
-
-	AddTracklets();
-
-}
-
-
-void CTracker::iterator::Advance(size_t step) {
-
-	size_t k = 0;
-
-	while(k<step) {
-
-		if(this->operator ()())
-			this->operator ++();
-		else
-			break;
-
-		k++;
-
-	}
-
-}*/
+template class CTracker<list>;
+template class CTracker<vector>;
 
 
 } // end of namespace

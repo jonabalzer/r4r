@@ -26,6 +26,9 @@
 
 #include <list>
 #include <set>
+#include <iostream>
+#include <memory>
+#include <iterator>
 
 #ifdef QT_GUI_LIB
 #include <QImage>
@@ -35,8 +38,8 @@
 
 #include "feature.h"
 #include "types.h"
-#include <iostream>
-#include <memory>
+
+#define MAX_TRACKLET_LENGTH 50
 
 namespace R4R {
 
@@ -45,70 +48,93 @@ typedef CInterestPoint<float,2> imfeature;
 /*! \brief feature trajectory
  *
  *
- *
  */
-class CTracklet:public std::list<imfeature> {
-
-	friend class CTracker;
+class CTracklet {
 
 public:
 
-	//! Standard constructor.
-	CTracklet();
+    //! Inhibits empty tracklets.
+    CTracklet() = delete;
 
-	//! Constructor.
-    CTracklet(size_t t0, imfeature x0);
+    //! Constructor.
+    explicit CTracklet(size_t t0, const imfeature& x0, size_t maxlength = MAX_TRACKLET_LENGTH);
 
-	//! Tests whether two tracklets are equal by looking at their initial position.
-    bool operator!=(CTracklet& tracklet) { return GetHash()!=tracklet.GetHash(); }
+    //! Directly updates the state without any filtering.
+    void Update(const imfeature& x);
 
-	//! Directly updates the state without any filtering.
-    void Update(imfeature x);
+    /*! \brief Provides access to previous feature position.
+     *
+     * \param[in] steps number of steps to go back in time
+     *
+     */
+    const vec2f& GetPastLocation(size_t steps) const;
 
-    //! Provides access to the current state.
-    imfeature& GetLatestState() { return back(); }
-
-	//! Provides access to the current feature position.
-    vec2f GetLatestLocation() const { return back().GetLocation(); }
-
-	//! Provides access to previous feature position.
-    vec2f GetPastLocation(size_t steps) const;
-
-	//! Provides access to previous feature position w.r.t. to the native scale.
+    //! Provides access to previous feature position w.r.t. to the native scale.
     vec2f GetPastLocationAtNativeScale(size_t steps) const;
 
-	//! Provides access to the current feature position w.r.t. to the native scale.
-    vec2f GetLatestLocationAtNativeScale() const { return back().GetLocationAtNativeScale(); }
+    //! Streams the tracklet to a given output.
+    friend  std::ostream& operator <<(std::ostream& os, const CTracklet& x);
 
-	//! Extrapolates the current translational speed from the feature.
-    vec2f GetLatestVelocity();
+    //! Returns the lifetime of the tracklet.
+    size_t Size() { return m_lifetime; }
+
+    /*! \brief Tests whether two tracklets are equal by looking at their initial position.
+     *
+     * This can always be done as there is no way to construct an empy tracklet.
+     *
+     */
+    bool operator!=(const CTracklet& tracklet) const { return GetHash()!=tracklet.GetHash(); }
+
+    //! Provides access to the current state.
+    imfeature& GetLatestState() { return m_data.at(m_cursor); }
+
+    //! Provides access to the current state.
+    const imfeature& GetLatestState() const { return m_data.at(m_cursor); }
+
+    //! Provides access to the current feature position.
+    const vec2f& GetLatestLocation() const { return m_data.at(m_cursor).GetLocation(); }
+
+    //! Provides access to the current feature position w.r.t. to the native scale.
+    vec2f GetLatestLocationAtNativeScale() const { return m_data.at(m_cursor).GetLocationAtNativeScale(); }
 
     //! Returns the current scale.
-    float GetScale() const { return back().GetScale(); }
+    float GetScale() const { return m_data.at(m_cursor).GetScale(); }
 
-	//! Streams the tracklet to a given output.
-	friend std::ostream& operator<<(std::ostream& os, CTracklet& x);
-
-	/*! \brief Generates a hash key for the tracklet.
-	 *
-	 * \details The hash is built from two quantities that should identify each tracklet uniquely:
-	 * - creation time
-	 * - initial x and y position
-	 */
-    std::string GetHash() const;
-
-	//! Gets the status.
+    //! Gets the status.
     bool GetStatus() const { return m_status; }
 
     //! Sets the status flag.
     void SetStatus(bool status) { m_status = status; }
 
-	/*! Gets the creation time.
-	 *
-     *\details Note that there is no member function to change #m_t as it is uniquely defined during reconstruction.
-	 *
-	 */
+    /*! \brief Gets the creation time.
+     *
+     * Note that there is no member function to change #m_t as it is uniquely defined during reconstruction.
+     *
+     */
     size_t GetCreationTime() const { return m_t0; }
+
+    //! Returns tracklet hash code.
+    std::string GetHash() const { return m_hash; }
+
+    //! Read-access to the data.
+    const vector<imfeature>& GetData() { return m_data; }
+
+    /*! \brief Generates a hash key for the tracklet.
+     *
+     * The hash is built from two quantities that should identify each tracklet uniquely:
+     * - creation time
+     * - initial location
+     */
+     static std::string GenerateHash(size_t t0, const imfeature& x);
+
+     /*! \brief Deletes unused ring buffer space.
+      *
+      * This method is useful for exporting entire trajectories. In this case, choose the buffer size
+      * larger than necessary, run the tracker, and compress the tracklets before saving them to disk.
+      * This also reverses the storage order.
+      *
+      */
+     void CompressAndReverse();
 
 #ifdef QT_GUI_LIB
 
@@ -119,30 +145,36 @@ public:
 
 #endif
 
-protected:
+private:
 
-    size_t m_t0;            //!< creation time
-    bool m_status;			//!< status
+    vector<imfeature> m_data;       //!< vector which holds the data
+    size_t m_t0;                    //!< creation time
+    bool m_status;                  //!< status
+    std::string m_hash;             //!< hash key for tracklet
+    int m_cursor;                   //!< iterator pointing to the last feature
+    size_t m_lifetime;              //!< how long is the tracklet alive
 
 };
 
 
+
 /*! \brief tracklets for tracking on the selection tree
  *
- *
+ * Alhtough TST is not part of R4R anymore, this class is kept because it might be useful
+ * anywhere where tracklets have to refer to each other.
  *
  */
 class CSTTracklet:public CTracklet {
 
-	friend class CTST;
+    //friend class CTST;
 
 public:
 
 	//! Standard constructor.
-    CSTTracklet():CTracklet(),m_children(), m_orphan(true){}
+    CSTTracklet() = delete;
 
 	//! Constructor.
-    CSTTracklet(size_t t0, imfeature x0):CTracklet(t0,x0),m_children(),m_orphan(true){}
+    CSTTracklet(size_t t0, imfeature x0, size_t maxlength = MAX_TRACKLET_LENGTH):CTracklet(t0,x0,maxlength),m_children(),m_orphan(true){}
 
 protected:
 

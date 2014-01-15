@@ -59,6 +59,9 @@ public:
     //! Initializer list constructor.
     CVector(std::initializer_list<T> list);
 
+    //! Fast routine for checking whether the vector is zero.
+    bool IsZero() const;
+
     //! Computes \f$l_p\f$-norm.
     double Norm(double p) const;
 

@@ -205,18 +205,18 @@ void MainWindow::on_stepButton_clicked()
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
 
-    // add new tracks
-    size_t noactive = m_tracker->GetNumberOfActiveTracks();
-    cout << "Number of active tracklets: " << noactive << endl;
-    if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
-         m_tracker->AddTracklets(m_pyramid);
-
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
 
     // check validity of tracks
     m_tracker->Clean(pyramid,m_pyramid);
     //trackers[i]->DeleteInvalidTracks();
+
+    // add new tracks
+    size_t noactive = m_tracker->GetNumberOfActiveTracks();
+    cout << "Number of active tracklets: " << noactive << endl;
+    if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
+         m_tracker->AddTracklets(m_pyramid);
 
     // compute and display framerate
     t1 = omp_get_wtime();

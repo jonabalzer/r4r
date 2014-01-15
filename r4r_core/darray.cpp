@@ -333,6 +333,15 @@ void CDenseArray<T>::Ones() {
 
 }
 
+template <typename T>
+void CDenseArray<T>::Zeros() {
+
+    T* pdata = m_data.get();
+
+    fill_n(pdata,NElems(),0);
+
+}
+
 template <class U>
 ostream& operator<< (ostream& os, const CDenseArray<U>& x) {
 

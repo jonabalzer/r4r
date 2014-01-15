@@ -25,9 +25,36 @@
 #define R4RSTRACKER_H_
 
 #include "tracker.h"
+#include "descriptor.h"
+
+
 #include <opencv2/opencv.hpp>
 
 namespace R4R {
+
+// forward declaration
+class CSimpleTracker;
+
+/*! \brief tracklets for simple tracker
+ *
+ */
+class CSimpleTrackerTracklet:public CTracklet {
+
+    friend class CSimpleTracker;
+
+public:
+
+    //! Standard constructor.
+    CSimpleTrackerTracklet() = delete;
+
+    //! Constructor.
+    CSimpleTrackerTracklet(size_t t0, imfeature x0, size_t maxlength = MAX_TRACKLET_LENGTH):CTracklet(t0,x0,maxlength), m_reference_feature() {}
+
+private:
+
+    CInterestPoint<float,3> m_reference_feature;        //! reference feature, may be used as map point
+
+};
 
 /*! \brief simple LK tracker
  *
@@ -53,9 +80,13 @@ namespace R4R {
  * initial configuration of the corresponding tracklet. This provides a simple but efficient mechanism for occlusion
  * detection.
  *
- * \todo Make it faster by using only one integral image during cleaning and addition.
+ * The tracking steps have to be called in the following order:
+ * - CSimpleTracker::Init(std::vector<cv::Mat>&) initializes a pyramid of empty integral images and adds the first features
+ * to it.
+ *
+ *
  */
-class CSimpleTracker: public CTracker {
+class CSimpleTracker: public CTracker<list> {
 
 public:
 
@@ -88,6 +119,8 @@ protected:
 	cv::FastFeatureDetector m_detector;						//!< feature detector
 
 };
+
+
 
 }
 

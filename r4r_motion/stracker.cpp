@@ -22,13 +22,11 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "stracker.h"
-#include "basic.h"
-#include "descspecial.h"
-#include "feature.h"
-#include "lk.h"
-#include <fstream>
 
+#include <fstream>
 #include <algorithm>
+
+#include "descspecial.h"
 
 using namespace std;
 using namespace cv;
@@ -48,7 +46,8 @@ CSimpleTracker::CSimpleTracker(CParameters* params):
 
 bool CSimpleTracker::Init(vector<Mat>& pyramid) {
 
-	AddTracklets(pyramid);
+    // detect and add tracklets
+    AddTracklets(pyramid);
 
 	return 0;
 
@@ -59,18 +58,18 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
     // sort features according to scale, this setup allows for scale changes
     vector<vector<Point2f> > points0(pyramid0.size());
     vector<vector<Point2f> > points1(pyramid0.size());
-    vector<vector<shared_ptr<CTracklet>> > tracklets(pyramid0.size());
+    vector<vector<shared_ptr<CTracklet> > > tracklets(pyramid0.size());
 
     list<shared_ptr<CTracklet> >::iterator it;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         // only consider live tracks
         if((*it)->GetStatus()) {
 
-            imfeature f0 = (*it)->GetLatestState();
-            vec2f u0 = f0.GetLocation();
-            u_int scale = (u_int)(f0.GetScale()+0.5);
+            const imfeature& f0 = (*it)->GetLatestState();
+            const vec2f& u0 = f0.GetLocation();
+            u_int scale = u_int(f0.GetScale());
 
             // make sure we can track at that level
             if(scale<pyramid0.size() && scale<pyramid1.size()) {
@@ -118,7 +117,7 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
                 if(status[i] && points1[s][i].x>0 && points1[s][i].x<pyramid1[s].cols-1 && points1[s][i].y>0 && points1[s][i].y<pyramid1[s].rows-1) {
 
-                    vec2f loc = {points1[s][i].x,points1[s][i].y};
+                    vec2f loc = { points1[s][i].x, points1[s][i].y };
                     imfeature x(loc,s,0);
                     tracklets[s][i]->Update(x);
 
@@ -140,43 +139,21 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
-    // create integral images for each scale
-    vector<CIntegralImage<size_t> > imgs;
-    for(size_t s=0; s<pyramid0.size(); s++)
-        imgs.push_back(CIntegralImage<size_t>(pyramid0[s].cols,pyramid0[s].rows));
-
-    // collect and count feature we already have
-    ComputeFeatureDensity(imgs);
-
-    // compute the integral images
-    for(u_int s=0; s<pyramid0.size(); s++)
-        imgs[s].Compute();
-
     list<shared_ptr<CTracklet> >::iterator it;
+
     size_t n = 0;
 
     // now go through all tracklets
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
-        imfeature f = (*it)->GetLatestState();
-        vec2f x = f.GetLocation();
-        u_int s = u_int(f.GetScale()+0.5);
+        const imfeature& f = (*it)->GetLatestState();
 
-        // if feature is still alive and we have a integral image at its scale...
-        if((*it)->GetStatus() && s<pyramid0.size()) {
-
-            // and if its violates quality or distance criterion...
-            if(f.GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE") ||
-               imgs[s].EvaluateFast(x.Get(0),x.Get(1),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"))>1) {
-
-                // delete last feature and kill tracklet
-                (*it)->pop_back();
-                (*it)->SetStatus(false);
-
-            } else
-                n++;
-
-        }
+        /* if feature is still alive  but its quality is too low in terms of the
+           distance between its descriptor and the reference, then kill it */
+        if((*it)->GetStatus() && f.GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE"))
+            (*it)->SetStatus(false);
+        else
+            n++;
 
 	}
 
@@ -187,7 +164,7 @@ void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
 
-    // create integral images for each scale
+    // initialize pyramid of integral images
     vector<CIntegralImage<size_t> > imgs;
     for(u_int s=0; s<pyramid.size(); s++)
         imgs.push_back(CIntegralImage<size_t>(pyramid[s].cols,pyramid[s].rows));
@@ -217,19 +194,22 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
                 for(size_t i=0; i<keypoints.size(); i++)
                     imgs[s].AddDensityFast(keypoints[i].pt.x,keypoints[i].pt.y,1);
 
+                // compute the integral image
                 imgs[s].Compute();
 
                 double hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT");
 
                 for(size_t i=0; i<keypoints.size(); i++) {
 
+                    // only features that are separated from all other candidates and existing features are accepted
                     if(imgs[s].EvaluateFast(keypoints[i].pt.x,keypoints[i].pt.y,hsize,hsize)==1) {
 
                         vec2f loc = { keypoints[i].pt.x,keypoints[i].pt.y };
                         imfeature x(loc,s,0);
 
-                        // create new tracklet with feature
-                        AddTracklet(x);
+                        // create new tracklet with feature, FIXME: get size restriction from parameters
+                        CSimpleTrackerTracklet* tracklet = new CSimpleTrackerTracklet(m_global_t,x);
+                        this->AddTracklet(tracklet);
 
                     }
 
@@ -240,6 +220,24 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
         }
 
 	}
+
+    /* since we already have the integral images computed, we might as well
+      check whether two tracks got too close to each other */
+    list<shared_ptr<CTracklet> >::iterator it;
+
+    // now go through all tracklets
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
+
+        const imfeature& f = (*it)->GetLatestState();
+        const vec2f& x = f.GetLocation();
+        u_int s = u_int(f.GetScale());
+
+        /* if feature is still alive and we have a integral image at its scale but
+           it violates the distance assumption, kill it */
+        if((*it)->GetStatus() && s<imgs.size() && imgs[s].EvaluateFast(x.Get(0),x.Get(1),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"),m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN"))>1)
+            (*it)->SetStatus(false);
+
+    }
 
 	return 0;
 
@@ -260,22 +258,22 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
     list<shared_ptr<CTracklet> >::iterator it;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         if((*it)->GetStatus()) {
 
             imfeature& x = (*it)->GetLatestState();
-            vec2f u0 = x.GetLocation();
-            u_int s = u_int(x.GetScale()+0.5);
+            const vec2f& u0 = x.GetLocation();
+            int s = int(x.GetScale());
 
-            // create new feature
+            // create region of interest
             CRectangle<double> droi(u0.Get(0),
                                     u0.Get(1),
                                     m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
                                     m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
             // adjust region to scale
-            droi.Scale(1.0/pow(2,s));
+            droi.Scale(1.0/double(2<<(s-1)));
 
             // compute brief descriptor
             CBRIEF* briefdesc1 = new CBRIEF(droi);
@@ -284,14 +282,17 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
             //brief->Compute(pyramid[s]);
             x.AttachDescriptor("BRIEF",brief);
 
-            // compute quality
-            shared_ptr<CAbstractDescriptor> desc0 = (*it)->front().GetDescriptor("BRIEF");
-            double quality = 1;
+            // interpret tracklet as simple tracker tracklet
+            shared_ptr<CSimpleTrackerTracklet> tracklet = static_pointer_cast<CSimpleTrackerTracklet>(*it);
+            float quality = 0;
+            if((*it)->GetCreationTime()==m_global_t)
+                tracklet->m_reference_feature.AttachDescriptor("BRIEF",brief);
+            else {
 
-            if(desc0!=nullptr) {
 
-                shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
-                quality = briefdesc0->Distance(*briefdesc1);
+
+                //quality = tracklet->m_reference_descriptor->Distance(*briefdesc1);
+
 
             }
 
@@ -340,7 +341,6 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
             }
 
         }
-
 
     }
 

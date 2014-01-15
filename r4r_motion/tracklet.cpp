@@ -22,8 +22,8 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include <stdio.h>
-#include <iostream>
 #include <fstream>
+#include <limits>
 
 #include "descriptor.h"
 #include "tracklet.h"
@@ -33,51 +33,101 @@ using namespace std;
 
 namespace R4R {
 
-CTracklet::CTracklet():
-    list<imfeature>(),
-	m_t0(0),
-	m_status(false) {}
 
-CTracklet::CTracklet(size_t t0, imfeature x0):
-    list<imfeature>(),
+CTracklet::CTracklet(size_t t0, const imfeature& x0, size_t maxlength):
+    m_data(maxlength),
 	m_t0(t0),
-	m_status(true)
+    m_status(true),
+    m_hash(CTracklet::GenerateHash(t0,x0)),
+    m_cursor(maxlength-1),
+    m_lifetime(0)
 {
 
-	push_back(x0);
+    m_data[m_cursor] = x0;
 
 }
 
-void CTracklet::Update(imfeature x) {
+void CTracklet::Update(const imfeature& x) {
 
-	push_back(x);
+    // store in backwards order, so we cant iterate forward in the array when going back in time
+    --m_cursor<0 ? m_cursor = m_data.size() + m_cursor : m_cursor;
+    m_data[m_cursor] = x;
+    m_lifetime++;
 
 }
 
-vec2f CTracklet::GetLatestVelocity() {
+const vec2f& CTracklet::GetPastLocation(size_t steps) const {
 
-    list<imfeature>::reverse_iterator rit = rbegin();
+    return m_data.at((m_cursor+steps)%m_data.size()).GetLocation();
 
-    vec2f x1 = (*rit).GetLocation();
+}
 
-    vec2f v;
+vec2f CTracklet::GetPastLocationAtNativeScale(size_t steps) const {
 
-	if(size()>1) {
+    return m_data.at((m_cursor+steps)%m_data.size()).GetLocationAtNativeScale();
 
-        rit++;
+}
 
-        vec2f x0 = (*rit).GetLocation();
+ostream& operator<<(ostream& os, const CTracklet& x) {
 
-        v = x1 - x0;
+    for(size_t i=x.m_cursor; i<x.m_cursor+x.m_data.size(); i++)
+        os << x.m_data.at(i%x.m_data.size()) << endl;
 
-	}
+	return os;
 
-	return v;
+}
+
+string CTracklet::GenerateHash(size_t t0, const imfeature& x) {
+
+    stringstream t;
+    t.fill('0');
+    t.width(4);
+    t << t0;
+
+    const vec2f& pt = x.GetLocation();
+
+    stringstream x0, y0;
+    x0.fill('0');
+    x0.width(4);
+    x0 << size_t(pt.Get(0)+0.5);
+    y0.fill('0');
+    y0.width(4);
+    y0 << size_t(pt.Get(1)+0.5);
+
+    stringstream scale;
+    scale.fill('0');
+    scale.width(4);
+    scale << size_t(x.GetScale());
+
+    stringstream hash;
+    hash << t.str() << x0.str() << y0.str() << scale.str();
+
+    return hash.str();
+
+}
+
+void CTracklet::CompressAndReverse() {
+
+    vector<imfeature> compressed;
+
+    vector<imfeature>::reverse_iterator it;
+
+    for(it=m_data.rbegin(); it!=m_data.rend(); ++it) {
+
+        vec2f x = it->GetLocation();
+
+        if(!x.IsZero())
+            compressed.push_back(*it);
+        else
+            break;
+
+    }
+
+    m_data = compressed;
 
 }
 
 #ifdef QT_GUI_LIB
-
 const Qt::GlobalColor CTracklet::COLORS[10] = { Qt::green,
                                                 Qt::red,
                                                 Qt::blue,
@@ -95,14 +145,11 @@ void CTracklet::Draw(QImage& img, size_t length) const {
     if(length==0)
         return;
 
-    // access to the two last features
-    list<imfeature>::const_reverse_iterator ita, itb;
-    ita = rbegin();
-    itb = rbegin();
-    itb++;
+    // get latest feature
+    imfeature ft = m_data.at(m_cursor);
 
-    // get scale for color
-    u_int scale = u_int((*ita).GetScale());
+    // get scale for color, mod 10 because so far only 10 colors are available
+    u_int scale = u_int(ft.GetScale())%10;
 
     // prepare drawing
     QPainter p(&img);
@@ -114,89 +161,37 @@ void CTracklet::Draw(QImage& img, size_t length) const {
     // draw circle if length of trail is 1
     if(length==1) {
 
-        vec2f a = (*ita).GetLocationAtNativeScale();
-        p.drawEllipse(int(a.Get(0)),int(a.Get(1)),10,10);
+        vec2f xt = ft.GetLocationAtNativeScale();
+        p.drawEllipse(int(xt.Get(0)),int(xt.Get(1)),10,10);
         return;
 
     }
 
-    size_t counter = 0;
+    // draw trail if desired
+    for(size_t i=1; i<length; i++) {
 
-    while (itb!=rend() && counter<length) {
+        // get next feature
+        const imfeature& ftm1 = m_data.at((m_cursor+i)%m_data.size());
 
-        vec2f a = (*ita).GetLocationAtNativeScale();
-        vec2f b = (*itb).GetLocationAtNativeScale();
+        // extract locations
+        vec2f xt = ft.GetLocationAtNativeScale();
+        vec2f xtm1 = ftm1.GetLocationAtNativeScale();
 
-        p.drawLine(int(a.Get(0)),int(a.Get(1)),int(b.Get(0)),int(b.Get(1)));
+        // only draw if the features do not come from the tracklet initialization
+        if(!xtm1.IsZero() && !xt.IsZero())
+            p.drawLine(int(xt.Get(0)),int(xt.Get(1)),int(xtm1.Get(0)),int(xtm1.Get(1)));
+        else
+            break;
 
-    	ita++;
-    	itb++;
-    	counter++;
+        // make the current feature, the "oldest"
+        ft = ftm1;
 
     }
 
 }
-
 #endif
 
-ostream& operator<<(ostream& os, CTracklet& x) {
-
-    list<imfeature>::iterator it;
-
-	for(it=x.begin(); it!=x.end(); it++)
-        os << (*it) << endl;
-
-	return os;
-
-}
-
-std::string CTracklet::GetHash() const {
-
-	stringstream t0;
-	t0.fill('0');
-	t0.width(4);
-	t0 << m_t0;
-
-    vec2f pt = front().GetLocation();
-
-	stringstream x0, y0;
-	x0.fill('0');
-	x0.width(4);
-    x0 << (size_t)(pt.Get(0)+0.5);
-	y0.fill('0');
-	y0.width(4);
-    y0 << (size_t)(pt.Get(1)+0.5);
-
-	stringstream hash;
-	hash << t0.str() << x0.str() << y0.str();
-
-	return hash.str();
-
-}
-
-vec2f CTracklet::GetPastLocation(size_t steps) const {
-
-    list<imfeature>::const_reverse_iterator rit = rbegin();
-
-	for(size_t i=0; i<steps; i++)
-		rit++;
-
-    return rit->GetLocation();
-
-}
-
-vec2f CTracklet::GetPastLocationAtNativeScale(size_t steps) const {
-
-    list<imfeature>::const_reverse_iterator rit = rbegin();
-
-	for(size_t i=0; i<steps; i++)
-		rit++;
-
-    return rit->GetLocationAtNativeScale();
-
-}
-
-}
+} // end of namespace
 
 
 

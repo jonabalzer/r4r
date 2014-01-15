@@ -63,6 +63,9 @@ public:
     //! Constructor.
     CInterestPoint(CVector<T,n>& location, float scale, T quality);
 
+    //! Destructor.
+    ~CInterestPoint();
+
     //! Returns the scale.
     float GetScale() const { return m_scale; }
 
@@ -88,7 +91,7 @@ public:
     bool HasDescriptor(const char* name) const;
 
     //! Returns feature location w.r.t. to inherent scale.
-    CVector<T,n> GetLocation() const { return m_location; }
+    const CVector<T,n>& GetLocation() const { return m_location; }
 
     //! Returns feature location w.r.t. to native scale.
     CVector<T,n> GetLocationAtNativeScale() const;
@@ -106,13 +109,13 @@ public:
     string GetDescriptorName(u_int no);
 
     //! Writes a feature to an output stream.
-    template<typename U,u_int m> friend std::ostream& operator<<(std::ostream& os, CInterestPoint<U,m>& x);
+    template<typename U,u_int m> friend std::ostream& operator <<(std::ostream& os, const CInterestPoint<U,m>& x);
 
     //! Writes a feature to a file stream.
-    template<typename U,u_int m> friend std::ofstream& operator<<(std::ofstream& os, CInterestPoint<U,m>& x);
+    template<typename U,u_int m> friend std::ofstream& operator <<(std::ofstream& os, const CInterestPoint<U,m>& x);
 
     //! Reads a from a file stream.
-    template<typename U,u_int m> friend std::ifstream& operator>>(std::ifstream& is, CInterestPoint<U,m>& x);
+    template<typename U,u_int m> friend std::ifstream& operator >>(std::ifstream& is, CInterestPoint<U,m>& x);
 
     /*! \brief Writes a set of features from file.
      * \param[in] filename file name
@@ -120,7 +123,8 @@ public:
      * \param[in] comment comment
      * \returns true if the operation was successful
      */
-    static bool SaveToFile(const char* filename, std::list<CInterestPoint<T,n> >& features, const char* comment = nullptr);
+    template<template<class U, class Allocator = std::allocator<U> > class Container>
+    static bool SaveToFile(const char* filename, const Container<CInterestPoint<T,n> >& features, const char* comment = nullptr);
 
     /*! \brief Reads a set of features from file.
      * \param[in] filename file name

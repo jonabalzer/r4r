@@ -23,7 +23,7 @@
 
 #include "mtracker.h"
 #include "lm.h"
-#include "basic.h"
+#include "descriptor.h"
 #include "rutils.h"
 #include "trafo.h"
 #include "interp.h"
@@ -74,7 +74,7 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         list<shared_ptr<CTracklet> >::iterator it;
 
         // collect image-to-image and scene-to-image correspondences
-        for(it=begin(); it!=end(); it++) {
+        for(it=m_data.begin(); it!=m_data.end(); it++) {
 
             vec2f p1 = (*it)->GetLatestLocationAtNativeScale();
 
@@ -201,7 +201,7 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
     list<shared_ptr<CTracklet> >::iterator it;
 
-    for(it=begin(); it!=end(); it++) {
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
 
         if((*it)->GetStatus()) {
 

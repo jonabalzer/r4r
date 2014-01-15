@@ -123,6 +123,9 @@ public:
 	//! Fills in ones.
 	void Ones();
 
+    //! Fills in zeros.
+    void Zeros();
+
 	//! Files the array with uniformly distributed random numbers between \f$0\f$ and \f$1\f$.
     void Rand(T min, T max);
 

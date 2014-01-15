@@ -34,7 +34,6 @@ SOURCES += tracker.cpp \
     lk.cpp \
     feature.cpp \
     descriptor.cpp \
-    basic.cpp \
     tracklet.cpp \
     dagg.cpp \
     descspecial.cpp
@@ -46,7 +45,6 @@ HEADERS += \
     lk.h \
     feature.h \
     descriptor.h \
-    basic.h \
     tracklet.h \
     dagg.h \
     descspecial.h
