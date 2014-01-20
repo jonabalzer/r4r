@@ -78,19 +78,18 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
             vec2f p1 = (*it)->GetLatestLocationAtNativeScale();
 
-            if((*it)->GetStatus() && (*it)->front().HasDescriptor("3DPOINT")) {
+            // cast to special tracklet type
+            shared_ptr<CSimpleTrackerTracklet> tracklet = static_pointer_cast<CSimpleTrackerTracklet>(*it);
 
-                // get access to the scene point
-                shared_ptr<CAbstractDescriptor> desc = (*it)->front().GetDescriptor("3DPOINT");
-                CDescriptor<vecf>* cdesc = (CDescriptor<vecf>*)desc.get();
-                vec3f x(cdesc->Get());
+            if((*it)->GetStatus() && !tracklet->m_reference_feature.GetLocation().IsZero()) {
 
-                xs.push_back(x);
+                // extract scene point
+                xs.push_back(tracklet->m_reference_feature.GetLocation());
                 p1ss.push_back(p1);
                 trackletss2i.push_back((*it).get());
 
             }
-            else if((*it)->GetStatus() && (*it)->size()>(size_t)kfr) {
+            else if((*it)->GetStatus() && (*it)->GetLifetime()>(size_t)kfr) {
 
                 vec2f u0 = (*it)->GetPastLocationAtNativeScale((size_t)kfr);
 
@@ -154,15 +153,9 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
                 // inject into map container
                 m_map.push_back(pair<vec2f,vec3f>(corri2i.first[i],x[i]));
 
-                // get pointer to initial feature
-                shared_ptr<CAbstractDescriptor> descx(new CDescriptor<vecf>(vecf(x[i])));
-                trackletsi2i[i]->front().AttachDescriptor("3DPOINT",descx);
-
-                // also store initial depths for descriptor canonization
-//                vec z(1);
-//                z(0) = x(i);
-//                shared_ptr<CDescriptor> descz(new CDescriptor<vec>(z));
-//                feat->AttachDescriptor("INITDEPTH",descz);
+                // cast to special tracklet type and set reference point
+                CSimpleTrackerTracklet* tracklet = reinterpret_cast<CSimpleTrackerTracklet*>(trackletsi2i[i]);
+                tracklet->m_reference_feature.SetLocation(x[i]);
 
             }
             else
@@ -195,10 +188,6 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
-    // get actual pose
-    /*vec motion = m_motion.back();
-    CRigidMotion<float,3> F(motion);*/
-
     list<shared_ptr<CTracklet> >::iterator it;
 
     for(it=m_data.begin(); it!=m_data.end(); it++) {
@@ -207,7 +196,7 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
             imfeature& x = (*it)->GetLatestState();
             vec2f u0 = x.GetLocation();
-            u_int s = u_int(x.GetScale()+0.5);
+            int s = int(x.GetScale());
 
             // create new feature
             CRectangle<double> droi(u0.Get(0),
@@ -216,44 +205,34 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
                                     m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
             // adjust region to scale
-            droi.Scale(1.0/pow(2,s));
+            if(s)
+                droi.Scale(1.0/double(2<<(s-1)));
+
             //droi.RotateTo(motion(5));
-
-            /*// see the feature has an initial depth
-            if((*it)->front()->HasDescriptor("INITDEPTH")) {
-
-                // get initial depth
-                shared_ptr<CDescriptor> descz = (*it)->front()->GetDescriptor("INITDEPTH");
-                CDescriptor<vec>* cdescz = (CDescriptor<vec>*)descz.get();
-                vec z = cdescz->Get();
-
-                // get point in local coordinates
-                shared_ptr<CDescriptor> descx = (*it)->front()->GetDescriptor("3DPOINT");
-                CDescriptor<vec>* cdescx = (CDescriptor<vec>*)descx.get();
-                vec pt = CLinearAlgebra::TransformPoint(F, cdescx->Get());
-
-                // scale by z0/z
-                droi.Scale(z(0)/pt(2));
-
-            }*/
 
             // compute brief descriptor
             CBRIEF* briefdesc1 = new CBRIEF(droi);
             shared_ptr<CAbstractDescriptor> brief(briefdesc1);
             brief->Compute(pyramid[s]);
+            //brief->Compute(pyramid[s]);
             x.AttachDescriptor("BRIEF",brief);
 
             // compute quality
-            shared_ptr<CAbstractDescriptor> desc0 = (*it)->front().GetDescriptor("BRIEF");
-            double quality = 1;
+            shared_ptr<CSimpleTrackerTracklet> tracklet = static_pointer_cast<CSimpleTrackerTracklet>(*it);
+            float quality = 0;
+            if((*it)->GetCreationTime()==m_global_t)
+                tracklet->m_reference_feature.AttachDescriptor("BRIEF",brief);
+            else {
 
-            if(desc0!=nullptr) {
+                if(tracklet->m_reference_feature.HasDescriptor("BRIEF")) {
 
-                shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
-                quality = briefdesc0->Distance(*briefdesc1);
+                    shared_ptr<CAbstractDescriptor> desc0 = tracklet->m_reference_feature.GetDescriptor("BRIEF");
+                    shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
+                    quality = briefdesc0->Distance(*briefdesc1);
+
+                }
 
             }
-
             x.SetQuality(quality);
 
         }
@@ -327,55 +306,6 @@ void CMagicSfM::ComputeResidual(vecf& r) {
         r(2*m+n+i) = m_weights.Get(2*m+n+i)*dp.Get(1);
 
     }
-
-    // projection error for image-to-image correspondences
-/*	for(size_t i=0; i<m_corri2i.size(); i++) {
-
-		// pixel in img 0 and 1
-        vec2f p0, p1;
-        p0 = m_corri2i[i].first;
-        p1 = m_corri2i[i].second;
-
-		// estimate of the scene point x0 in camera system of first frame
-        vec3f x0h = m_cam.Normalize(p0);
-        vec3f x0 = x0h*m_model.Get(i);
-        x0 = m_F0inv.Transform(x0);
-
-		// point transformed from world to local camera system of second frame
-        vec3f x1 = F1.Transform(x0);
-
-		// projection of x0 into second image
-        vec2f p1p = m_cam.Project(x1);
-
-		// projection error
-        vec2f dp = p1p - p1;
-
-        // set residual
-        r(i) = m_weights.Get(i)*dp.Get(0);
-        r(m_corri2i.size()+i) = m_weights.Get(m_corri2i.size()+i)*dp.Get(1);
-
-	}
-
-	// projection error for scene-to-image correspondences
-	for(size_t i=0; i<m_corrs2i.size(); i++) {
-
-        vec3f x0 = m_corrs2i[i].first;		// scene point in world coordinates
-        vec2f p1 = m_corrs2i[i].second;     // projection into second image
-
-		// rigid transform from wc to second cam
-        vec3f x1 = F1.Transform(x0);
-
-        // predicted projection of x1 into second image
-        vec2f p1p = m_cam.Project(x1);
-
-		// projection error
-        vec2f dp = p1p - p1;
-
-		// set residual
-        r(2*m_corri2i.size()+i) = m_weights.Get(2*m_corri2i.size()+i)*dp.Get(0);
-        r(2*m_corri2i.size()+m_corrs2i.size()+i) = m_weights.Get(2*m_corri2i.size()+m_corrs2i.size()+i)*dp.Get(1);
-
-    }*/
 
 }
 
@@ -563,160 +493,4 @@ vecf CMagicSfM::ComputeDispersion(const vecf& r) {
 
 }
 
-//CSfMTrackerUpdate::CSfMTrackerUpdate(CCam cam, vector<CTracklet*> map, cv::Mat& img0, cv::Mat& img1, size_t hsize):
-//	CLeastSquaresProblem(map.size()*(2*hsize+1)*(2*hsize+1),6),
-//	m_cam(cam),
-//	m_map(map),
-//	m_img0(img0),
-//	m_img1(img1),
-//	m_hsize(hsize) {
-
-//}
-
-//void CSfMTrackerUpdate::ComputeResidualAndJacobian(vec& r, mat& J) {
-
-//	// some sizes
-//	size_t n = m_map.size();					// no of anchor pixels
-//	size_t w = 2*m_hsize+1; 					// width of neighborhood
-//	size_t m = w*w;								// no of pixels around each anchor
-
-//	// actual transformation
-//	vec t(3), omega(3);
-//	for(size_t i=0; i<3; i++) {
-
-//		t(i) = m_model(i);
-//		omega(i) = m_model(3+i);
-
-//	}
-
-//	mat R(3,3), DRx(3,3), DRy(3,3), DRz(3,3);
-//	CLinearAlgebra::Rodrigues(omega,R,DRx,DRy,DRz);
-
-//	// projection errors and their derivatives
-//	for(size_t i=0; i<n; i++) {
-
-//		// anchor point in first frame
-//		vec u0 = m_map[i]->GetLatestLocation();
-
-//		// world point
-//        shared_ptr<CAbstractDescriptor> desc = m_map[i]->front().GetDescriptor("3DPOINT");
-//        CDescriptor<vec>* cdesc = (CDescriptor<vec>*)desc.get();
-//		vec x0 = cdesc->Get();
-
-//		// rigid transform from wc to second cam
-//		vec x1 = R*x0 + t;
-
-//		// projection of x1 into second image
-//		vec u1 = m_cam.ProjectLocal(x1);
-
-//		// init Jacobian w.r.t to local coordinates of projection into second frame
-//		mat Jpi(2,3);
-//		Jpi(0,0) = m_cam.m_f[0]/x1(2);
-//		Jpi(1,1) = m_cam.m_f[1]/x1(2);
-
-//		// every pixel in neighborhood of anchor contributes to energy
-//		for(int j=-(int)m_hsize; j<=(int)m_hsize; j++) {
-
-//			for(int k=-(int)m_hsize; k<=(int)m_hsize; k++) {
-
-//				// compute row index
-//				int row = m*i+w*(j+(int)m_hsize)+(int)m_hsize+k;
-
-//				// interpolated intensities and gradients
-//				double I0, I1, I1u, I1v;
-//				I0 = CImageInterpolation::Bilinear(m_img0,u0(0)+j,u0(1)+k);
-//				I1 = CImageInterpolation::Bilinear(m_img1,u1(0)+j,u1(1)+k);
-//				I1u = CImageInterpolation::Gradient(m_img1,u1(0)+j,u1(1)+k,true);
-//				I1v = CImageInterpolation::Gradient(m_img1,u1(0)+j,u1(1)+k,false);
-
-//				// residual
-//				r(row) = I1 - I0;
-
-//				// update projection Jacobian
-//				Jpi(0,2) = -(u1(0)+j-m_cam.m_c[0])/x1(2);
-//				Jpi(1,2) = -(u1(1)+k-m_cam.m_c[1])/x1(2);
-
-//				// translational part
-//				J(row,0) = I1u*Jpi(0,0) + I1v*Jpi(1,0);
-//				J(row,1) = I1u*Jpi(0,1) + I1v*Jpi(1,1);
-//				J(row,2) = I1u*Jpi(0,2) + I1v*Jpi(1,2);
-
-//				// rotational part
-//				vec do1 = Jpi*(DRx*x0);
-//				vec do2 = Jpi*(DRy*x0);
-//				vec do3 = Jpi*(DRz*x0);
-//				J(row,3) = I1u*do1(0) + I1v*do1(1);
-//				J(row,4) = I1u*do2(0) + I1v*do2(1);
-//				J(row,5) = I1u*do3(0) + I1v*do3(1);
-
-//			}
-
-//		}
-
-//	}
-
-//}
-
-//void CSfMTrackerUpdate::ComputeResidual(vec& r) {
-//	// some sizes
-//	size_t n = m_map.size();					// no of anchor pixels
-//	size_t w = 2*m_hsize+1; 					// width of neighborhood
-//	size_t m = w*w;								// no of pixels around each anchor
-
-//	// actual transformation
-//	vec t(3), omega(3);
-//	for(size_t i=0; i<3; i++) {
-
-//		t(i) = m_model(i);
-//		omega(i) = m_model(3+i);
-
-//	}
-
-//	mat R(3,3), DRx(3,3), DRy(3,3), DRz(3,3);
-//	CLinearAlgebra::Rodrigues(omega,R,DRx,DRy,DRz);
-
-//	// projection errors and their derivatives
-//#pragma omp parallel for
-//	for(size_t i=0; i<n; i++) {
-
-//		// anchor point in first frame
-//		vec u0 = m_map[i]->GetLatestLocation();
-
-//		// world point
-//        shared_ptr<CAbstractDescriptor> desc = m_map[i]->front().GetDescriptor("3DPOINT");
-//        CDescriptor<vec>* cdesc = (CDescriptor<vec>*)desc.get();
-//		vec x0 = cdesc->Get();
-
-//		// rigid transform from wc to second cam
-//		vec x1 = R*x0 + t;
-
-//		// projection of x1 into second image
-//		vec u1 = m_cam.ProjectLocal(x1);
-
-//		// every pixel in neighborhood of anchor contributes to energy
-//		for(int j=-(int)m_hsize; j<=(int)m_hsize; j++) {
-
-//			for(int k=-(int)m_hsize; k<=(int)m_hsize; k++) {
-
-//				// compute row index
-//				int row = m*i+w*(j+(int)m_hsize)+(int)m_hsize+k;
-
-//				// interpolated intensities and gradients
-//				double I0, I1;
-//				I0 = CImageInterpolation::Bilinear(m_img0,u0(0)+j,u0(1)+k);	// FIXME: do this outside
-//				I1 = CImageInterpolation::Bilinear(m_img1,u1(0)+j,u1(1)+k);
-
-//				// residual
-//				r(row) = I1 - I0;
-
-
-//			}
-
-//		}
-
-//	}
-
-//}
-
-
-}
+} // end of namespace

@@ -208,15 +208,12 @@ void MainWindow::on_stepButton_clicked()
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
 
-    // check validity of tracks
+    // check validity of tracks and count how many are left over
     m_tracker->Clean(pyramid,m_pyramid);
     //trackers[i]->DeleteInvalidTracks();
 
-    // add new tracks
-    size_t noactive = m_tracker->GetNumberOfActiveTracks();
-    cout << "Number of active tracklets: " << noactive << endl;
-    if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
-         m_tracker->AddTracklets(m_pyramid);
+    // add new tracklets and mark those getting too close to each other as invalid
+    m_tracker->AddTracklets(m_pyramid);
 
     // compute and display framerate
     t1 = omp_get_wtime();
@@ -225,7 +222,7 @@ void MainWindow::on_stepButton_clicked()
 
     // draw trails
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    m_tracker->Draw(qimg,5);
+    m_tracker->Draw(qimg,1);
     show_image(qimg);
 
     // display frame no and mem usage
@@ -323,38 +320,38 @@ void MainWindow::on_actionSave_Descriptors_triggered()
         return;
 
     // create aggregator
-    CDescriptorAggregator<matf>* aggregator;
+    CDescriptorAggregator<matf,list>* aggregator;
 
     switch(m_params.GetIntParameter("AGGREGATOR")) {
 
     case 1:
         cout << "Init frame." << endl;
-        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
+        aggregator = new CInitFrameAggregator<matf,list>(m_tracker,name.c_str());
         break;
     case 2:
-        aggregator = new CSubsampleAggregator<matf>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
+        aggregator = new CSubsampleAggregator<matf,list>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
         break;
 
     case 3:
-        aggregator = new CSplineInterpolationAggregator<matf>(m_tracker,name.c_str(),10,3);
+        aggregator = new CSplineInterpolationAggregator<matf,list>(m_tracker,name.c_str(),10,3);
         break;
 
     case 4:
-        aggregator = new CMeanAggregator<matf>(m_tracker,name.c_str());
+        aggregator = new CMeanAggregator<matf,list>(m_tracker,name.c_str());
         break;
 
     default:
 
-        aggregator = new CDescriptorAggregator<matf>(m_tracker,name.c_str());
+        aggregator = new CDescriptorAggregator<matf,list>(m_tracker,name.c_str());
 
         break;
     }
 
     // aggregate
     aggregator->Aggregate();
-    list<imfeature> feats = aggregator->Get();
+    const list<imfeature>& feats = aggregator->Get();
 
-    imfeature::SaveToFile(filename.toStdString().c_str(),feats,comment.toStdString().c_str());
+    imfeature::SaveToFile<list>(filename.toStdString().c_str(),feats,comment.toStdString().c_str());
 
     delete aggregator;
 

@@ -39,7 +39,7 @@
 #include "feature.h"
 #include "types.h"
 
-#define MAX_TRACKLET_LENGTH 50
+#define MAX_TRACKLET_LENGTH 200  // FIXME: make this a tracking parameter
 
 namespace R4R {
 
@@ -76,7 +76,7 @@ public:
     friend  std::ostream& operator <<(std::ostream& os, const CTracklet& x);
 
     //! Returns the lifetime of the tracklet.
-    size_t Size() { return m_lifetime; }
+    size_t GetLifetime() { return m_lifetime; }
 
     /*! \brief Tests whether two tracklets are equal by looking at their initial position.
      *
@@ -119,6 +119,9 @@ public:
     //! Read-access to the data.
     const vector<imfeature>& GetData() { return m_data; }
 
+    //! Get position of cursor.
+    const int& GetCursor() { return m_cursor; }
+
     /*! \brief Generates a hash key for the tracklet.
      *
      * The hash is built from two quantities that should identify each tracklet uniquely:
@@ -129,12 +132,18 @@ public:
 
      /*! \brief Deletes unused ring buffer space.
       *
-      * This method is useful for exporting entire trajectories. In this case, choose the buffer size
-      * larger than necessary, run the tracker, and compress the tracklets before saving them to disk.
-      * This also reverses the storage order.
+      * This method is useful for exporting entire trajectories or for aggregation. In this case,
+      * choose the buffer size larger than necessary, run the tracker, and compress the tracklets
+      * before saving them to disk or aggregating them. This also reverses the storage order.
       *
       */
      void CompressAndReverse();
+
+     //! Resize the ring buffer.
+     void Resize(size_t n) { m_data.resize(n); m_cursor = n - 1; }
+
+     //! Checks whether the buffer has been completely filled at least once.
+     bool IsFull();
 
 #ifdef QT_GUI_LIB
 

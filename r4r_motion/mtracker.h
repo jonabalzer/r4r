@@ -70,7 +70,7 @@ private:
 
     CPinholeCam m_cam;                                //!< camera
     std::list<vecf> m_motion;                         //!< motion
-    std::list<std::pair<vec2f,vec3f> > m_map;                           //!< map
+    std::list<std::pair<vec2f,vec3f> > m_map;         //!< map
 
 };
 

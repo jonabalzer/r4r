@@ -39,7 +39,7 @@ CInterestPoint<T,n>::CInterestPoint():
     m_descriptors() {}
 
 template<typename T,u_int n>
-CInterestPoint<T,n>::CInterestPoint(CVector<T,n>& location, float scale, T quality):
+CInterestPoint<T,n>::CInterestPoint(const CVector<T,n>& location, float scale, T quality):
     m_location(location),
     m_scale(scale),
     m_quality(quality),
@@ -51,8 +51,8 @@ CInterestPoint<T,n>::~CInterestPoint() {
 
     map<string,shared_ptr<CAbstractDescriptor> >::iterator it;
 
-    for(it=m_descriptors.begin(); it!=m_descriptors.end(); +it)
-        it->reset();
+    for(it=m_descriptors.begin(); it!=m_descriptors.end(); ++it)
+        it->second.reset();
 
 }
 
@@ -88,22 +88,22 @@ CVector<T,n> CInterestPoint<T,n>::GetLocationAtNativeScale() const {
 }
 
 template<typename T,u_int n>
-shared_ptr<CAbstractDescriptor> CInterestPoint<T,n>::GetDescriptor(const char* name) {
+const shared_ptr<CAbstractDescriptor>& CInterestPoint<T, n>::GetDescriptor(const char* name) const {
 
     if(m_descriptors.find(name)==m_descriptors.end())
         return nullptr;
     else
-        return m_descriptors[name];
+        return m_descriptors.at(name);
 
 }
 
 template<typename T,u_int n>
-shared_ptr<CAbstractDescriptor> CInterestPoint<T,n>::GetDescriptor(u_int no) {
+const shared_ptr<CAbstractDescriptor>& CInterestPoint<T,n>::GetDescriptor(u_int no) const {
 
     if(no>=m_descriptors.size())
         return nullptr;
 
-    map<string,shared_ptr<CAbstractDescriptor> >::iterator it = m_descriptors.begin();
+    map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it = m_descriptors.begin();
 
     for(size_t i=0; i<no; i++)
         it++;
@@ -395,7 +395,7 @@ int CInterestPoint<T,n>::LoadFromFile(const char* filename, std::vector<CInteres
 }
 
 template class CInterestPoint<float,2>;
-
+template class CInterestPoint<float,3>;
 
 }
 

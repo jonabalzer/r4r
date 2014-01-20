@@ -172,6 +172,11 @@ public:
     //! Access to the global time.
     size_t GetTime() { return m_global_t; }
 
+    //! Read-only access to data.
+    const Container<std::shared_ptr<CTracklet> >& GetData() { return m_data; }
+
+    //! Adjusts the size of all tracklet buffer.
+    void ResizeTracklets(size_t n);
 
 #ifdef QT_GUI_LIB
 

@@ -87,7 +87,7 @@ private:
     vector<cv::Mat> m_pyramid;
     QTimer m_timer;
     CParameters m_params;
-    CTracker* m_tracker;
+    CTracker<list>* m_tracker;
 
     void show_image(const QImage& qimg);
 

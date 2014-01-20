@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <limits>
+#include <algorithm>
 
 #include "descriptor.h"
 #include "tracklet.h"
@@ -110,20 +111,45 @@ void CTracklet::CompressAndReverse() {
 
     vector<imfeature> compressed;
 
-    vector<imfeature>::reverse_iterator it;
+    // if the buffer is filled, loop back
+    if(this->IsFull()) {
 
-    for(it=m_data.rbegin(); it!=m_data.rend(); ++it) {
+        for(size_t i=0; i<m_data.size(); i++) {
 
-        vec2f x = it->GetLocation();
+        // get features starting from cursor backwards in time
+        const imfeature& f = m_data.at((m_cursor+i)%m_data.size());
+        compressed.push_back(f);
 
-        if(!x.IsZero())
-            compressed.push_back(*it);
-        else
-            break;
+        }
+
+        // reverse time order
+        std::reverse(compressed.begin(),compressed.end());
+
+    }
+    else {
+
+        size_t length = m_data.size() - m_cursor;
+        compressed.resize(length);
+        std::reverse_copy(&m_data[m_cursor],&m_data[m_cursor+length],compressed.begin());
 
     }
 
     m_data = compressed;
+
+    // just in case, we want to keep using the ring buffer after saving
+    m_cursor = compressed.size() - 1;
+
+}
+
+bool CTracklet::IsFull() {
+
+    // the the first feature
+    const imfeature& f = m_data.at(0);
+
+    if(f.GetLocation().IsZero())
+        return false;
+    else
+        return true;
 
 }
 
@@ -167,8 +193,8 @@ void CTracklet::Draw(QImage& img, size_t length) const {
 
     }
 
-    // draw trail if desired
-    for(size_t i=1; i<length; i++) {
+    // draw trail if desired, not longer than length or size of container
+    for(size_t i=1; i<length && i<m_data.size(); i++) {
 
         // get next feature
         const imfeature& ftm1 = m_data.at((m_cursor+i)%m_data.size());

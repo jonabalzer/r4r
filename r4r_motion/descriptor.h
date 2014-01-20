@@ -141,7 +141,7 @@ public:
     CNeighborhoodDescriptor(const Array& container, const Rect& roi);
 
     //! Access to the region of interest.
-    Rect GetRoI() const { return m_roi; }
+    const Rect& GetRoI() const { return m_roi; }
 
 protected:
 

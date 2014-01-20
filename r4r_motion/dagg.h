@@ -30,19 +30,19 @@
 
 namespace R4R {
 
-template <class Array>
+template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
 class CDescriptorAggregator {
 
 public:
 
     //! Constructor.
-    CDescriptorAggregator(CTracker* tracker, const char* name);
+    CDescriptorAggregator(CTracker<Container>* tracker, const char* name);
 
     //! Aggregates over the entire tracker.
     void Aggregate();
 
     //! Access to the aggregates.
-    list<imfeature>& Get() { return m_aggregate; }
+    const list<imfeature>& Get() { return m_aggregate; }
 
 protected:
 
@@ -50,39 +50,39 @@ protected:
     virtual void AggregateTracklet(CTracklet* tracklet);
 
     //! Copies the feature including only the descriptors specified by #m_name.
-    imfeature CopyFeature(imfeature x);
+    imfeature CopyFeature(const imfeature& x) const;
 
-    CTracker* m_tracker;                //! tracker to aggregate over
+    CTracker<Container>* m_tracker;                //! tracker to aggregate over
     string m_name;                      //! name of the descriptor to aggregate
     list<imfeature> m_aggregate;         //! list of aggregated features
 
 };
 
-template<class Array>
-class CInitFrameAggregator: public CDescriptorAggregator<Array> {
+template<class Array,template<class T, class Allocator = std::allocator<T> > class Container>
+class CInitFrameAggregator: public CDescriptorAggregator<Array,Container> {
 
 public:
 
     //! Constructor.
-    CInitFrameAggregator(CTracker* tracker, const char* name):CDescriptorAggregator<Array>::CDescriptorAggregator(tracker,name){}
+    CInitFrameAggregator(CTracker<Container>* tracker, const char* name):CDescriptorAggregator<Array,Container>::CDescriptorAggregator(tracker,name){}
 
 private:
 
     //! Gets the descriptor from the first feature in the tracklet.
     virtual void AggregateTracklet(CTracklet* tracklet);
 
-    using CDescriptorAggregator<Array>::m_name;
-    using CDescriptorAggregator<Array>::m_aggregate;
+    using CDescriptorAggregator<Array,Container>::m_name;
+    using CDescriptorAggregator<Array,Container>::m_aggregate;
 
 };
 
-template<class Array>
-class CSubsampleAggregator:public CDescriptorAggregator<Array> {
+template<class Array,template<class T, class Allocator = std::allocator<T> > class Container>
+class CSubsampleAggregator:public CDescriptorAggregator<Array,Container> {
 
 public:
 
     //! Constructor.
-    CSubsampleAggregator(CTracker* tracker, const char* name, size_t n);
+    CSubsampleAggregator(CTracker<Container>* tracker, const char* name, size_t n);
 
 private:
 
@@ -91,36 +91,36 @@ private:
 
     size_t m_n;                          //! downsampling factor
 
-    using CDescriptorAggregator<Array>::m_name;
-    using CDescriptorAggregator<Array>::m_aggregate;
+    using CDescriptorAggregator<Array,Container>::m_name;
+    using CDescriptorAggregator<Array,Container>::m_aggregate;
 
 };
 
-template<class Array>
-class CMeanAggregator:public CDescriptorAggregator<Array> {
+template<class Array,template<class T, class Allocator = std::allocator<T> > class Container>
+class CMeanAggregator:public CDescriptorAggregator<Array,Container> {
 
 public:
 
     //! Constructor.
-    CMeanAggregator(CTracker* tracker, const char* name):CDescriptorAggregator<Array>::CDescriptorAggregator(tracker,name){}
+    CMeanAggregator(CTracker<Container>* tracker, const char* name):CDescriptorAggregator<Array,Container>::CDescriptorAggregator(tracker,name){}
 
 private:
 
     //! Subsamples each tracklet.
     virtual void AggregateTracklet(CTracklet* tracklet);
 
-    using CDescriptorAggregator<Array>::m_name;
-    using CDescriptorAggregator<Array>::m_aggregate;
+    using CDescriptorAggregator<Array,Container>::m_name;
+    using CDescriptorAggregator<Array,Container>::m_aggregate;
 
 };
 
-template<class Array>
-class CSplineInterpolationAggregator:public CDescriptorAggregator<Array> {
+template<class Array,template<class T, class Allocator = std::allocator<T> > class Container>
+class CSplineInterpolationAggregator:public CDescriptorAggregator<Array,Container> {
 
 public:
 
     //! Constructor.
-    CSplineInterpolationAggregator(CTracker* tracker, const char* name, size_t n, size_t p);
+    CSplineInterpolationAggregator(CTracker<Container>* tracker, const char* name, size_t n, size_t p);
 
 private:
 
@@ -130,8 +130,8 @@ private:
     size_t m_n;                                          //!< number of control points
     size_t m_p;                                          //!< polynomial degree
 
-    using CDescriptorAggregator<Array>::m_name;
-    using CDescriptorAggregator<Array>::m_aggregate;
+    using CDescriptorAggregator<Array,Container>::m_name;
+    using CDescriptorAggregator<Array,Container>::m_aggregate;
 
 };
 

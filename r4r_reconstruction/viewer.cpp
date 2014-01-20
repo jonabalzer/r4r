@@ -230,6 +230,7 @@ void CViewer::keyPressEvent(QKeyEvent* event) {
         updateGL();
 
     }
+
 }
 
 void CViewer::loadView(const CView<double>& view) {
@@ -479,6 +480,34 @@ void CTriMeshViewer::loadView(const CView<double>& view) {
 
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixd(&mv[0]);
+
+}
+
+
+void CTriMeshViewer::keyPressEvent(QKeyEvent* event) {
+
+    // reset to cam to world coordinates
+    if(event->key() == Qt::Key_Z) {
+
+        CRigidMotion<double,3> id;
+        m_view.SetTransformation(id);
+
+        loadView(m_view);
+        updateGL();
+
+    }
+
+    // rotate around barycenter of mesh
+    if(event->key() == Qt::Key_B)
+        m_center = m_mesh->Barycenter();
+
+    // turn color rendering on/off
+    if(event->key() == Qt::Key_C) {
+
+        m_show_color = !m_show_color;
+        updateGL();
+
+    }
 
 }
 

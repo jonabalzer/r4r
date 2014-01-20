@@ -322,7 +322,7 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
     // residual of the normal equation
     //A.Transpose();
     CDenseVector<T> rnormal = At*r;
-    //A.Transpose();
+     //A.Transpose();
 
     // preconditioning
     CDenseVector<T> z = rnormal.Clone();
@@ -357,7 +357,7 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
         if(!m_silent)
             cout << "k=" << k << ": " << res.back() << endl;
 
-        if(fabs(res.at(res.size()-2)-res.back())<m_eps)
+        if(fabs(res.at(res.size()-2)-res.back())<m_eps || res.back()<m_eps)
             break;
 
         // update residual of normal equation

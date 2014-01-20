@@ -239,7 +239,7 @@ map<shared_ptr<CTracklet>,list<shared_ptr<CTracklet> > > CTracker<Container>::Co
             size_t t01 = (*it)->GetCreationTime();
             size_t t02 = (*it2)->GetCreationTime();
 
-            if((*it)!=(*it2) && (t01+(*it)->Size()-1>=t02 || t01<=t02+(*it2)->Size()-1))
+            if((*it)!=(*it2) && (t01+(*it)->GetLifetime()-1>=t02 || t01<=t02+(*it2)->GetLifetime()-1))
                 graph[*it].push_back(*it2);
 
         }
@@ -275,16 +275,16 @@ vector<size_t> CTracker<Container>::ComputeFeatureDensity(vector<CIntegralImage<
         if((*it)->GetStatus()) {
 
             // get the current feature
-            imfeature f = (*it)->GetLatestState();
+            const imfeature& f = (*it)->GetLatestState();
 
             // see what scale it is at (possibly with rounding)
-            u_int s = (u_int)(f.GetScale()+0.5);
+            u_int s = u_int(f.GetScale());
 
             // count
             n[s]++;
 
             // set Dirac impulse at location in integral image
-            vec2f x = f.GetLocation();
+            const vec2f& x = f.GetLocation();
 
             // make sure we have an image at that scale
             if(s<imgs.size())
@@ -295,6 +295,17 @@ vector<size_t> CTracker<Container>::ComputeFeatureDensity(vector<CIntegralImage<
     }
 
     return n;
+
+}
+
+
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+void CTracker<Container>::ResizeTracklets(size_t n) {
+
+    typename Container<shared_ptr<CTracklet> >::iterator it;
+
+    for(it=m_data.begin(); it!=m_data.end(); it++)
+        (*it)->Resize(n);
 
 }
 

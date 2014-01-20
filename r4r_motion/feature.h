@@ -41,8 +41,9 @@ namespace R4R {
 
 // some forward declarations
 class CAbstractDescriptor;
-template<class Array> class CDescriptorAggregator;
-template<class Array> class CSubsampleAggregator;
+template<class Array,template<class T,class Allocator = std::allocator<T> > class Container> class CDescriptorAggregator;
+template<class Array,template<class T,class Allocator = std::allocator<T> > class Container> class CSubsampleAggregator;
+
 
 /*! \brief interest point in \f$\mathbb{R}^n\f$
  *
@@ -52,8 +53,8 @@ template<typename T,u_int n>
 class CInterestPoint {
 
     friend class CAbstractDescriptor;
-    template<class Array> friend class CDescriptorAggregator;
-    template<class Array> friend class CSubsampleAggregator;
+    template<class Array,template<class V,class Allocator = std::allocator<V> > class Container> friend class CDescriptorAggregator;
+    template<class Array,template<class V,class Allocator = std::allocator<V> > class Container> friend class CSubsampleAggregator;
 
 public:
 
@@ -61,7 +62,7 @@ public:
     CInterestPoint();
 
     //! Constructor.
-    CInterestPoint(CVector<T,n>& location, float scale, T quality);
+    CInterestPoint(const CVector<T,n>& location, float scale, T quality);
 
     //! Destructor.
     ~CInterestPoint();
@@ -93,6 +94,9 @@ public:
     //! Returns feature location w.r.t. to inherent scale.
     const CVector<T,n>& GetLocation() const { return m_location; }
 
+    //! Sets location of the feature..
+    void SetLocation(const CVector<T,n>& location) { m_location = location; }
+
     //! Returns feature location w.r.t. to native scale.
     CVector<T,n> GetLocationAtNativeScale() const;
 
@@ -100,10 +104,10 @@ public:
     std::map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; }
 
     //! Looks for descriptor with a specified name. \TODO: Better return iterator.
-    shared_ptr<CAbstractDescriptor> GetDescriptor(const char* name);
+    const shared_ptr<CAbstractDescriptor>& GetDescriptor(const char* name) const;
 
     //! Looks for a descriptor at specified position.
-    shared_ptr<CAbstractDescriptor> GetDescriptor(u_int no);
+    const shared_ptr<CAbstractDescriptor>& GetDescriptor(u_int no) const;
 
     //! Looks for name of descriptor at specified position.
     string GetDescriptorName(u_int no);

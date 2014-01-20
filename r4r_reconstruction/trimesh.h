@@ -27,6 +27,7 @@
 #define COTAN_EPSILON 1e-10
 
 #include <set>
+#include <queue>
 
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
@@ -39,10 +40,22 @@ typedef OpenMesh::TriMesh_ArrayKernelT<OpenMesh::Subdivider::Adaptive::Composite
 
 namespace R4R {
 
+typedef std::pair<OpenMesh::VertexHandle,float> vd;
+
+class CVertexDistanceComparator {
+public:
+    bool operator()(const vd& x, const vd& y) { return x.second>=y.second; }
+};
+
 /*! \brief triangle mesh
  *
  *
- *
+ *typedef pair<VertexHandle,float> vd;
+
+class CVertexDistanceComparator {
+public:
+    bool operator()(const vd& x, const vd& y) { return x.second<=y.second; }
+};
  */
 class CTriangleMesh:public TriangleMesh {
 
@@ -62,6 +75,9 @@ public:
 
 	//! Returns barycenter of a mesh face.
     vec3f Barycenter(FaceHandle fh);
+
+    //! Returns the barycenter of the entire mesh.
+    vec3f Barycenter();
 
 	//! Exterior normal at a boundary vertex.
     CTriangleMesh::Normal ExteriorNormal(VertexHandle vh);
@@ -127,6 +143,20 @@ public:
     //! Cotangent of the angle opposite to a half edge.
     float CotanOppositeAngle(HalfedgeHandle heh);
 
+    /*! \brief Deforms the mesh locally in normal direction.
+     *
+     * Takes an impulse at the given vertex, diffuses it according to the number of steps, then
+     * deforms the neighborhood in the direction of the vertex normal.
+     *
+     */
+    void Deform(VertexHandle vh, size_t n, float h);
+
+    //! Collects all vertices in an \f$n\f$-ring neighborhood of a vertex.
+    void GetNRingNeighborhood(VertexHandle vh, size_t h, std::set<VertexHandle>& neighbors);
+
+    //! Implementation of Dijkstra's shortest path algorithm.
+    std::map<VertexHandle,float> Dijkstra(VertexHandle vh, const std::set<VertexHandle>& vertices);
+
 private:
 
     //! Previous half edge on boundary from vertex.
@@ -143,6 +173,7 @@ private:
 
     //! Checks for an obtuse triangle.
     bool IsTriangleObtuse(FaceHandle fh);
+
 
 };
 

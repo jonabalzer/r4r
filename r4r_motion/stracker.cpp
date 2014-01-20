@@ -152,7 +152,7 @@ void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
            distance between its descriptor and the reference, then kill it */
         if((*it)->GetStatus() && f.GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE"))
             (*it)->SetStatus(false);
-        else
+        else if((*it)->GetStatus())
             n++;
 
 	}
@@ -172,44 +172,49 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
     // collect and count feature we already have per scale
     vector<size_t> n = ComputeFeatureDensity(imgs);
 
-    for(u_int s = 0; s<pyramid.size(); s++) {
+    // only do something if we have to0 little tracks
+    if(m_n_active_tracks<=size_t(m_params->GetIntParameter("MIN_NO_FEATURES"))) {
 
-        // how many to add per scale
-        int ntoadd = m_params->GetIntParameter("MAX_NO_FEATURES") - (int)n[s];
+        for(u_int s = 0; s<pyramid.size(); s++) {
 
-        // if we have enough, don't do anything
-        if(ntoadd>0) {
+            // how many to add per scale
+            int ntoadd = m_params->GetIntParameter("MAX_NO_FEATURES") - (int)n[s];
 
-            // detect
-            vector<KeyPoint> keypoints;
-            m_detector.detect(pyramid[s],keypoints);
+            // if we have enough, don't do anything
+            if(ntoadd>0) {
 
-            // only do something if there were detections at scale s
-            if(keypoints.size()>0) {
+                // detect
+                vector<KeyPoint> keypoints;
+                m_detector.detect(pyramid[s],keypoints);
 
-                // keep the best but no more than the number to add
-                KeyPointsFilter::retainBest(keypoints,ntoadd);
+                // only do something if there were detections at scale s
+                if(keypoints.size()>0) {
 
-                // add potential
-                for(size_t i=0; i<keypoints.size(); i++)
-                    imgs[s].AddDensityFast(keypoints[i].pt.x,keypoints[i].pt.y,1);
+                    // keep the best but no more than the number to add
+                    KeyPointsFilter::retainBest(keypoints,ntoadd);
 
-                // compute the integral image
-                imgs[s].Compute();
+                    // add potential
+                    for(size_t i=0; i<keypoints.size(); i++)
+                        imgs[s].AddDensityFast(keypoints[i].pt.x,keypoints[i].pt.y,1);
 
-                double hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT");
+                    // compute the integral image
+                    imgs[s].Compute();
 
-                for(size_t i=0; i<keypoints.size(); i++) {
+                    double hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT");
 
-                    // only features that are separated from all other candidates and existing features are accepted
-                    if(imgs[s].EvaluateFast(keypoints[i].pt.x,keypoints[i].pt.y,hsize,hsize)==1) {
+                    for(size_t i=0; i<keypoints.size(); i++) {
 
-                        vec2f loc = { keypoints[i].pt.x,keypoints[i].pt.y };
-                        imfeature x(loc,s,0);
+                        // only features that are separated from all other candidates and existing features are accepted
+                        if(imgs[s].EvaluateFast(keypoints[i].pt.x,keypoints[i].pt.y,hsize,hsize)==1) {
 
-                        // create new tracklet with feature, FIXME: get size restriction from parameters
-                        CSimpleTrackerTracklet* tracklet = new CSimpleTrackerTracklet(m_global_t,x);
-                        this->AddTracklet(tracklet);
+                            vec2f loc = { keypoints[i].pt.x,keypoints[i].pt.y };
+                            imfeature x(loc,s,0);
+
+                            // create new tracklet with feature, FIXME: get size restriction from parameters
+                            CSimpleTrackerTracklet* tracklet = new CSimpleTrackerTracklet(m_global_t,x);
+                            this->AddTracklet(tracklet);
+
+                        }
 
                     }
 
@@ -219,7 +224,13 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
 
         }
 
-	}
+    }
+    else {  // only compute integral images
+
+        for(u_int s = 0; s<pyramid.size(); s++)
+            imgs[s].Compute();
+
+    }
 
     /* since we already have the integral images computed, we might as well
       check whether two tracks got too close to each other */
@@ -273,7 +284,8 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
                                     m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
 
             // adjust region to scale
-            droi.Scale(1.0/double(2<<(s-1)));
+            if(s)
+                droi.Scale(1.0/double(2<<(s-1)));
 
             // compute brief descriptor
             CBRIEF* briefdesc1 = new CBRIEF(droi);
@@ -289,13 +301,15 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
                 tracklet->m_reference_feature.AttachDescriptor("BRIEF",brief);
             else {
 
+                if(tracklet->m_reference_feature.HasDescriptor("BRIEF")) {
 
+                    shared_ptr<CAbstractDescriptor> desc0 = tracklet->m_reference_feature.GetDescriptor("BRIEF");
+                    shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
+                    quality = briefdesc0->Distance(*briefdesc1);
 
-                //quality = tracklet->m_reference_descriptor->Distance(*briefdesc1);
-
+                }
 
             }
-
             x.SetQuality(quality);
 
             if(m_params->GetIntParameter("COMPUTE_ID")) {

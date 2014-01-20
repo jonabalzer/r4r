@@ -22,6 +22,8 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include <assert.h>
+#include <limits>
+#include <algorithm>
 
 #include <OpenMesh/Tools/Subdivider/Uniform/LoopT.hh>
 
@@ -190,6 +192,25 @@ vec3f CTriangleMesh::Barycenter(FaceHandle fh) {
 	cog = cog/valence;
 
 	return cog;
+
+}
+
+
+vec3f CTriangleMesh::Barycenter() {
+
+    vec3f barycenter;
+    size_t counter = 0;
+
+    TriangleMesh::VertexIter v_it;
+
+    for (v_it=vertices_begin(); v_it!=vertices_end(); ++v_it) {
+
+        barycenter = barycenter + Point(v_it);
+        counter++;
+
+    }
+
+    return (1.0/float(counter))*barycenter;
 
 }
 
@@ -686,5 +707,131 @@ float CTriangleMesh::MeanEdgeLength() {
     return length/float(this->n_edges());
 
 }
+
+
+void CTriangleMesh::Deform(VertexHandle vh, size_t n, float h) {
+
+    // first get neighborhood
+    // then distances in neighborhood
+    // then exponential function of -d (sigma \propto n)
+
+}
+
+void CTriangleMesh::GetNRingNeighborhood(VertexHandle vh, size_t h, set<VertexHandle>& neighbors) {
+
+    neighbors.insert(vh);
+
+    // base case of recursion
+    if(h==0)
+        return;
+
+    TriangleMesh::VertexVertexIter vv_it;
+    for (vv_it = this->vv_iter(vh); vv_it; ++vv_it) {
+
+        if(neighbors.find(vv_it.handle()) == neighbors.end())
+            GetNRingNeighborhood(vv_it.handle(),h-1,neighbors);
+
+    }
+
+}
+
+map<VertexHandle,float> CTriangleMesh::Dijkstra(VertexHandle vh, const set<VertexHandle>& vertices) {
+
+    map<VertexHandle,float> result;     // distance container
+    map<VertexHandle,bool> visited;     // visited vertices
+    vector<vd> vds;                     // heap storage
+
+    // if the seed is not even in the subset of vertices, do nothing
+    if(vertices.find(vh)==vertices.end())
+        return result;
+
+    set<VertexHandle>::const_iterator it;
+    for(it=vertices.begin(); it!=vertices.end(); ++it) {
+
+        if((*it)==vh) {
+
+            result.insert(pair<VertexHandle,float>(vh,0));
+            visited.insert(pair<VertexHandle,bool>(vh,true));
+            vds.push_back(pair<VertexHandle,float>(vh,0));
+
+        }
+        else {
+
+            result.insert(pair<VertexHandle,float>(*it,std::numeric_limits<float>::max()));
+            visited.insert(pair<VertexHandle,bool>(*it,false));
+
+        }
+
+    }
+
+    // move the initial value to the top of the heap
+    std::make_heap(vds.begin(),vds.end(),CVertexDistanceComparator());
+
+    while(!vds.empty()) {
+
+        // get the current smallest element
+        vd current = vds.front();
+
+        // remove it from the priority queue
+        std::pop_heap(vds.begin(),vds.end(),CVertexDistanceComparator());
+        vds.pop_back();
+
+        TriangleMesh::VertexOHalfedgeIter voh_it;
+        for (voh_it=this->voh_iter(current.first); voh_it; ++voh_it) {
+
+            VertexHandle tv = this->to_vertex_handle(voh_it.handle());
+
+            if(vertices.find(tv)!=vertices.end() && !visited[tv]) {
+
+                float tentdist = this->calc_edge_length(voh_it) + result[current.first];
+
+                if(tentdist<result[tv]) {
+
+                    // set trsult
+                    result[tv]  = tentdist;
+
+                    // update the heap
+                    vds.push_back(pair<VertexHandle,float>(tv,tentdist));
+                    std::make_heap(vds.begin(),vds.end(),CVertexDistanceComparator());
+
+                }
+
+            }
+
+        }
+
+    }
+
+    return result;
+
+}
+
+
+
+
+/*void CTriangleMesh::Diffuse(VertexHandle vh, size_t h, std::map<int,float>& funcin, std::map<int,float>& funcout) {
+
+    TriangleMesh::VertexVertexIter vv_it;
+    float sum = 0;
+    for (vv_it = this->vv_iter(vh); vv_it; ++vv_it) {
+        sum += funcin[vv_it.handle().idx()];
+    }
+    funcout[vh.idx()] = funcin[vh.idx()] + sum;
+    funcout[vh.idx()] /= float(this->valence(vh));
+
+    // base case of recursion
+    if(h==0)
+        return;
+
+    for (vv_it = this->vv_iter(vh); vv_it; ++vv_it) {
+
+        if(funcout.find(vv_it.handle().idx())==funcout.end())
+            Diffuse(vv_it.handle(),h-1,funcin,funcout);
+
+    }
+
+}*/
+
+
 
 }

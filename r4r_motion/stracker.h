@@ -34,6 +34,7 @@ namespace R4R {
 
 // forward declaration
 class CSimpleTracker;
+class CMotionTracker;
 
 /*! \brief tracklets for simple tracker
  *
@@ -41,6 +42,7 @@ class CSimpleTracker;
 class CSimpleTrackerTracklet:public CTracklet {
 
     friend class CSimpleTracker;
+    friend class CMotionTracker;
 
 public:
 
