@@ -35,9 +35,7 @@ class CViewer : public QGLWidget
     Q_OBJECT
 public:
 
-
     explicit CViewer(QWidget *parent = 0);
-
 
     explicit CViewer(const R4R::CView<float>& view, QWidget *parent = 0);
 

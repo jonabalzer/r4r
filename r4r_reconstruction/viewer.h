@@ -116,6 +116,9 @@ public:
      */
     void updateBoundingBox();
 
+    //! Assigns to each pixel in the result the handle of the face it sees.
+    CDenseArray<int> getFaceMap(const CView<double>& view);
+
 public slots:
 
 protected:

@@ -102,7 +102,7 @@ class knot_vector:
             return self.data[self.p-1:-self.p+1]
     
     def get_span(self,t):
-        return bs.knot_span(self.data,self.p,t)
+        return bs.find_knot_span(self.data,self.p,t)
         
     def convert_index(self,span,i):
         """         
@@ -160,9 +160,21 @@ class knot_vector:
         for i in range(0,basis.shape[0]):    
             plt.plot(t,basis[i,:],label=str(i))
         
-        plt.legend()
+        #plt.legend()
         plt.vlines(dom,0,ymax,linestyles='dashed')
         
+    def number_of_controlpoints(self):
+        return self.ncp
+    
+    def greville_abscissae(self):
+        
+        result = np.zeros(self.ncp)
+        
+        for i in range(0,self.ncp):
+            result[i] = np.sum(self.data[i:i+self.p])/float(self.p)
+            
+        return result
+                
 class curve:
  
     def __init__(self,knots,d):
@@ -323,9 +335,45 @@ class curve:
         cs = self.sample_location(n)
         return bs.characteristic_function(x,y,cs)
         
-                 
+    def make_identity(self):
+        """
+        Interprets a 2d-curve as a scalar-valued functions, and sets it to the
+        identity with the help of the Greville abscissae. 
+        """
+        
+        if(self.d==1):   
+            self.cp = np.reshape(self.knots.greville_abscissae(),(1,self.knots.ncp))
+    
+    def insert_knot(self,t):
+        """
+        Insert a new knot without changing the geometry of the curve.
+        """        
+        
+        # find knot span        
+        span = self.knots.get_span(t)
+    
+        # keep all but p of them
+        cpsnew = np.zeros((self.d,self.knots.ncp+1),self.cp.dtype)
+        cpsnew[:,0:span-self.knots.p+1] = self.cp[:,0:span-self.knots.p+1]
+        cpsnew[:,span+1:] = self.cp[:,span:]
+        
+        for i in range(span-self.knots.p+1,span+1):
+            denom = self.knots.data[i+self.knots.p] - self.knots.data[i]
+            w0 = t - self.knots.data[i]
+            w1 = self.knots.data[i+self.knots.p] - t            
+            c0 = self.cp[:,i%self.knots.ncp]
+            c1 = self.cp[:,(i-1)%self.knots.ncp]
+            cpsnew[:,i] = (w0*c0 + w1*c1)/denom
+            
+        self.cp = cpsnew
+        self.knots.ncp += 1
+        
+        # insert t in to knot vector
+        self.knots.data = np.insert(self.knots.data,span+1,t)
+        
+
 # fixme: make this a member, derive the graph and override           
-def plot_curve(s,n,controlpoints=False,knotpoints=False,normals=False):
+def plot_curve(s,n,controlpoints=False,knotpoints=False,normals=False,annotatespan=-1):
     """
     Plots spline curve or graph.
     """
@@ -341,8 +389,10 @@ def plot_curve(s,n,controlpoints=False,knotpoints=False,normals=False):
             # mark boundaries of knot intervals
             for i in range(0,domain.size):
                 x,xt,xtt = s.evaluate(domain[i])
-                plt.plot(x[0],x[1],marker='x',color='g',markersize=10)
-                #plt.annotate(str(i), xy=(xk[0], xk[1]),xytext=(xk[0]+0.01, xk[1]))
+                plt.plot(x[0],x[1],marker='x',markersize=10)
+                
+                if annotatespan>0 and i%annotatespan==0:
+                    plt.annotate('{:.2f}'.format(domain[i]), xy=(x[0], x[1]),xytext=(x[0]+0.01, x[1]+0.01))
                 
         pts = np.zeros((t.size,2))
 
@@ -357,18 +407,19 @@ def plot_curve(s,n,controlpoints=False,knotpoints=False,normals=False):
         
         
         if controlpoints is True:
-            plt.plot(s.cp[0,:],s.cp[1,:],marker='o',color='r')
+            plt.plot(s.cp[0,:],s.cp[1,:],marker='o')
         
     elif(s.d==1):
 
         f = np.zeros(t.size)
         for i in range(0,t.size):
-            f[i] = s.evaluate(t[i])
+            f[i] = s.evaluate(t[i])[0]
             
         plt.plot(t[:-1],f[:-1])
 
-        gv = s.knots.greville_abscissae()
-        plt.plot(gv,s.cp[0,:],marker='o',color='r')
+        if controlpoints is True:
+            gv = s.knots.greville_abscissae()
+            plt.plot(gv,s.cp[0,:],marker='o')
     
     plt.axis('equal')
     plt.grid('on')
