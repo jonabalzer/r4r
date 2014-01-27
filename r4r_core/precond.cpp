@@ -35,6 +35,10 @@ template class CPreconditioner<CSparseArray<double>,double>;
 template class CPreconditioner<CDenseArray<double>,double>;
 template class CPreconditioner<CSparseArray<float>,float>;
 template class CPreconditioner<CDenseArray<float>,float>;
+template class CPreconditioner<CSymmetricCSRMatrix<float,size_t>,float>;
+template class CPreconditioner<CSymmetricCSRMatrix<double,size_t>,double>;
+template class CPreconditioner<CCSRMatrix<float,size_t>,float>;
+template class CPreconditioner<CCSRMatrix<double,size_t>,double>;
 
 template<class Matrix,typename T>
 CSSORPreconditioner<Matrix,T>::CSSORPreconditioner(Matrix& A, T omega, bool lower):

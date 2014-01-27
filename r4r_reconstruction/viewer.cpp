@@ -55,7 +55,7 @@ CViewer::CViewer(const R4R::CView<double>& view, QWidget* parent):
 
 void CViewer::initializeGL(){
 
-    glClearColor(0.1, 0.1, 0.1, 1.0);
+    glClearColor(0.1,0.1,0.1,1.0);
 
     // this is in normalized device coordinates
     glClearDepth(1.0);
@@ -230,7 +230,6 @@ void CViewer::keyPressEvent(QKeyEvent* event) {
         updateGL();
 
     }
-
 }
 
 void CViewer::loadView(const CView<double>& view) {
@@ -362,6 +361,94 @@ void CTriMeshViewer::updateBoundingBox() {
 
 }
 
+CDenseArray<int> CTriMeshViewer::getFaceMap(const CView<double>& view) {
+
+    // allocate result
+    QSize ws = this->size();
+    CDenseArray<int> fm(ws.height(),ws.width());
+
+    // turn lighting off and set clear color to black
+    glDisable(GL_LIGHTING);
+    glClearColor(0.0,0.0,0.0,1.0);
+
+    // load view
+    loadView(view);
+
+    // clear buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // load mesh
+    TriangleMesh::FaceIter f_it;
+    TriangleMesh::FaceVertexIter fv_it;
+    unsigned int counter = 1;
+
+    // draw it
+    glBegin(GL_TRIANGLES);
+
+    for (f_it=m_mesh->faces_begin(); f_it!=m_mesh->faces_end(); ++f_it, ++counter) {
+
+        // take the last three bytes of the counter as the color
+        uchar* bytes = reinterpret_cast<uchar*>(&counter);
+
+        // load color
+        glColor3ub(bytes[0],bytes[1],bytes[2]);
+
+        // draw vertices
+        fv_it = m_mesh->fv_iter(f_it.handle());
+        glVertex3fv(&m_mesh->point(fv_it)[0]);
+        ++fv_it;
+        glVertex3fv( &m_mesh->point(fv_it)[0] );
+        ++fv_it;
+        glVertex3fv( &m_mesh->point(fv_it)[0] );
+
+    }
+
+    glEnd();
+
+    glFlush();
+
+    // need buffer in order to flip the image
+    uchar* buffer = new uchar[3*fm.NElems()];
+
+    glReadPixels(0, 0,fm.NCols(),fm.NRows(),GL_RGB,GL_UNSIGNED_BYTE,buffer);
+
+    for(size_t i=0; i<fm.NRows(); i++) {
+
+        for(size_t j=0; j<fm.NCols(); j++) {
+
+            // normalized depth
+            uchar* pbuffer = buffer + 3*((fm.NRows()-i-1)*fm.NCols() + j);
+
+            // concatenate the three bytes to an integer
+            unsigned int index = 0;
+            uchar* bytes = reinterpret_cast<uchar*>(&index);
+            bytes[0] = pbuffer[0];
+            bytes[1] = pbuffer[1];
+            bytes[2] = pbuffer[2];
+
+            // transform to camera coordinates
+            if(index>0)
+                fm(i,j) = index;
+            else
+                fm(i,j) = -1;
+
+        }
+
+    }
+
+    // clean up
+    delete [] buffer;
+
+    // restore view and graphics display
+    glEnable(GL_LIGHTING);
+    glClearColor(0.1,0.1,0.1,1.0);
+    loadView(m_view);
+    paintGL();
+
+    return fm;
+
+}
+
 void CTriMeshViewer::updateClipDepth(const CView<double>& view, double tolerance) {
 
     vector<vec3f> corners = m_bbox.Corners();
@@ -480,34 +567,6 @@ void CTriMeshViewer::loadView(const CView<double>& view) {
 
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixd(&mv[0]);
-
-}
-
-
-void CTriMeshViewer::keyPressEvent(QKeyEvent* event) {
-
-    // reset to cam to world coordinates
-    if(event->key() == Qt::Key_Z) {
-
-        CRigidMotion<double,3> id;
-        m_view.SetTransformation(id);
-
-        loadView(m_view);
-        updateGL();
-
-    }
-
-    // rotate around barycenter of mesh
-    if(event->key() == Qt::Key_B)
-        m_center = m_mesh->Barycenter();
-
-    // turn color rendering on/off
-    if(event->key() == Qt::Key_C) {
-
-        m_show_color = !m_show_color;
-        updateGL();
-
-    }
 
 }
 

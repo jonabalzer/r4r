@@ -31,13 +31,285 @@
 
 namespace R4R {
 
+/*!
+ * \brief matrix-market CSR triple
+ */
+template<typename T,typename U = size_t>
+class CCSRTriple {
+
+public:
+
+    //! Constructor.
+    CCSRTriple(U i, U j, T v):m_i(i),m_j(j),m_v(v){}
+
+    //! Lexicographic ordering.
+    bool operator<(const CCSRTriple& x) const;
+
+    //! Tests for equal location.
+    bool operator==(const CCSRTriple& x) const { return m_i==x.m_i && m_j==x.m_j; }
+
+    //! Tests for equal location.
+    bool operator!=(const CCSRTriple& x) const { return m_i!=x.m_i || m_j!=x.m_j; }
+
+    //! Access to row index.
+    const U& i() const { return m_i; }
+
+    //! Access to column index.
+    const U& j() const { return m_j; }
+
+    //! Access to value.
+    const T& v() const { return m_v; }
+
+private:
+
+    U m_i;
+    U m_j;
+    T m_v;
+
+};
+
+/*!
+ * \brief matrix-market CSR triple
+ */
+template<typename T,typename U = size_t>
+class CCSCTriple {
+
+public:
+
+    //! Constructor.
+    CCSCTriple(U i, U j, T v):m_i(i),m_j(j),m_v(v){}
+
+    //! Initializer list constructor.
+    //CCSCTriple(std::initializer_list<U> list);
+
+    //! Lexicographic ordering.
+    bool operator<(const CCSCTriple& x) const;
+
+    //! Tests for equal location.
+    bool operator==(const CCSCTriple& x) const { return m_i==x.m_i && m_j==x.m_j; }
+
+    //! Tests for equal location.
+    bool operator!=(const CCSCTriple& x) const { return m_i!=x.m_i || m_j!=x.m_j; }
+
+    //! Access to row index.
+    const U& i() const { return m_i; }
+
+    //! Access to column index.
+    const U& j() const { return m_j; }
+
+    //! Access to value.
+    const T& v() const { return m_v; }
+
+private:
+
+    U m_i;
+    U m_j;
+    T m_v;
+
+};
+
+
+// forward declaration
+template<class T,typename U> class CCSCMatrix;
+
+/*! \brief sparse matrix in compressed-row format
+ *
+ */
+template<typename T,typename U = size_t>
+class CCSRMatrix {
+
+public:
+
+    //! Deleted standard constructor.
+    CCSRMatrix() = delete;
+
+    //! Constructor.
+    CCSRMatrix(size_t m, size_t n);
+
+    /*! \brief Constructor which takes MatrixMarket triples as input.
+     *
+     * The triples can contain duplicate entries. A heap sort and implicit summation
+     * is performed internally in the constructor.
+     *
+     */
+    CCSRMatrix(size_t m, size_t n, std::vector<CCSRTriple<T,U> >& data);
+
+    /*! \brief Constructor for external assembly.
+     *
+     * This facilitates fast assembly, e.g., in the case of least-squares
+     * problems, where one iterates linearly over the abscissae, which
+     * corresponds to a row, and for each abscissa, all the variables which
+     * it affects (the columns). No random access is needed. Make sure to
+     * call Verify() to see if internally everything is in order.
+     *
+     */
+    CCSRMatrix(std::shared_ptr<std::vector<U> >& rowptr, std::shared_ptr<std::vector<U> >& cols, std::shared_ptr<std::vector<T> >& vals);
+
+    //! Verifies the structure.
+    bool Verify() const;
+
+    //! Access number of cols.
+    size_t NRows() const { return m_nrows; }
+
+    //! Access number of cols.
+    size_t NCols() const { return m_ncols; }
+
+    //! In-place scalar multiplication.
+    void Scale(T scalar);
+
+    //! Erases the matrix and replaces it with the identity.
+    void Eye();
+
+    //! Counts the number of non-zero entries.
+    size_t NNz() const { return m_vals->size(); }
+
+    //! Multiplies the object with a dense array from the right.
+    template<class Matrix> Matrix operator*(const Matrix& array) const;
+
+    //! Writes matrix to a stream.
+    template<typename V,typename W> friend std::ostream& operator << (std::ostream& os, const CCSRMatrix<V,W>& x);
+
+    //! Transposition transform a CSR into a CSC matrix.
+    static CCSRMatrix<T,U> Transpose(const CCSRMatrix<T,U>& x);
+
+protected:
+
+    size_t m_nrows;                                         //!< number of rows
+    size_t m_ncols;                                         //!< number of cols
+    bool m_transpose;                                       //!< transposition flag
+    std::shared_ptr<std::vector<U> > m_rowptr;              //!< indicates the beginning of rows in #m_val and #m_cols
+    std::shared_ptr<std::vector<U> > m_cols;                //!< col index
+    std::shared_ptr<std::vector<T> > m_vals;                //!< value
+
+};
+
+
+template<typename T,typename U = size_t>
+class CSymmetricCSRMatrix {
+
+public:
+
+    //! Constructor.
+    CSymmetricCSRMatrix(size_t s);
+
+    //! Squares a CSC matrix.
+    CSymmetricCSRMatrix(const CCSCMatrix<T,U>& x);
+
+    //! Access number of cols.
+    size_t NRows() const { return m_size; }
+
+    //! Access number of cols.
+    size_t NCols() const { return m_size; }
+
+    //! In-place scalar multiplication.
+    void Scale(T scalar);
+
+    //! Counts the number of non-zero entries.
+    size_t NNz() const;
+
+    //! Multiplies the object with a dense array from the right.
+    template<class Matrix> Matrix operator*(const Matrix& array) const;
+
+    //! Writes matrix to a stream.
+    template<typename V,typename W> friend std::ostream& operator << (std::ostream& os, const CSymmetricCSRMatrix<V,W>& x);
+
+private:
+
+    size_t m_size;                                          //!< number of rows and cols
+    std::shared_ptr<std::vector<U> > m_rowptr;              //!< indicates the beginning of rows in #m_val and #m_cols
+    std::shared_ptr<std::vector<U> > m_cols;                //!< col index
+    std::shared_ptr<std::vector<T> > m_vals;                //!< value
+
+};
+
+template<typename T,typename U = size_t>
+class CCSCMatrix {
+
+    friend class CSymmetricCSRMatrix<T,U>;
+
+public:
+
+    //! Deleted standard constructor.
+    CCSCMatrix() = delete;
+
+    //! Constructor.
+    CCSCMatrix(size_t m, size_t n);
+
+    /*! \brief Constructor which takes MatrixMarket triples as input.
+     *
+     * The triples can contain duplicate entries. A heap sort and implicit summation
+     * is performed internally in the constructor.
+     *
+     */
+    CCSCMatrix(size_t m, size_t n, std::vector<CCSCTriple<T,U> >& data);
+
+    /*! \brief Constructor for external assembly.
+     */
+    CCSCMatrix(std::shared_ptr<std::vector<U> >& colptr, std::shared_ptr<std::vector<U> >& rows, std::shared_ptr<std::vector<T> >& vals);
+
+    //! Erases the matrix and replaces it with the identity.
+    void Eye();
+
+    //! Access number of cols.
+    size_t NRows() const { return m_nrows; }
+
+    //! Access number of cols.
+    size_t NCols() const { return m_ncols; }
+
+    //! In-place scalar multiplication.
+    void Scale(T scalar);
+
+    //! Counts the number of non-zero entries.
+    size_t NNz() const { return m_vals->size(); }
+
+    /*! Multiplies the transpose of the current object with an array from the right.
+     *
+     * CAVEAT: This implicitly form the transpose of the current object!
+     *
+     */
+    template<class Matrix> Matrix operator*(const Matrix& array) const;
+
+    //! Writes matrix to a stream.
+    template<typename V,typename W> friend std::ostream& operator << (std::ostream& os, const CCSCMatrix<V,W>& x);
+
+    /*! \brief Squares a matrix in an efficient way.
+     *
+     * This comes in handy for forming normal equations. The entries of
+     * the squares are obtained as all mutual inner product between the
+     * columns, so the representation has no influence on speed. The CSC
+     * matrix can be kept for fast multiplication of the right-hands side
+     * of a linear system, while the squared matrix in CSR  format is particularly
+     * fit for any Krylov subspace method which only needs matrix-vector-products
+     * (without transposition), e.g. the standard CG method. Problem is however
+     * that assembly is usually done row-wise! So assembly is followed by
+     * transposition (inefficient), than squaring. Maybe it is faster to do
+     * construct CSC matrix from triplets and a heap.
+     *
+     *
+     */
+    CSymmetricCSRMatrix<T,U> Square() const;
+
+    //! Transposition transform a CSR into a CSC matrix.
+    static CCSCMatrix<T,U> Transpose(const CCSCMatrix<T,U>& x);
+
+private:
+
+    size_t m_nrows;                                         //!< number of rows
+    size_t m_ncols;                                         //!< number of cols
+    bool m_transpose;                                       //!< transposition flag
+    std::shared_ptr<std::vector<U> > m_colptr;              //!< indicates the beginning of columns in #m_val and #m_rows
+    std::shared_ptr<std::vector<U> > m_rows;                //!< row index
+    std::shared_ptr<std::vector<T> > m_vals;                //!< value
+
+};
+
+// forward declarations
 template <class T> class CSparseDiagonalArray;
 template <class T> class CSparseLowerTriangularArray;
 template <class T> class CSparseUpperTriangularArray;
 
 /*! \brief sparse 2d matrix/array
  *
- * \todo - Make #m_data a shared pointer and allow shallow copies.
  *
  */
 template<class T>
@@ -157,7 +429,11 @@ public:
 	//! Deletes a column.
 	void DeleteColumn(size_t j);
 
-	//! Converts the matrix into compressed sparse row format suitable for many standard sparse solvers.
+    /*! Converts the matrix into compressed sparse row format suitable for many standard sparse solvers.
+     *
+     * TODO: Return R4R type.
+     *
+     */
 	void GetCSR(std::vector<size_t>& nz, std::vector<size_t>& j, std::vector<T>& v, bool ibase);
 
 	//! Converts the matrix into (row,column,value) format.

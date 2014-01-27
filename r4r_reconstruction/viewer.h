@@ -116,6 +116,9 @@ public:
      */
     void updateBoundingBox();
 
+    //! Assigns to each pixel in the result the handle of the face it sees.
+    CDenseArray<int> getFaceMap(const CView<double>& view);
+
 public slots:
 
 protected:
@@ -136,9 +139,6 @@ protected:
 
     //! Update clip depth based on the bounding box approximation of the current mesh.
     virtual void updateClipDepth(const CView<double>& view, double tolerance = 1.0);
-
-    //! Handling of keyboard inputs.
-    virtual void keyPressEvent(QKeyEvent* event);
 
 private:
 

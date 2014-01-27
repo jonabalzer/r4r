@@ -46,7 +46,7 @@ static PyObject* cox_de_boor(PyObject* self, PyObject* args) {
     int nknots = knots->dimensions[0];
     int span = -1;
     if(t>=pknots[nknots-1-(p-1)]) {
-        span = nknots-1-(p-1);
+        span = nknots-1-(p-1)-1;
     }
     else if(t<pknots[p-1])
         span = p-1;
@@ -97,7 +97,7 @@ static PyObject* find_knot_span(PyObject* self, PyObject* args) {
     int nknots = knots->dimensions[0];
     int span = -1;
     if(t>=cknots[nknots-1-(p-1)]) {
-        span = nknots-1-(p-1);
+        span = nknots-1-(p-1)-1;
     }
     else if(t<cknots[p-1])
         span = p-1;
@@ -129,7 +129,7 @@ static PyObject* evaluate_curve(PyObject* self, PyObject* args) {
     int nknots = knots->dimensions[0];
     int span = -1;
     if(t>=pknots[nknots-1-(p-1)]) {
-        span = nknots-1-(p-1);
+        span = nknots-1-(p-1)-1;
     }
     else if(t<pknots[p-1])
         span = p-1;

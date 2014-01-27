@@ -193,6 +193,8 @@ template class CConjugateGradientMethod<CDenseArray<double>,double>;
 template class CConjugateGradientMethod<CSparseArray<double>,double>;
 template class CConjugateGradientMethod<CDenseArray<float>,float>;
 template class CConjugateGradientMethod<CSparseArray<float>,float>;
+template class CConjugateGradientMethod<CSymmetricCSRMatrix<float,size_t>,float>;
+template class CConjugateGradientMethod<CSymmetricCSRMatrix<double,size_t>,double>;
 
 template<class Matrix,typename T>
 CConjugateGradientMethodLeastSquares<Matrix,T>::CConjugateGradientMethodLeastSquares(const CPreconditioner<Matrix,T>& M, size_t n, double eps, bool silent):
@@ -320,9 +322,7 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
     res.push_back(r.Norm2());
 
     // residual of the normal equation
-    //A.Transpose();
     CDenseVector<T> rnormal = At*r;
-     //A.Transpose();
 
     // preconditioning
     CDenseVector<T> z = rnormal.Clone();
@@ -385,5 +385,7 @@ template class CConjugateGradientMethodLeastSquares<CDenseArray<double>,double>;
 template class CConjugateGradientMethodLeastSquares<CSparseArray<double>,double>;
 template class CConjugateGradientMethodLeastSquares<CDenseArray<float>,float>;
 template class CConjugateGradientMethodLeastSquares<CSparseArray<float>,float>;
+template class CConjugateGradientMethodLeastSquares<CCSRMatrix<double,size_t>,double>;
+template class CConjugateGradientMethodLeastSquares<CCSRMatrix<float,size_t>,float>;
 
 }
