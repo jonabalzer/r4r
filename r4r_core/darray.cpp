@@ -1098,6 +1098,28 @@ template vector<double> CDenseArray<double>::Gradient<double>(const CVector<doub
 template vector<double> CDenseArray<unsigned char>::Gradient<double>(const CVector<double,2>& p) const;
 template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(const CVector<double,2>& p) const;
 
+template <typename T>
+template<typename U>
+vector<U> CDenseArray<T>::Gradient(size_t i, size_t j) const {
+
+    if(i<1 || j<1 || j>NCols()-2 || i>NRows()-2)
+        return vector<U>(2);
+
+    U I0x, I0y, I1x, I1y;
+    I0x = U(this->Get(i,j-1));
+    I0y = U(this->Get(i-1,j));
+    I1x = U(this->Get(i,j+1));
+    I1y = U(this->Get(i+1,j));
+
+    vector<U> grad;
+    grad.push_back(0.5*(I1x-I0x));
+    grad.push_back(0.5*(I1y-I0y));
+
+    return grad;
+}
+
+template vector<double> CDenseArray<double>::Gradient<double>(size_t i, size_t j) const;
+template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(size_t i, size_t j) const;
 
 template <typename T>
 CVector<double,2> CDenseArray<T>::ProjectToBoundary(const CVector<double,2>& x) const {

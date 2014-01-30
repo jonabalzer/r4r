@@ -241,6 +241,17 @@ public:
      */
     CVector<T,3> Normalize(const CVector<T,2>& u) const;
 
+
+    /*! \brief Converts matrix indices into a viewing direction.
+     *
+     * \param[in] i image row
+     * \param[in] j image column
+     * \returns direction vector, normalized s.t. \f$z\f$-component equals \f$1\f$ and transformed
+     * to world coordinates
+     *
+     */
+    CVector<T,3> Normalize(size_t i, size_t j) const;
+
     /*! \brief Converts a set of pixels into viewing directions.
      *
      * \param[in] u locations w.r.t. the pixel coordinate system

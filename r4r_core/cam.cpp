@@ -473,6 +473,18 @@ CVector<T,3> CView<T>::Normalize(const CVector<T,2>& u) const {
 }
 
 template<typename T>
+CVector<T,3> CView<T>::Normalize(size_t i, size_t j) const {
+
+    CVector<T,2> u  = { T(j), T(i) };
+
+    CVector<T,3> xc = m_cam.Normalize(u);
+
+    return m_Finv.DifferentialTransform(xc);
+    //return m_Finv.Transform(xc);
+
+}
+
+template<typename T>
 vector<CVector<T,3> > CView<T>::Normalize(const std::vector<CVector<T,2> >& u) const {
 
     vector<CVector<T,3> > xc = m_cam.Normalize(u);

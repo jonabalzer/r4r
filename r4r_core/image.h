@@ -114,6 +114,9 @@ public:
     std::vector<vec3> Gradient(const vec2& p) const { return CDenseArray::Gradient<vec3>(p); }
 
     //! Compute gradient with centered differences.
+    std::vector<vec3> Gradient(size_t i, size_t j) const { return CDenseArray::Gradient<vec3>(i,j); }
+
+    //! Compute gradient with centered differences.
     //CVector<short,2> Gradient(size_t x, size_t y);
 
     //! Creates a deep copy of a region of interest.

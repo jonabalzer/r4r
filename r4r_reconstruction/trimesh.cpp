@@ -195,7 +195,6 @@ vec3f CTriangleMesh::Barycenter(FaceHandle fh) {
 
 }
 
-
 vec3f CTriangleMesh::Barycenter() {
 
     vec3f barycenter;

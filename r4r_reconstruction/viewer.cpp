@@ -380,15 +380,17 @@ CDenseArray<int> CTriMeshViewer::getFaceMap(const CView<double>& view) {
     // load mesh
     TriangleMesh::FaceIter f_it;
     TriangleMesh::FaceVertexIter fv_it;
-    unsigned int counter = 1;
+    //unsigned int counter = 1;
 
     // draw it
     glBegin(GL_TRIANGLES);
 
-    for (f_it=m_mesh->faces_begin(); f_it!=m_mesh->faces_end(); ++f_it, ++counter) {
+    for (f_it=m_mesh->faces_begin(); f_it!=m_mesh->faces_end(); ++f_it) {
+
+        unsigned int id = f_it.handle().idx() + 1;
 
         // take the last three bytes of the counter as the color
-        uchar* bytes = reinterpret_cast<uchar*>(&counter);
+        uchar* bytes = reinterpret_cast<uchar*>(&id);
 
         // load color
         glColor3ub(bytes[0],bytes[1],bytes[2]);
@@ -428,7 +430,7 @@ CDenseArray<int> CTriMeshViewer::getFaceMap(const CView<double>& view) {
 
             // transform to camera coordinates
             if(index>0)
-                fm(i,j) = index;
+                fm(i,j) = index - 1;
             else
                 fm(i,j) = -1;
 

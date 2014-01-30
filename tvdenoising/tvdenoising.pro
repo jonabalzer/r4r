@@ -46,10 +46,22 @@ DEPENDPATH += $$PWD/../r4r_core
 target.path = $$OUT_PWD/../bin
 INSTALLS += target
 
+packagesExist(tbb) {
+    DEFINES += HAVE_TBB
+    CONFIG(debug,debug|release):DEFINES += TBB_USE_DEBUG
+}
+
+
 unix:!symbian|win32: {
 
     LIBS += -L$$OUT_PWD/../r4r_core/ \
             -lr4r_core \
+
+    contains(DEFINES,HAVE_TBB) {
+            LIBS += -ltbb
+            #CONFIG(release,debug|release):LIBS+= -ltbb
+            #CONFIG(debug,debug|release):LIBS+= -ltbb_debug
+    }
 
    INCLUDEPATH += /usr/include/r4r/
 

@@ -37,6 +37,7 @@ typedef OpenMesh::TriMesh_ArrayKernelT<OpenMesh::Subdivider::Adaptive::Composite
 
 #include "bbox.h"
 #include "sarray.h"
+#include "cam.h"
 
 namespace R4R {
 

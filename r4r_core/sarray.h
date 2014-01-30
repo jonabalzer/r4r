@@ -79,9 +79,6 @@ public:
     //! Constructor.
     CCSCTriple(U i, U j, T v):m_i(i),m_j(j),m_v(v){}
 
-    //! Initializer list constructor.
-    //CCSCTriple(std::initializer_list<U> list);
-
     //! Lexicographic ordering.
     bool operator<(const CCSCTriple& x) const;
 
@@ -120,8 +117,8 @@ class CCSRMatrix {
 
 public:
 
-    //! Deleted standard constructor.
-    CCSRMatrix() = delete;
+    //! Standard constructor.
+    CCSRMatrix();
 
     //! Constructor.
     CCSRMatrix(size_t m, size_t n);
@@ -129,7 +126,8 @@ public:
     /*! \brief Constructor which takes MatrixMarket triples as input.
      *
      * The triples can contain duplicate entries. A heap sort and implicit summation
-     * is performed internally in the constructor.
+     * is performed internally in the constructor. CAVEAT: The input data gets
+     * destroyed.
      *
      */
     CCSRMatrix(size_t m, size_t n, std::vector<CCSRTriple<T,U> >& data);
@@ -143,16 +141,16 @@ public:
      * call Verify() to see if internally everything is in order.
      *
      */
-    CCSRMatrix(std::shared_ptr<std::vector<U> >& rowptr, std::shared_ptr<std::vector<U> >& cols, std::shared_ptr<std::vector<T> >& vals);
+    CCSRMatrix(size_t m, size_t n, const std::shared_ptr<std::vector<U> >& rowptr, const std::shared_ptr<std::vector<U> >& cols, const std::shared_ptr<std::vector<T> >& vals);
 
     //! Verifies the structure.
     bool Verify() const;
 
     //! Access number of cols.
-    size_t NRows() const { return m_nrows; }
+    size_t NRows() const {  size_t res; m_transpose ? res = m_ncols : res = m_nrows; return res; }
 
     //! Access number of cols.
-    size_t NCols() const { return m_ncols; }
+    size_t NCols() const { size_t res; m_transpose ? res = m_nrows : res = m_ncols; return res; }
 
     //! In-place scalar multiplication.
     void Scale(T scalar);
@@ -169,8 +167,20 @@ public:
     //! Writes matrix to a stream.
     template<typename V,typename W> friend std::ostream& operator << (std::ostream& os, const CCSRMatrix<V,W>& x);
 
-    //! Transposition transform a CSR into a CSC matrix.
+    //! Transposition.
     static CCSRMatrix<T,U> Transpose(const CCSRMatrix<T,U>& x);
+
+    /*! Stacks the object on top of a given matrix.
+     *
+     * TODO: Remove argument for direction. This should not be supported by
+     * the CSR representation, but it is needed to comply with the interface
+     * required by the CSplitBregman.
+     *
+     */
+    void Concatenate(const CCSRMatrix<T,U>& x, bool direction);
+
+    //! Deep copy.
+    CCSRMatrix<T,U> Clone() const;
 
 protected:
 
@@ -229,8 +239,8 @@ class CCSCMatrix {
 
 public:
 
-    //! Deleted standard constructor.
-    CCSCMatrix() = delete;
+    //! Standard constructor.
+    CCSCMatrix();
 
     //! Constructor.
     CCSCMatrix(size_t m, size_t n);
@@ -251,10 +261,10 @@ public:
     void Eye();
 
     //! Access number of cols.
-    size_t NRows() const { return m_nrows; }
+    size_t NRows() const {  size_t res; m_transpose ? res = m_ncols : res = m_nrows; return res; }
 
     //! Access number of cols.
-    size_t NCols() const { return m_ncols; }
+    size_t NCols() const { size_t res; m_transpose ? res = m_nrows : res = m_ncols; return res; }
 
     //! In-place scalar multiplication.
     void Scale(T scalar);
@@ -264,7 +274,7 @@ public:
 
     /*! Multiplies the transpose of the current object with an array from the right.
      *
-     * CAVEAT: This implicitly form the transpose of the current object!
+     * CAVEAT: This implicitly forms the transpose of the current object!
      *
      */
     template<class Matrix> Matrix operator*(const Matrix& array) const;
@@ -289,7 +299,7 @@ public:
      */
     CSymmetricCSRMatrix<T,U> Square() const;
 
-    //! Transposition transform a CSR into a CSC matrix.
+    //! Transposition.
     static CCSCMatrix<T,U> Transpose(const CCSCMatrix<T,U>& x);
 
 private:

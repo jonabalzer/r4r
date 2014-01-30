@@ -70,6 +70,20 @@ bool CCSCTriple<T,U>::operator<(const CCSCTriple<T,U>& x) const {
 template class CCSCTriple<float,size_t>;
 template class CCSCTriple<double,size_t>;
 
+
+template<typename T, typename U>
+CCSRMatrix<T,U>::CCSRMatrix():
+    m_nrows(),
+    m_ncols(),
+    m_transpose(false),
+    m_rowptr(new vector<U>(1)),
+    m_cols(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    m_rowptr->at(0) = 0;
+
+}
+
 template<typename T, typename U>
 CCSRMatrix<T,U>::CCSRMatrix(size_t m, size_t n):
     m_nrows(m),
@@ -143,9 +157,9 @@ CCSRMatrix<T,U>::CCSRMatrix(size_t m, size_t n, vector<CCSRTriple<T,U> >& data):
 }
 
 template<typename T, typename U>
-CCSRMatrix<T,U>::CCSRMatrix(std::shared_ptr<std::vector<U> >& rowptr, std::shared_ptr<std::vector<U> >& cols, std::shared_ptr<std::vector<T> >& vals):
-    m_nrows(rowptr->size()-1),
-    m_ncols(*max_element(cols->begin(),cols->end())),
+CCSRMatrix<T,U>::CCSRMatrix(size_t m, size_t n, const std::shared_ptr<std::vector<U> >& rowptr, const std::shared_ptr<std::vector<U> >& cols, const std::shared_ptr<std::vector<T> >& vals):
+    m_nrows(m),
+    m_ncols(n),
     m_transpose(false),
     m_rowptr(rowptr),
     m_cols(cols),
@@ -235,13 +249,9 @@ template<class Matrix>
 Matrix CCSRMatrix<T,U>::operator*(const Matrix& array) const {
 
     assert(this->NCols()==array.NRows());
-
-    // zero matrix
-    Matrix result;
+    Matrix result = Matrix(this->NRows(),array.NCols());
 
     if(!m_transpose) {
-
-        result = Matrix(this->NRows(),array.NCols());
 
         // columns of the input matrix
         for(size_t k=0; k<array.NCols(); k++) {
@@ -256,8 +266,6 @@ Matrix CCSRMatrix<T,U>::operator*(const Matrix& array) const {
         }
 
     } else {
-
-        result = Matrix(this->NCols(),array.NCols());
 
         // columns of the input matrix
         for(size_t k=0; k<array.NCols(); k++) {
@@ -287,6 +295,51 @@ CCSRMatrix<T,U> CCSRMatrix<T,U>::Transpose(const CCSRMatrix<T,U>& x) {
 
     CCSRMatrix<T,U> result(x);
     result.m_transpose = true;
+    return result;
+
+}
+
+template<typename T,typename U>
+void CCSRMatrix<T,U>::Concatenate(const CCSRMatrix<T,U>& x, bool direction) {
+
+    /* make sure transposition is off, that the sizes match, and that
+     * we are not concateting this with it self
+     */
+    assert(!m_transpose && m_ncols==x.m_ncols && this!=&x);
+
+    this->m_rowptr->reserve(this->m_rowptr->size()+x.NRows());
+    this->m_cols->reserve(this->m_cols->size()+x.m_cols->size());
+    this->m_vals->reserve(this->m_vals->size()+x.m_vals->size());
+
+    // adjust size info
+    m_nrows += x.m_nrows;
+
+    U nnz = this->m_rowptr->back();
+
+    typename vector<U>::const_iterator it = x.m_rowptr->begin();
+    it++;
+
+    for(it; it!=x.m_rowptr->end(); ++it)
+        this->m_rowptr->push_back(*it+nnz);
+
+    for(it=x.m_cols->begin(); it!=x.m_cols->end(); ++it)
+        this->m_cols->push_back(*it);
+
+    typename vector<T>::const_iterator it_val;
+    for(it_val=x.m_vals->begin(); it_val!=x.m_vals->end(); ++it_val)
+        this->m_vals->push_back(*it_val);
+
+}
+
+template<typename T,typename U>
+CCSRMatrix<T,U> CCSRMatrix<T,U>::Clone() const {
+
+    CCSRMatrix<T,U> result(m_nrows,m_ncols);
+
+    result.m_rowptr.reset(new vector<U>(*this->m_rowptr));
+    result.m_cols.reset(new vector<U>(*this->m_cols));
+    result.m_vals.reset(new vector<T>(*this->m_vals));
+
     return result;
 
 }
@@ -466,6 +519,20 @@ template class CSymmetricCSRMatrix<double,size_t>;
 
 
 template<typename T, typename U>
+CCSCMatrix<T,U>::CCSCMatrix():
+    m_nrows(),
+    m_ncols(),
+    m_transpose(false),
+    m_colptr(new vector<U>(1)),
+    m_rows(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    m_colptr->at(0) = 0;
+
+}
+
+
+template<typename T, typename U>
 CCSCMatrix<T,U>::CCSCMatrix(size_t m, size_t n):
     m_nrows(m),
     m_ncols(n),
@@ -586,11 +653,9 @@ Matrix CCSCMatrix<T,U>::operator*(const Matrix& array) const {
     assert(this->NRows()==array.NRows());
 
     // zero matrix
-    Matrix result;
+    Matrix result(this->NCols(),array.NCols());
 
     if(!m_transpose) {
-
-        result = Matrix(this->NCols(),array.NCols());
 
         // columns of the input matrix
         for(size_t k=0; k<array.NCols(); k++) {
@@ -599,6 +664,22 @@ Matrix CCSCMatrix<T,U>::operator*(const Matrix& array) const {
 
                 for(size_t j=m_colptr->at(i); j<m_colptr->at(i+1); j++) {
                     result(i,k) += m_vals->at(j)*array.Get(m_rows->at(j),k);
+
+                }
+
+            }
+
+        }
+
+    } else {
+
+        // columns of the input matrix
+        for(size_t k=0; k<array.NCols(); k++) {
+
+            for(size_t i=0; i<m_ncols; i++) {
+
+                for(size_t j=m_colptr->at(i); j<m_colptr->at(i+1); j++) {
+                    result(m_rows->at(j),k) += m_vals->at(j)*array.Get(i,k);
 
                 }
 
@@ -655,11 +736,8 @@ CCSCMatrix<T,U> CCSCMatrix<T,U>::Transpose(const CCSCMatrix<T,U>& x) {
 
 }
 
-
-
 template class CCSCMatrix<float,size_t>;
 template class CCSCMatrix<double,size_t>;
-
 
 template <class T>
 CSparseArray<T>::CSparseArray():

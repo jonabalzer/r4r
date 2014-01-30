@@ -170,6 +170,9 @@ public:
     //! Compute central-difference approximation of the gradient of the array data.
     template<typename U> std::vector<U> Gradient(const CVector<double,2>& p) const;
 
+    //! Compute central-difference approximation of the gradient of the array data.
+    template<typename U> std::vector<U> Gradient(size_t i, size_t j) const;
+
     //! Maps a point that is out of bounds to its closest points on the boundary.
     CVector<double,2> ProjectToBoundary(const CVector<double,2>& x) const;
 

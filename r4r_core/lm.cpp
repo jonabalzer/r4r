@@ -485,6 +485,7 @@ void CSplitBregman<Matrix,T>::Shrink() {
 
 
 template class CSplitBregman<smatf,float>;
+template class CSplitBregman<CCSRMatrix<float,size_t>,float>;
 
 } // end of namespace
 
