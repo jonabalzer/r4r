@@ -34,51 +34,46 @@ using namespace std;
 
 namespace R4R {
 
-
-CTracklet::CTracklet(size_t t0, const imfeature& x0, size_t maxlength):
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+CTracklet<Container>::CTracklet(size_t t0, const imfeature& x0, size_t maxlength):
     m_data(maxlength),
 	m_t0(t0),
     m_status(true),
-    m_hash(CTracklet::GenerateHash(t0,x0)),
-    m_cursor(maxlength-1),
-    m_lifetime(0)
-{
+    m_hash(CTracklet::GenerateHash(t0,x0)) {
 
-    m_data[m_cursor] = x0;
+    m_data.push_back(x0);
 
 }
 
-void CTracklet::Update(const imfeature& x) {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+void CTracklet<Container>::Update(const imfeature& x) {
 
-    // store in backwards order, so we cant iterate forward in the array when going back in time
-    --m_cursor<0 ? m_cursor = m_data.size() + m_cursor : m_cursor;
-    m_data[m_cursor] = x;
-    m_lifetime++;
+    m_data.push_back(x);
 
 }
 
-const vec2f& CTracklet::GetPastLocation(size_t steps) const {
-
-    return m_data.at((m_cursor+steps)%m_data.size()).GetLocation();
-
-}
-
-vec2f CTracklet::GetPastLocationAtNativeScale(size_t steps) const {
-
-    return m_data.at((m_cursor+steps)%m_data.size()).GetLocationAtNativeScale();
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+const vec2f& CTracklet<Container>::GetPastLocation(size_t steps) const {
 
 }
 
-ostream& operator<<(ostream& os, const CTracklet& x) {
-
-    for(size_t i=x.m_cursor; i<x.m_cursor+x.m_data.size(); i++)
-        os << x.m_data.at(i%x.m_data.size()) << endl;
-
-	return os;
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+vec2f CTracklet<Container>::GetPastLocationAtNativeScale(size_t steps) const {
 
 }
 
-string CTracklet::GenerateHash(size_t t0, const imfeature& x) {
+template<template<class T, class Allocator = std::allocator<T> > class C>
+ostream& operator<<(ostream& os, const CTracklet<C>& x) {
+
+
+ //   os << x.m_data.at(i%x.m_data.size()) << endl;
+
+    //return os;
+
+}
+
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+string CTracklet<Container>::GenerateHash(size_t t0, const imfeature& x) {
 
     stringstream t;
     t.fill('0');
@@ -107,68 +102,24 @@ string CTracklet::GenerateHash(size_t t0, const imfeature& x) {
 
 }
 
-void CTracklet::CompressAndReverse() {
-
-    vector<imfeature> compressed;
-
-    // if the buffer is filled, loop back
-    if(this->IsFull()) {
-
-        for(size_t i=0; i<m_data.size(); i++) {
-
-        // get features starting from cursor backwards in time
-        const imfeature& f = m_data.at((m_cursor+i)%m_data.size());
-        compressed.push_back(f);
-
-        }
-
-        // reverse time order
-        std::reverse(compressed.begin(),compressed.end());
-
-    }
-    else {
-
-        size_t length = m_data.size() - m_cursor;
-        compressed.resize(length);
-        std::reverse_copy(&m_data[m_cursor],&m_data[m_cursor+length],compressed.begin());
-
-    }
-
-    m_data = compressed;
-
-    // just in case, we want to keep using the ring buffer after saving
-    m_cursor = compressed.size() - 1;
-
-}
-
-bool CTracklet::IsFull() {
-
-    // the the first feature
-    const imfeature& f = m_data.at(0);
-
-    if(f.GetLocation().IsZero())
-        return false;
-    else
-        return true;
-
-}
-
 #ifdef QT_GUI_LIB
-const Qt::GlobalColor CTracklet::COLORS[10] = { Qt::green,
-                                                Qt::red,
-                                                Qt::blue,
-                                                Qt::cyan,
-                                                Qt::magenta,
-                                                Qt::white,
-                                                Qt::yellow,
-                                                Qt::darkGreen,
-                                                Qt::darkRed,
-                                                Qt::darkBlue };
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+const Qt::GlobalColor CTracklet<Container>::COLORS[10] = { Qt::green,
+                                                           Qt::red,
+                                                           Qt::blue,
+                                                           Qt::cyan,
+                                                           Qt::magenta,
+                                                           Qt::white,
+                                                           Qt::yellow,
+                                                           Qt::darkGreen,
+                                                           Qt::darkRed,
+                                                           Qt::darkBlue };
 
-void CTracklet::Draw(QImage& img, size_t length) const {
+template<template<class T, class Allocator = std::allocator<T> > class Container>
+void CTracklet<Container>::Draw(QImage& img, size_t length) const {
 
     // check if length > 0
-    if(length==0)
+ /*   if(length==0)
         return;
 
     // get latest feature
@@ -212,10 +163,14 @@ void CTracklet::Draw(QImage& img, size_t length) const {
         // make the current feature, the "oldest"
         ft = ftm1;
 
-    }
+    }*/
 
 }
 #endif
+
+template class CTracklet<list>;
+template class CTracklet<vector>;
+
 
 } // end of namespace
 

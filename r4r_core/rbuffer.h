@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include <vector>
-#include <iostream>
 
 namespace R4R {
 
@@ -150,6 +149,9 @@ public:
 
     //! Access to cursor.
     const int& cursor() { return m_cursor; }
+
+    //! Resize.
+    void resize(size_t n) { m_data.resize(n); }
 
 private:
 

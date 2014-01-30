@@ -49,6 +49,7 @@ typedef CInterestPoint<float,2> imfeature;
  *
  *
  */
+template<template<class T, class Allocator = std::allocator<T> > class Container>
 class CTracklet {
 
 public:
@@ -73,10 +74,7 @@ public:
     vec2f GetPastLocationAtNativeScale(size_t steps) const;
 
     //! Streams the tracklet to a given output.
-    friend  std::ostream& operator <<(std::ostream& os, const CTracklet& x);
-
-    //! Returns the lifetime of the tracklet.
-    size_t GetLifetime() { return m_lifetime; }
+    template<template<class T, class Allocator = std::allocator<T> > class C> friend  std::ostream& operator <<(std::ostream& os, const CTracklet<C>& x);
 
     /*! \brief Tests whether two tracklets are equal by looking at their initial position.
      *
@@ -86,19 +84,19 @@ public:
     bool operator!=(const CTracklet& tracklet) const { return GetHash()!=tracklet.GetHash(); }
 
     //! Provides access to the current state.
-    imfeature& GetLatestState() { return m_data.at(m_cursor); }
+    imfeature& GetLatestState() { return m_data.back(); }
 
     //! Provides access to the current state.
-    const imfeature& GetLatestState() const { return m_data.at(m_cursor); }
+    const imfeature& GetLatestState() const { return m_data.back(); }
 
     //! Provides access to the current feature position.
-    const vec2f& GetLatestLocation() const { return m_data.at(m_cursor).GetLocation(); }
+    const vec2f& GetLatestLocation() const { return m_data.back().GetLocation(); }
 
     //! Provides access to the current feature position w.r.t. to the native scale.
-    vec2f GetLatestLocationAtNativeScale() const { return m_data.at(m_cursor).GetLocationAtNativeScale(); }
+    vec2f GetLatestLocationAtNativeScale() const { return m_data.back().GetLocationAtNativeScale(); }
 
     //! Returns the current scale.
-    float GetScale() const { return m_data.at(m_cursor).GetScale(); }
+    float GetScale() const { return m_data.back().GetScale(); }
 
     //! Gets the status.
     bool GetStatus() const { return m_status; }
@@ -116,12 +114,6 @@ public:
     //! Returns tracklet hash code.
     std::string GetHash() const { return m_hash; }
 
-    //! Read-access to the data.
-    const vector<imfeature>& GetData() { return m_data; }
-
-    //! Get position of cursor.
-    const int& GetCursor() { return m_cursor; }
-
     /*! \brief Generates a hash key for the tracklet.
      *
      * The hash is built from two quantities that should identify each tracklet uniquely:
@@ -129,21 +121,6 @@ public:
      * - initial location
      */
      static std::string GenerateHash(size_t t0, const imfeature& x);
-
-     /*! \brief Deletes unused ring buffer space.
-      *
-      * This method is useful for exporting entire trajectories or for aggregation. In this case,
-      * choose the buffer size larger than necessary, run the tracker, and compress the tracklets
-      * before saving them to disk or aggregating them. This also reverses the storage order.
-      *
-      */
-     void CompressAndReverse();
-
-     //! Resize the ring buffer.
-     void Resize(size_t n) { m_data.resize(n); m_cursor = n - 1; }
-
-     //! Checks whether the buffer has been completely filled at least once.
-     bool IsFull();
 
 #ifdef QT_GUI_LIB
 
@@ -156,12 +133,10 @@ public:
 
 private:
 
-    vector<imfeature> m_data;       //!< vector which holds the data
-    size_t m_t0;                    //!< creation time
-    bool m_status;                  //!< status
-    std::string m_hash;             //!< hash key for tracklet
-    int m_cursor;                   //!< iterator pointing to the last feature
-    size_t m_lifetime;              //!< how long is the tracklet alive
+    Container<imfeature> m_data;       //!< vector which holds the data
+    size_t m_t0;                       //!< creation time
+    bool m_status;                     //!< status
+    std::string m_hash;                //!< hash key for tracklet
 
 };
 
@@ -173,7 +148,7 @@ private:
  * anywhere where tracklets have to refer to each other.
  *
  */
-class CSTTracklet:public CTracklet {
+/*class CSTTracklet:public CTracklet {
 
     //friend class CTST;
 
@@ -190,7 +165,7 @@ protected:
 	std::set<shared_ptr<CSTTracklet> > m_children;			//!< pointer to children tracklets
 	bool m_orphan;											//!< true if tracklet is not part of the tree
 
-};
+};*/
 
 } // end of namespace
 
