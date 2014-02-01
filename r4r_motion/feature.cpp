@@ -23,6 +23,8 @@
 
 #include "feature.h"
 #include "descriptor.h"
+#include "rbuffer.h"
+
 #include <stdio.h>
 #include <assert.h>
 
@@ -45,11 +47,35 @@ CInterestPoint<T,n>::CInterestPoint(const CVector<T,n>& location, float scale, T
     m_quality(quality),
     m_descriptors() {}
 
+template<typename T,u_int n>
+CInterestPoint<T,n>::CInterestPoint(const CInterestPoint<T,n>& x, string name):
+    m_location(x.m_location),
+    m_scale(x.m_scale),
+    m_quality(x.m_quality),
+    m_descriptors() {
+
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it;
+
+    for(it=x.m_descriptors.begin(); it!=x.m_descriptors.end(); ++it) {
+
+        if(it->first==name) {
+
+            shared_ptr<CAbstractDescriptor> pdesc = x.GetDescriptor(name.c_str());
+            this->AttachDescriptor(name.c_str(),pdesc);
+
+        }
+
+    }
+
+}
+
+
+
 
 template<typename T,u_int n>
 CInterestPoint<T,n>::~CInterestPoint() {
 
-    map<string,shared_ptr<CAbstractDescriptor> >::iterator it;
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::iterator it;
 
     for(it=m_descriptors.begin(); it!=m_descriptors.end(); ++it)
         it->second.reset();
@@ -103,7 +129,7 @@ const shared_ptr<CAbstractDescriptor>& CInterestPoint<T,n>::GetDescriptor(u_int 
     if(no>=m_descriptors.size())
         return nullptr;
 
-    map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it = m_descriptors.begin();
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it = m_descriptors.begin();
 
     for(size_t i=0; i<no; i++)
         it++;
@@ -118,7 +144,7 @@ string CInterestPoint<T,n>::GetDescriptorName(u_int no) {
     if(no>=m_descriptors.size())
         return nullptr;
 
-    map<string,shared_ptr<CAbstractDescriptor> >::iterator it = m_descriptors.begin();
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::iterator it = m_descriptors.begin();
 
     for(size_t i=0; i<no; i++)
         it++;
@@ -166,7 +192,7 @@ ofstream& operator<<(ofstream& os, const CInterestPoint<U,m>& x) {
     else
         os << x.NoDescriptors();
 
-    map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it;
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it;
 
     // write all descriptors
     u_int counter = 0;
@@ -331,7 +357,7 @@ bool CInterestPoint<T,n>::SaveToFile(const char* filename, const Container<CInte
 
     size_t counter = 0;
 
-    for(it=features.begin(); it!=features.end(); it++, counter++) {
+    for(it=features.begin(); it!=features.end(); ++it, ++counter) {
 
         // write feature itself
         out << *it;
@@ -350,6 +376,7 @@ bool CInterestPoint<T,n>::SaveToFile(const char* filename, const Container<CInte
 
 template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const vector<CInterestPoint<float,2> >& features, const char* comment);
 template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const list<CInterestPoint<float,2> >& features, const char* comment);
+template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const CRingBuffer<CInterestPoint<float,2> >& features, const char* comment);
 
 template<typename T,u_int n>
 int CInterestPoint<T,n>::LoadFromFile(const char* filename, std::vector<CInterestPoint<T,n> >& features, string& comment) {

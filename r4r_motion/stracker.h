@@ -36,10 +36,13 @@ namespace R4R {
 class CSimpleTracker;
 class CMotionTracker;
 
+// only for testing to switch between different implementations
+typedef CCircularTracklet mytracklet;
+
 /*! \brief tracklets for simple tracker
  *
  */
-class CSimpleTrackerTracklet:public CTracklet {
+class CSimpleTrackerTracklet:public mytracklet {
 
     friend class CSimpleTracker;
     friend class CMotionTracker;
@@ -50,11 +53,11 @@ public:
     CSimpleTrackerTracklet() = delete;
 
     //! Constructor.
-    CSimpleTrackerTracklet(size_t t0, imfeature x0, size_t maxlength = MAX_TRACKLET_LENGTH):CTracklet(t0,x0,maxlength), m_reference_feature() {}
+    CSimpleTrackerTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200):CTracklet(t0,x0,maxlength), m_reference_feature() {}
 
 private:
 
-    CInterestPoint<float,3> m_reference_feature;        //! reference feature, may be used as map point
+    CInterestPoint<float,3> m_reference_feature;        //! reference feature, may be a map point
 
 };
 
@@ -82,13 +85,9 @@ private:
  * initial configuration of the corresponding tracklet. This provides a simple but efficient mechanism for occlusion
  * detection.
  *
- * The tracking steps have to be called in the following order:
- * - CSimpleTracker::Init(std::vector<cv::Mat>&) initializes a pyramid of empty integral images and adds the first features
- * to it.
- *
  *
  */
-class CSimpleTracker: public CTracker<list> {
+class CSimpleTracker: public CSlidingWindowTracker {
 
 public:
 
@@ -122,8 +121,6 @@ protected:
 
 };
 
-
-
-}
+} // end of namespace
 
 #endif /* STRACKER_H_ */

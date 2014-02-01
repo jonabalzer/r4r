@@ -154,9 +154,12 @@ public:
      *
      * Unfortunately, this member cannot be templated because this would lead to
      * ambiguities. But it rarely needs to be because thanks to implicit casting,
-     * this function can also be called with floating point input vectors.
+     * this function can also be called with floating point input vectors. Note
+     * that the indices are w.r.t. to an spatial coordinate system. They do not
+     * refer to row and column indices.
+     *
      */
-    T Get(const CVector<int,2>& p) const { return this->Get(p.Get(0),p.Get(1)); }
+    T Get(const CVector<int,2>& p) const { return this->Get(p.Get(1),p.Get(0)); }
 
     /*! Non-destructive element access.
      *
@@ -174,7 +177,26 @@ public:
     template<typename U> std::vector<U> Gradient(size_t i, size_t j) const;
 
     //! Maps a point that is out of bounds to its closest points on the boundary.
-    CVector<double,2> ProjectToBoundary(const CVector<double,2>& x) const;
+    template<typename U>
+    CVector<U,2> ProjectToBoundary(const CVector<U,2>& x) const {
+
+        CVector<U,2> result = x;
+
+        if(x.Get(0)<0)
+            result(0) = 0;
+
+        if(x.Get(0)>=this->NCols())
+            result(0) = this->NCols() - 1;
+
+        if(x.Get(1)<0)
+            result(1) = 0;
+
+        if(x.Get(1)>=this->NRows())
+            result(1) = this->NRows() - 1;
+
+        return result;
+
+    }
 
 	//! Overwrites data.
     void Set(std::shared_ptr<T> data);

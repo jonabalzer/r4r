@@ -29,178 +29,45 @@
 
 namespace R4R {
 
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-CDescriptorAggregator<Array,Container>::CDescriptorAggregator(CTracker<Container>* tracker, const char* name):
-    m_tracker(tracker),
-    m_name(string(name)),
-    m_aggregate() {
-
-}
-
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-void CDescriptorAggregator<Array,Container>::Aggregate() {
-
-    cout << "Aggregating descriptors..." << endl;
-
-    const Container<shared_ptr<CTracklet> >& data = m_tracker->GetData();
-    typename Container<shared_ptr<CTracklet> >::const_iterator it;
-
-    for(it=data.begin(); it!=data.end(); it++) {
-
-        cout << ".";
-
-        AggregateTracklet((*it).get());
-
-    }
-
-    cout << endl;
-
-}
-
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-void CDescriptorAggregator<Array,Container>::AggregateTracklet(CTracklet* tracklet) {
-
-    // first compress and reverse order
-    tracklet->CompressAndReverse();
+template<class Array,template<class T, class Allocator = std::allocator<T> > class Container>
+void CInitFrameAggregator<Array,Container>::Aggregate(const CTracklet<Container>& tracklet, const string& name, list<imfeature>& result) const {
 
     // get access to the data
-    const vector<imfeature>& data = tracklet->GetData();
-    vector<imfeature>::const_iterator it = data.begin();
+    const Container<imfeature>& data = tracklet.GetData();
+    typename Container<imfeature>::const_iterator it = data.begin();
 
-    // keep the first feature as reference
-    imfeature x0 = *it;
+    imfeature x(*it,name);
 
-    for(it; it!= data.end(); it++) {
-
-        if(it->HasDescriptor(m_name.c_str())) {
-
-            imfeature x = CDescriptorAggregator<Array,Container>::CopyFeature(*it);
-
-            // copy properties of reference feature
-            x.m_scale = x0.m_scale;
-            x.m_quality = x0.m_quality;
-            x.m_location(0) = x0.m_location.Get(0);
-            x.m_location(1) = x0.m_location.Get(1);
-
-            m_aggregate.push_back(x);
-
-        }
-
-    }
+    if(x.HasDescriptor(name.c_str()))
+        result.push_back(x);
 
 }
 
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-imfeature CDescriptorAggregator<Array,Container>::CopyFeature(const imfeature& x) const {
+template<class Array,template<class T, class Allocator = std::allocator<T> > class Container>
+void CMeanAggregator<Array,Container>::Aggregate(const CTracklet<Container>& tracklet, const string& name, list<imfeature>& result) const {
 
-    // don't copy all the old descriptors
-    const vec2f& loc = x.GetLocation();
-    imfeature result(loc,x.GetScale(),x.GetQuality());
-
-    if(x.HasDescriptor(m_name.c_str())) {
-
-        // get from x
-        shared_ptr<CAbstractDescriptor> pdesc = x.GetDescriptor(m_name.c_str());
-
-        // attach to result
-        result.AttachDescriptor(m_name.c_str(),pdesc);
-
-    }
-
-    return result;
-
-}
-
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-void CInitFrameAggregator<Array,Container>::AggregateTracklet(CTracklet* tracklet) {
-
-    // first compress and reverse order
-    tracklet->CompressAndReverse();
-
-    // get access to the data
-    const vector<imfeature>& data = tracklet->GetData();
-    vector<imfeature>::const_iterator it = data.begin();
-
-    imfeature x = CDescriptorAggregator<Array,Container>::CopyFeature(*it);
-
-    if(x.HasDescriptor(m_name.c_str()))
-        m_aggregate.push_back(x);
-
-}
-
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-CSubsampleAggregator<Array,Container>::CSubsampleAggregator(CTracker<Container>* tracker, const char* name, size_t n):
-    CDescriptorAggregator<Array,Container>::CDescriptorAggregator(tracker,name),
-    m_n(n) {}
-
-
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-void CSubsampleAggregator<Array,Container>::AggregateTracklet(CTracklet* tracklet) {
-
-    // first compress and reverse order
-    tracklet->CompressAndReverse();
-
-    // get access to the data
-    const vector<imfeature>& data = tracklet->GetData();
-    vector<imfeature>::const_iterator it = data.begin();
-
-    // keep the first feature as reference
-    imfeature x0 = *it;
-    size_t counter = 0;
-
-    for(it; it!= data.end(); it++) {
-
-        if(counter%m_n==0 && it->HasDescriptor(m_name.c_str())) {
-
-            imfeature x = CDescriptorAggregator<Array,Container>::CopyFeature(*it);
-
-            // copy properties of reference feature
-            x.m_scale = x0.m_scale;
-            x.m_quality = x0.m_quality;
-            x.m_location(0) = x0.m_location.Get(0);
-            x.m_location(1) = x0.m_location.Get(1);
-
-            m_aggregate.push_back(x);
-
-        }
-
-        counter++;
-
-    }
-
-}
-
-
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-void CMeanAggregator<Array,Container>::AggregateTracklet(CTracklet* tracklet) {
-
-    // first compress and reverse order
-    tracklet->CompressAndReverse();
-
-    // get access to the data
-    const vector<imfeature>& data = tracklet->GetData();
-    vector<imfeature>::const_iterator it = data.begin();
+    const Container<imfeature>& data = tracklet.GetData();
+    typename Container<imfeature>::const_iterator it = data.begin();
 
     shared_ptr<CDescriptor<Array> > pdesc;
-    if(it->HasDescriptor(m_name.c_str()))
-        pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(m_name.c_str()));
+    if(it->HasDescriptor(name.c_str()))
+        pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(name.c_str()));
     else {
 
-        cerr << "ERROR: Descriptor " << m_name << " not found!" << endl;
+        cerr << "ERROR: Descriptor " << name << " not found!" << endl;
         return;
 
     }
 
     Array mean(pdesc->NRows(),pdesc->NCols());
-
     size_t counter = 0;
 
-    for(it; it!=data.end(); it++, counter++) {
+    for(it; it!=data.end(); ++it, ++counter) {
 
         // only add and count features that have the descripor
-        if(it->HasDescriptor(m_name.c_str())) {
+        if(it->HasDescriptor(name.c_str())) {
 
-            pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(m_name.c_str()));
+            pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(name.c_str()));
             mean = mean + pdesc->Get();
 
         }
@@ -208,48 +75,40 @@ void CMeanAggregator<Array,Container>::AggregateTracklet(CTracklet* tracklet) {
     }
 
     if(counter>0)
-        mean.Scale(1.0/(double)counter);
+        mean.Scale(1.0/double(counter));
 
-    // create new feature/descriptor pair
-    imfeature x0 = *data.begin();
-    const vec2f& loc = x0.GetLocation();
-    imfeature result(loc,x0.GetScale(),x0.GetQuality());
-    shared_ptr<CDescriptor<matf> > desc = shared_ptr<CDescriptor<matf> >(new CDescriptor<matf>(mean));
-    result.AttachDescriptor(m_name.c_str(),desc);
-    m_aggregate.push_back(result);
+    // copy interes point without descriptors
+    imfeature x0(*data.begin(),"VOID");
 
-}
-
-
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-CSplineInterpolationAggregator<Array,Container>::CSplineInterpolationAggregator(CTracker<Container>* tracker, const char* name, size_t n, size_t p):
-    CDescriptorAggregator<Array,Container>::CDescriptorAggregator(tracker,name),
-    m_n(n),
-    m_p(p) {
+    // attach the mean descriptor
+    shared_ptr<CDescriptor<Array> > desc = shared_ptr<CDescriptor<Array> >(new CDescriptor<Array>(mean));
+    x0.AttachDescriptor(name.c_str(),desc);
+    result.push_back(x0);
 
 }
 
-template <class Array,template<class T,class Allocator = std::allocator<T> > class Container>
-void CSplineInterpolationAggregator<Array,Container>::AggregateTracklet(CTracklet* tracklet) {
-
-    // first compress and reverse order
-    tracklet->CompressAndReverse();
+template<class Array,template<class T, class Allocator = std::allocator<T> > class Container>
+void CSplineInterpolationAggregator<Array,Container>::Aggregate(const CTracklet<Container>& tracklet, const string& name, list<imfeature>& result) const {
 
     // get access to the data
-    const vector<imfeature>& data = tracklet->GetData();
+    const Container<imfeature>& data = tracklet.GetData();
 
     // if the tracklet is too short disregard it, A must have full rank
     if(data.size()<m_n)
         return;
 
     // access the first descriptor
-    vector<imfeature>::const_iterator it = data.begin();
+    typename Container<imfeature>::const_iterator it = data.begin();
 
     shared_ptr<CDescriptor<Array> > pdesc;
-    if(it->HasDescriptor(m_name.c_str()))
-        pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(m_name.c_str()));
-    else
+    if(it->HasDescriptor(name.c_str()))
+        pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(name.c_str()));
+    else {
+
+        cerr << "ERROR: Descriptor " << name << " not found!" << endl;
         return;
+
+    }
 
     // get dimension of descriptors
     size_t d = pdesc->NElems();
@@ -258,7 +117,7 @@ void CSplineInterpolationAggregator<Array,Container>::AggregateTracklet(CTrackle
     CSplineCurve<float> curve(d,m_p,m_n);
     curve.MakeClampedUniformKnotVector(0,1);
 
-    // set up interpolation matrix
+    // set up interpolation matrix, FIXME: do this all in knotvector class
     matf A(data.size(),m_n);
     float dt = 1.0/((float)data.size()-1.0);
     size_t order = m_p + 1;
@@ -316,10 +175,10 @@ void CSplineInterpolationAggregator<Array,Container>::AggregateTracklet(CTrackle
             size_t counter = 0;
 
             // assemble tube for the pixel i,j
-            for(it=data.begin(); it!=data.end(); it++) {
+            for(it=data.begin(); it!=data.end(); ++it) {
 
                 // downcast pointer
-                pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(m_name.c_str()));
+                pdesc = static_pointer_cast<CDescriptor<Array> >(it->GetDescriptor(name.c_str()));
 
                 // get access to container, cast to float
                 tube(counter) = (float)pdesc->Get().Get(i,j);
@@ -354,26 +213,22 @@ void CSplineInterpolationAggregator<Array,Container>::AggregateTracklet(CTrackle
 
     }
 
-    // create new feature/descriptor pair
-    imfeature x0 = *data.begin();
-    vec2f loc = x0.GetLocation();
-    imfeature result(loc,x0.GetScale(),x0.GetQuality());
+    // copy interes point without descriptors
+    imfeature x0(*data.begin(),"VOID");
+
+    // attach the mean descriptor
     shared_ptr<CDescriptor<matf> > desc = shared_ptr<CDescriptor<matf> >(new CDescriptor<matf>(cv));
-    result.AttachDescriptor(m_name.c_str(),desc);
-    m_aggregate.push_back(result);
+    x0.AttachDescriptor(name.c_str(),desc);
+    result.push_back(x0);
 
 }
 
-
-template class CDescriptorAggregator<matf,list>;
+template class CInitFrameAggregator<matf,CRingBuffer>;
+template class CSplineInterpolationAggregator<matf,CRingBuffer>;
+template class CMeanAggregator<matf,CRingBuffer>;
+template class CInitFrameAggregator<matf,list>;
 template class CSplineInterpolationAggregator<matf,list>;
 template class CMeanAggregator<matf,list>;
-template class CSubsampleAggregator<matf,list>;
-template class CInitFrameAggregator<matf,list>;
-template class CDescriptorAggregator<vecf,list>;
-template class CSubsampleAggregator<vecf,list>;
-template class CInitFrameAggregator<vecf,list>;
-template class CSplineInterpolationAggregator<vecf,list>;
-template class CMeanAggregator<vecf,list>;
+
 
 }

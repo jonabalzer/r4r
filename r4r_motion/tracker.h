@@ -46,7 +46,8 @@
 
 #include "tracklet.h"
 #include "params.h"
-#include "intimg.h"
+#include "image.h"
+#include "dagg.h"
 
 namespace R4R {
 
@@ -55,7 +56,7 @@ namespace R4R {
  *
  */
 
-template<template<class T, class Allocator = std::allocator<T> > class Container>
+template<template<class Tracklet, class Allocator = std::allocator<Tracklet> > class TrackerContainer,template<class T, class Allocator = std::allocator<T> > class TrackletContainer>
 class CTracker {
 
 public:
@@ -86,10 +87,10 @@ public:
      * \param[in] x feature point
      *
      */
-    std::shared_ptr<CTracklet> AddTracklet(const imfeature& x);
+    std::shared_ptr<CTracklet<TrackletContainer> > AddTracklet(const imfeature& x);
 
     //! Creates a shared pointer and adds it to the tracklet pool.
-    void AddTracklet(CTracklet* trackler);
+    void AddTracklet(CTracklet<TrackletContainer>* trackler);
 
 	//! Computes the number of tracklets in the container that are still alive.
     size_t ActiveCapacity() const;
@@ -140,13 +141,13 @@ public:
     bool SaveToFile(const char* dir, const char* prefix);
 
 	//! Searches for a tracklet with given initial feature and initial time.
-    std::shared_ptr<CTracklet> SearchTracklet(std::string hash);
+    std::shared_ptr<CTracklet<TrackletContainer> > SearchTracklet(const std::string& hash) const;
 
 	//! Searches for the tracklet with maximal life time.
-    std::shared_ptr<CTracklet> SearchFittestTracklet();
+    std::shared_ptr<CTracklet<TrackletContainer> > SearchFittestTracklet() const;
 
 	//! Computes the adjacency list of the covisibility graph.
-    std::map<std::shared_ptr<CTracklet>,std::list<std::shared_ptr<CTracklet> > > ComputeCovisibilityGraph();
+    std::map<std::shared_ptr<CTracklet<TrackletContainer> >,std::list<std::shared_ptr<CTracklet<TrackletContainer> > > > ComputeCovisibilityGraph() const;
 
 	//! Sets all tracklets to active.
     void SetAllTrackletsActive();
@@ -161,40 +162,38 @@ public:
      * \returns
      *
 	 */
-    std::vector<size_t> ComputeFeatureDensity(std::vector<CIntegralImage<size_t> >& imgs);
+    std::vector<size_t> ComputeFeatureDensity(std::vector<CIntImage<size_t> >& imgs) const;
 
 	//! Returns the set of parameters.
     const CParameters& GetParameters() { return *m_params; }
-
-    //! Returns the number of tracks still alive.
-    size_t GetNumberOfActiveTracks() { return m_n_active_tracks; }
 
     //! Access to the global time.
     size_t GetTime() { return m_global_t; }
 
     //! Read-only access to data.
-    const Container<std::shared_ptr<CTracklet> >& GetData() { return m_data; }
+    const TrackerContainer<std::shared_ptr<CTracklet<TrackletContainer> > >& GetData() { return m_data; }
 
     //! Adjusts the size of all tracklet buffer.
     void ResizeTracklets(size_t n);
 
 #ifdef QT_GUI_LIB
-
     //! Draws active tracklets into an image.
     void Draw(QImage& img, size_t length) const;
-
 #endif
+
+    //! Triggers aggregation of all tracklets.
+    template<class Array> std::list<imfeature> Aggregate(const CDescriptorAggregator<Array,TrackletContainer>& aggregator, const string& name) const;
 
 protected:
 
-    Container<std::shared_ptr<CTracklet> >  m_data;     //!< container holding the tracklets
-    CParameters* m_params;                              //!< container for user-defined parameters
-    size_t m_global_t;                                  //!< global time variable
-    size_t m_n_active_tracks;                           //!< number of active tracks
-
-    typedef std::iterator_traits<typename Container<double>::iterator > traits;
+    TrackerContainer<std::shared_ptr<CTracklet<TrackletContainer> > >  m_data;     //!< container holding the tracklets
+    CParameters* m_params;                                                         //!< container for user-defined parameters
+    size_t m_global_t;                                                             //!< global time variable
 
 };
+
+typedef CTracker<list,CRingBuffer> CSlidingWindowTracker;
+typedef CTracker<list,list> CContinuousTracker;
 
 } // end of namespace
 

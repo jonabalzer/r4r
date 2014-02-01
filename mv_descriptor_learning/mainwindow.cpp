@@ -104,7 +104,7 @@ void MainWindow::on_actionOpen_triggered()
     QString filename = QFileDialog::getOpenFileName(this,
                                                     "Open video file...",
                                                     ".",
-                                                    "(*.mp4);;(*.avi);;(*.mov);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
+                                                    "(*.mov);;(*.avi);;(*.mpv);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
 
 
     // check if it is an image or video
@@ -162,7 +162,7 @@ void MainWindow::on_actionOpen_triggered()
 
     // draw
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    m_tracker->Draw(qimg,1);
+    m_tracker->Draw(qimg,0);
 
     // display
     show_image(qimg);
@@ -208,9 +208,9 @@ void MainWindow::on_stepButton_clicked()
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
 
-    // check validity of tracks and count how many are left over
+    // check validity of tracks
     m_tracker->Clean(pyramid,m_pyramid);
-    //trackers[i]->DeleteInvalidTracks();
+    m_tracker->DeleteInvalidTracks();
 
     // add new tracklets and mark those getting too close to each other as invalid
     m_tracker->AddTracklets(m_pyramid);
@@ -222,7 +222,7 @@ void MainWindow::on_stepButton_clicked()
 
     // draw trails
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    m_tracker->Draw(qimg,1);
+    m_tracker->Draw(qimg,5);
     show_image(qimg);
 
     // display frame no and mem usage
@@ -320,55 +320,52 @@ void MainWindow::on_actionSave_Descriptors_triggered()
         return;
 
     // create aggregator
-    CDescriptorAggregator<matf,list>* aggregator;
+    list<imfeature> aggregates;
 
     switch(m_params.GetIntParameter("AGGREGATOR")) {
 
     case 1:
-        cout << "Init frame." << endl;
-        aggregator = new CInitFrameAggregator<matf,list>(m_tracker,name.c_str());
+    {
+        CInitFrameAggregator<matf,CRingBuffer> aggregator;
+        aggregates = m_tracker->Aggregate(aggregator,name.c_str());
         break;
+    }
     case 2:
-        aggregator = new CSubsampleAggregator<matf,list>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
+    {
+        CSplineInterpolationAggregator<matf,CRingBuffer> aggregator(10,3);
+        aggregates = m_tracker->Aggregate(aggregator,name.c_str());
         break;
-
+    }
     case 3:
-        aggregator = new CSplineInterpolationAggregator<matf,list>(m_tracker,name.c_str(),10,3);
-        break;
-
-    case 4:
-        aggregator = new CMeanAggregator<matf,list>(m_tracker,name.c_str());
-        break;
-
-    default:
-
-        aggregator = new CDescriptorAggregator<matf,list>(m_tracker,name.c_str());
-
+    {
+        CMeanAggregator<matf,CRingBuffer> aggregator;
+        aggregates = m_tracker->Aggregate(aggregator,name.c_str());
         break;
     }
 
-    // aggregate
-    aggregator->Aggregate();
-    const list<imfeature>& feats = aggregator->Get();
+    }
 
-    imfeature::SaveToFile<list>(filename.toStdString().c_str(),feats,comment.toStdString().c_str());
-
-    delete aggregator;
+    imfeature::SaveToFile<list>(filename.toStdString().c_str(),aggregates,comment.toStdString().c_str());
 
 }
 
 void MainWindow::on_actionClose_triggered()
 {
 
+    if(m_tracker==nullptr)
+        return;
+
     m_timer.stop();
     ui->labelImage->clear();
+
     delete m_tracker;
+    m_tracker = nullptr;
+
     m_cap.release();
 
     emit show_memoryUsage();
 
     ui->frameLcdNumber->display(0);
-
 
 }
 

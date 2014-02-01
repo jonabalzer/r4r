@@ -55,7 +55,7 @@ public:
      * Color is attached to the scene points as a descriptor and can be exported to the .PLY file.
      *
      */
-    bool UpdateDescriptors(std::vector<cv::Mat>& pyramid);
+    //bool UpdateDescriptors(std::vector<cv::Mat>& pyramid);
 
     //! Returns a reference to the point cloud.
     std::list<std::pair<vec2f,vec3f> >& GetMap() { return m_map; }

@@ -37,9 +37,7 @@
 #endif
 
 #include "feature.h"
-#include "types.h"
-
-#define MAX_TRACKLET_LENGTH 200  // FIXME: make this a tracking parameter
+#include "rbuffer.h"
 
 namespace R4R {
 
@@ -58,7 +56,7 @@ public:
     CTracklet() = delete;
 
     //! Constructor.
-    explicit CTracklet(size_t t0, const imfeature& x0, size_t maxlength = MAX_TRACKLET_LENGTH);
+    explicit CTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200);
 
     //! Directly updates the state without any filtering.
     void Update(const imfeature& x);
@@ -122,6 +120,12 @@ public:
      */
      static std::string GenerateHash(size_t t0, const imfeature& x);
 
+     //! Read-only access to the data.
+     const Container<imfeature>& GetData() const { return m_data; }
+
+     //! Life-time of tracklet.
+     size_t GetLifetime() { return m_data.size(); }
+
 #ifdef QT_GUI_LIB
 
     static const Qt::GlobalColor COLORS[10];
@@ -140,7 +144,8 @@ private:
 
 };
 
-
+typedef CTracklet<CRingBuffer> CCircularTracklet;
+typedef CTracklet<list> CContinuousTracklet;
 
 /*! \brief tracklets for tracking on the selection tree
  *
@@ -154,16 +159,16 @@ private:
 
 public:
 
-	//! Standard constructor.
+    //! Standard constructor.
     CSTTracklet() = delete;
 
-	//! Constructor.
+    //! Constructor.
     CSTTracklet(size_t t0, imfeature x0, size_t maxlength = MAX_TRACKLET_LENGTH):CTracklet(t0,x0,maxlength),m_children(),m_orphan(true){}
 
 protected:
 
-	std::set<shared_ptr<CSTTracklet> > m_children;			//!< pointer to children tracklets
-	bool m_orphan;											//!< true if tracklet is not part of the tree
+    std::set<shared_ptr<CSTTracklet> > m_children;			//!< pointer to children tracklets
+    bool m_orphan;											//!< true if tracklet is not part of the tree
 
 };*/
 

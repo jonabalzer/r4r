@@ -328,54 +328,9 @@ void CIntImage<T>::Compute() {
 }
 
 template<typename T>
-void CIntImage<T>::AddMass(const CVector<double,2>& x, T val) {
+void CIntImage<T>::AddMass(size_t i, size_t j, T val) {
 
-    double dx, dy;
-    dx = x.Get(0) - floor(x.Get(0));
-    dy = x.Get(1) - floor(x.Get(1));
-
-    size_t i, j;
-    i = size_t(x.Get(1));
-    j = size_t(x.Get(0));
-
-    this->operator ()(i,j) += T(dx*dy*val);
-    this->operator ()(i+1,j) += T(dx*(1-dy)*val);
-    this->operator ()(i,j+1) += T(dy*(1-dx)*val);
-    this->operator ()(i+1,j+1) += T((1-dx)*(1-dy)*val);
-
-}
-
-template<typename T>
-void CIntImage<T>::AddMass(const CVector<size_t,2>& x, T val) {
-
-    this->operator ()(x.Get(1),x.Get(0)) += val;
-
-}
-
-template<typename T>
-template<typename U>
-U CIntImage<T>::Evaluate(const CVector<double,2>& x, const CVector<double,2>& hsize) const {
-
-    CVector<double,2> tl = this->ProjectToBoundary(x - hsize);
-    CVector<double,2> br = this->ProjectToBoundary(x + hsize);
-    CVector<double,2> bl = { tl.Get(0), br.Get(1) };
-    CVector<double,2> tr = { br.Get(0), tl.Get(1) };
-
-    return this->template Get<U>(tl) + this->template Get<U>(br) - this->template Get<U>(bl) - this->template Get<U>(tr);
-
-}
-
-template double CIntImage<double>::Evaluate<double>(const CVector<double,2>& x, const CVector<double,2>& hsize) const;
-
-template<typename T>
-T CIntImage<T>::EvaluateApproximately(const CVector<double,2>& x, const CVector<double,2>& hsize) const {
-
-    CVector<double,2> tl = this->ProjectToBoundary(x - hsize);
-    CVector<double,2> br = this->ProjectToBoundary(x + hsize);
-    CVector<double,2> bl = { tl.Get(0), br.Get(1) };
-    CVector<double,2> tr = { br.Get(0), tl.Get(1) };
-
-    return this->Get(tl) + this->Get(br) - this->Get(bl) - this->Get(tr);
+    this->operator ()(i,j) += val;
 
 }
 

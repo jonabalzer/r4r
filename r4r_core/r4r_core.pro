@@ -39,7 +39,6 @@ SOURCES += \
     lm.cpp \
     kfilter.cpp \
     iter.cpp \
-    intimg.cpp \
     interp.cpp \
     factor.cpp \
     darray.cpp \
@@ -62,7 +61,6 @@ HEADERS += \
     lm.h \
     kfilter.h \
     iter.h \
-    intimg.h \
     interp.h \
     factor.h \
     darray.h \

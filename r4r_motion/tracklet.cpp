@@ -29,6 +29,7 @@
 #include "descriptor.h"
 #include "tracklet.h"
 
+
 using namespace cv;
 using namespace std;
 
@@ -36,10 +37,21 @@ namespace R4R {
 
 template<template<class T, class Allocator = std::allocator<T> > class Container>
 CTracklet<Container>::CTracklet(size_t t0, const imfeature& x0, size_t maxlength):
-    m_data(maxlength),
+    m_data(),
 	m_t0(t0),
     m_status(true),
-    m_hash(CTracklet::GenerateHash(t0,x0)) {
+    m_hash(GenerateHash(t0,x0)) {
+
+    m_data.push_back(x0);
+
+}
+
+template<>
+CTracklet<CRingBuffer>::CTracklet(size_t t0, const imfeature& x0, size_t maxlength):
+    m_data(maxlength),
+    m_t0(t0),
+    m_status(true),
+    m_hash(GenerateHash(t0,x0)) {
 
     m_data.push_back(x0);
 
@@ -52,25 +64,48 @@ void CTracklet<Container>::Update(const imfeature& x) {
 
 }
 
-template<template<class T, class Allocator = std::allocator<T> > class Container>
+template<template<class T,class Allocator = std::allocator<T> > class Container>
 const vec2f& CTracklet<Container>::GetPastLocation(size_t steps) const {
+
+    typename Container<imfeature>::const_reverse_iterator rit = m_data.rbegin();
+
+    for(size_t i=0; i<steps; i++)
+        ++rit;
+
+    return rit->GetLocation();
 
 }
 
 template<template<class T, class Allocator = std::allocator<T> > class Container>
 vec2f CTracklet<Container>::GetPastLocationAtNativeScale(size_t steps) const {
 
+    typename Container<imfeature>::const_reverse_iterator rit = m_data.rbegin();
+
+    for(size_t i=0; i<steps; i++)
+        ++rit;
+
+    return rit->GetLocationAtNativeScale();
+
 }
 
 template<template<class T, class Allocator = std::allocator<T> > class C>
 ostream& operator<<(ostream& os, const CTracklet<C>& x) {
 
+    os << "Hash: " << x.m_hash << endl;
+    os << x.m_data.size() << endl;
 
- //   os << x.m_data.at(i%x.m_data.size()) << endl;
+    typename C<imfeature>::const_iterator it;
 
-    //return os;
+    for(it=x.m_data.begin(); it!=x.m_data.end(); ++it)
+        os << (*it) << endl;
+
+    return os;
 
 }
+
+template ostream& operator<<(ostream& os, const CTracklet<CRingBuffer>& x);
+template ostream& operator<<(ostream& os, const CTracklet<list>& x);
+template ostream& operator<<(ostream& os, const CTracklet<vector>& x);
 
 template<template<class T, class Allocator = std::allocator<T> > class Container>
 string CTracklet<Container>::GenerateHash(size_t t0, const imfeature& x) {
@@ -118,15 +153,8 @@ const Qt::GlobalColor CTracklet<Container>::COLORS[10] = { Qt::green,
 template<template<class T, class Allocator = std::allocator<T> > class Container>
 void CTracklet<Container>::Draw(QImage& img, size_t length) const {
 
-    // check if length > 0
- /*   if(length==0)
-        return;
-
-    // get latest feature
-    imfeature ft = m_data.at(m_cursor);
-
-    // get scale for color, mod 10 because so far only 10 colors are available
-    u_int scale = u_int(ft.GetScale())%10;
+    typename Container<imfeature>::const_reverse_iterator ita = m_data.rbegin();
+    u_int scale = u_int((*ita).GetScale());
 
     // prepare drawing
     QPainter p(&img);
@@ -136,40 +164,38 @@ void CTracklet<Container>::Draw(QImage& img, size_t length) const {
     p.setPen(pen);
 
     // draw circle if length of trail is 1
-    if(length==1) {
+    if(length==0) {
 
-        vec2f xt = ft.GetLocationAtNativeScale();
-        p.drawEllipse(int(xt.Get(0)),int(xt.Get(1)),10,10);
+        vec2f a = (*ita).GetLocationAtNativeScale();
+        p.drawEllipse(int(a.Get(0)),int(a.Get(1)),10,10);
         return;
 
     }
 
-    // draw trail if desired, not longer than length or size of container
-    for(size_t i=1; i<length && i<m_data.size(); i++) {
+    // get a second iterator
+    typename Container<imfeature>::const_reverse_iterator itb = m_data.rbegin();
+    ++itb;
+    size_t counter = 0;
 
-        // get next feature
-        const imfeature& ftm1 = m_data.at((m_cursor+i)%m_data.size());
+    while (itb!=m_data.rend() && counter<length) {
 
-        // extract locations
-        vec2f xt = ft.GetLocationAtNativeScale();
-        vec2f xtm1 = ftm1.GetLocationAtNativeScale();
+        vec2f a = (*ita).GetLocationAtNativeScale();
+        vec2f b = (*itb).GetLocationAtNativeScale();
 
-        // only draw if the features do not come from the tracklet initialization
-        if(!xtm1.IsZero() && !xt.IsZero())
-            p.drawLine(int(xt.Get(0)),int(xt.Get(1)),int(xtm1.Get(0)),int(xtm1.Get(1)));
-        else
-            break;
+        p.drawLine(int(a.Get(0)),int(a.Get(1)),int(b.Get(0)),int(b.Get(1)));
 
-        // make the current feature, the "oldest"
-        ft = ftm1;
+        ++ita;
+        ++itb;
+        ++counter;
 
-    }*/
+    }
 
 }
 #endif
 
 template class CTracklet<list>;
 template class CTracklet<vector>;
+template class CTracklet<CRingBuffer>;
 
 
 } // end of namespace

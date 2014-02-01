@@ -186,9 +186,9 @@ void MainWindow::on_stepButton_clicked()
     //trackers[i]->DeleteInvalidTracks();
 
     // add new tracks
-    size_t noactive = m_tracker->GetNumberOfActiveTracks();
-    if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
-         m_tracker->AddTracklets(m_pyramid);
+    //size_t noactive = m_tracker->GetNumberOfActiveTracks();
+    //if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
+    m_tracker->AddTracklets(m_pyramid);
 
     // compute and display framerate
     t1 = omp_get_wtime();

@@ -29,6 +29,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <unordered_map>
 
 #include "rect.h"
 #include "darray.h"
@@ -41,9 +42,6 @@ namespace R4R {
 
 // some forward declarations
 class CAbstractDescriptor;
-template<class Array,template<class T,class Allocator = std::allocator<T> > class Container> class CDescriptorAggregator;
-template<class Array,template<class T,class Allocator = std::allocator<T> > class Container> class CSubsampleAggregator;
-
 
 /*! \brief interest point in \f$\mathbb{R}^n\f$
  *
@@ -53,8 +51,6 @@ template<typename T,u_int n>
 class CInterestPoint {
 
     friend class CAbstractDescriptor;
-    template<class Array,template<class V,class Allocator = std::allocator<V> > class Container> friend class CDescriptorAggregator;
-    template<class Array,template<class V,class Allocator = std::allocator<V> > class Container> friend class CSubsampleAggregator;
 
 public:
 
@@ -63,6 +59,15 @@ public:
 
     //! Constructor.
     CInterestPoint(const CVector<T,n>& location, float scale, T quality);
+
+    /*! \brief Copy constructor.
+     *
+     * \param[in] name name of descriptor to include in the copy
+     *
+     * All but one descriptor are ignored during construction.
+     *
+     */
+    CInterestPoint(const CInterestPoint<T,n>& x, string name);
 
     //! Destructor.
     ~CInterestPoint();
@@ -101,7 +106,7 @@ public:
     CVector<T,n> GetLocationAtNativeScale() const;
 
     //! Access to the descriptor container.
-    std::map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; }
+    std::unordered_map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; }
 
     //! Looks for descriptor with a specified name. \TODO: Better return iterator.
     const shared_ptr<CAbstractDescriptor>& GetDescriptor(const char* name) const;
@@ -140,10 +145,10 @@ public:
 
 private:
 
-    CVector<T,n> m_location;                                                //! feature location
-    float m_scale;                                                          //!< scale
-    T m_quality;                                                            //!< quality measure, e.g., for storing motion estimation residual
-    std::map<string,shared_ptr<CAbstractDescriptor> > m_descriptors;        //!< attached descriptors
+    CVector<T,n> m_location;                                                          //! feature location
+    float m_scale;                                                                    //!< scale
+    T m_quality;                                                                      //!< quality measure, e.g., for storing motion estimation residual
+    std::unordered_map<string,shared_ptr<CAbstractDescriptor> > m_descriptors;        //!< attached descriptors
 
 };
 

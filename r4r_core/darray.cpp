@@ -1121,26 +1121,27 @@ vector<U> CDenseArray<T>::Gradient(size_t i, size_t j) const {
 template vector<double> CDenseArray<double>::Gradient<double>(size_t i, size_t j) const;
 template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(size_t i, size_t j) const;
 
-template <typename T>
-CVector<double,2> CDenseArray<T>::ProjectToBoundary(const CVector<double,2>& x) const {
+//template <typename T>
+//template <typename U>
+//CVector<U,2> CDenseArray<T>::ProjectToBoundary(const CVector<U,2>& x) const {
 
-    CVector<double,2> result = x;
+//    CVector<U,2> result = x;
 
-    if(x.Get(0)<0)
-        result(0) = 0;
+//    if(x.Get(0)<0)
+//        result(0) = 0;
 
-    if(x.Get(0)>=this->NCols())
-        result(0) = this->NCols() - 1;
+//    if(x.Get(0)>=this->NCols())
+//        result(0) = this->NCols() - 1;
 
-    if(x.Get(1)<0)
-        result(1) = 0;
+//    if(x.Get(1)<0)
+//        result(1) = 0;
 
-    if(x.Get(1)>=this->NRows())
-        result(1) = this->NRows() - 1;
+//    if(x.Get(1)>=this->NRows())
+//        result(1) = this->NRows() - 1;
 
-    return result;
+//    return result;
 
-}
+//}
 
 template <typename T>
 CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {

@@ -69,9 +69,9 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
         vector<vec3f> xs;
         vector<vec2f> p0s, p1s, p1ss;
-        vector<CTracklet*> trackletss2i, trackletsi2i;
+        vector<mytracklet*> trackletss2i, trackletsi2i;
 
-        list<shared_ptr<CTracklet> >::iterator it;
+        list<shared_ptr<mytracklet> >::iterator it;
 
         // collect image-to-image and scene-to-image correspondences
         for(it=m_data.begin(); it!=m_data.end(); it++) {
@@ -186,9 +186,9 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 }
 
-bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
+/*bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
-    list<shared_ptr<CTracklet> >::iterator it;
+    list<shared_ptr<CCircularTracklet> >::iterator it;
 
     for(it=m_data.begin(); it!=m_data.end(); it++) {
 
@@ -241,7 +241,7 @@ bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
 
     return 0;
 
-}
+}*/
 
 CMagicSfM::CMagicSfM(CPinholeCam cam, pair<vector<vec2f>,vector<vec2f> >& corri2i, pair<vector<vec3f>,vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv):
     CLeastSquaresProblem<smatf,float>::CLeastSquaresProblem(2*(corri2i.first.size()+corrs2i.first.size()),corri2i.first.size()+6),

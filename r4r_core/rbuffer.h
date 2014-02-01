@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <vector>
+#include <iostream>
 
 namespace R4R {
 
@@ -13,7 +14,7 @@ namespace R4R {
  *
  *
  */
-template<class T>
+template<class T,class Allocator = std::allocator<T> >
 class CRingBuffer {
 
 public:
@@ -22,11 +23,15 @@ public:
 
     public:
 
+      iterator():m_i(0),m_n(0),m_data(nullptr) {}
+
       iterator(size_t i, size_t n, T* data):m_i(i),m_n(n),m_data(data) {}
 
       void operator++() { m_i = ++m_i%m_n; }
 
       T& operator*() { return m_data[m_i]; }
+
+      T* operator->() { return &(operator*()); }
 
       bool operator!=(const iterator& it) const { return m_i!=it.m_i; }
 
@@ -42,9 +47,13 @@ public:
 
     public:
 
+      const_iterator():m_i(0),m_n(0),m_data(nullptr) {}
+
       const_iterator(size_t i, size_t n, const T* data):m_i(i),m_n(n),m_data(data) {}
 
       void operator++() { m_i = ++m_i%m_n; }
+
+      const T* operator->() const { return &(operator*()); }
 
       const T& operator*() const { return m_data[m_i]; }
 
@@ -63,11 +72,15 @@ public:
 
     public:
 
+      reverse_iterator():m_i(0),m_n(0),m_data(nullptr) {}
+
       reverse_iterator(size_t i, size_t n, T* data):m_i(n-1-i),m_n(n),m_data(data) {}
 
       void operator++() { m_i = ++m_i%m_n; }
 
       T& operator*() { return m_data[m_n-1-m_i]; }
+
+      T* operator->() { return &(operator*()); }
 
       bool operator!=(const reverse_iterator& it) const { return m_i!=it.m_i; }
 
@@ -83,11 +96,15 @@ public:
 
     public:
 
+      const_reverse_iterator():m_i(0),m_n(0),m_data(nullptr) {}
+
       const_reverse_iterator(size_t i, size_t n, const T* data):m_i(n-1-i),m_n(n),m_data(data) {}
 
       void operator++() { m_i = ++m_i%m_n; }
 
-      const T& operator*() { return m_data[m_n-1-m_i]; }
+      const T& operator*() const { return m_data[m_n-1-m_i]; }
+
+      const T* operator->() const { return &(operator*()); }
 
       bool operator!=(const const_reverse_iterator& it) const { return m_i!=it.m_i; }
 
@@ -114,10 +131,10 @@ public:
     void push_back(const T& x) { m_data[m_cursor] = x; m_cursor = (++m_cursor)%m_data.size(); }
 
     //! Back
-    const T& back() const { return m_data[(m_cursor-1)%m_data.size()]; }
+    const T& back() const { return m_data[(m_cursor+m_data.size()-1)%m_data.size()]; }
 
     //! Back
-    T& back() { return m_data[(m_cursor-1)%m_data.size()]; }
+    T& back() { return m_data[(m_cursor+m_data.size()-1)%m_data.size()]; }
 
     /*! \brief Creates forward iterator pointing to the "beginning".
      *
@@ -133,16 +150,16 @@ public:
      * one element.
      *
      */
-    iterator end() { return iterator((m_cursor-1)%m_data.size(),m_data.size(),&m_data[0]); }
-    const_iterator end() const { return const_iterator((m_cursor-1)%m_data.size(),m_data.size(),&m_data[0]); }
+    iterator end() { return iterator((m_cursor+m_data.size()-1)%m_data.size(),m_data.size(),&m_data[0]); }
+    const_iterator end() const { return const_iterator((m_cursor+m_data.size()-1)%m_data.size(),m_data.size(),&m_data[0]);  }
 
     //! Backward iterator.
-    reverse_iterator rbegin() { return reverse_iterator((m_cursor-1)%m_data.size(),m_data.size(),&m_data[0]); }
-    const_reverse_iterator rbegin() const { return reverse_iterator((m_cursor-1)%m_data.size(),m_data.size(),&m_data[0]); }
+    reverse_iterator rbegin() { return reverse_iterator((m_cursor+m_data.size()-1)%m_data.size(),m_data.size(),&m_data[0]); }
+    const_reverse_iterator rbegin() const { return const_reverse_iterator((m_cursor+m_data.size()-1)%m_data.size(),m_data.size(),&m_data[0]); }
 
     //! Backward iterator.
     reverse_iterator rend() { return reverse_iterator((m_cursor)%m_data.size(),m_data.size(),&m_data[0]); }
-    const_reverse_iterator rend() const { return reverse_iterator((m_cursor)%m_data.size(),m_data.size(),&m_data[0]); }
+    const_reverse_iterator rend() const { return const_reverse_iterator((m_cursor)%m_data.size(),m_data.size(),&m_data[0]); }
 
     //! Reference to data.
     const std::vector<T>& data() { return m_data; }
