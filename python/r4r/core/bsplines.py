@@ -8,7 +8,10 @@ Created on Fri Dec 13 17:57:20 2013
 import numpy as np
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.cm as cm
 from scipy.sparse.linalg import lsqr
+
 
 import r4r.core._bsplines as bs
 
@@ -65,8 +68,10 @@ class knot_vector:
     def assemble_interpolation_matrix(self,t):
         """
         Creates a sparse matrix needed for interpolating points given at the
-        locations given in t    
+        locations given in t.     
         """
+
+        #FIXME: This has to be a member of the spline class.
         ii = []
         jj = []
         vals = []
@@ -372,7 +377,174 @@ class curve:
         self.knots.data = np.insert(self.knots.data,span+1,t)
         
 
-# fixme: make this a member, derive the graph and override           
+class surface:
+ 
+    def __init__(self,knots,d):
+        self.knots = knots
+        self.d = d
+        self.cp = np.zeros((d,knots[0].ncp,knots[1].ncp),dtype='double')
+
+    def set_function(self,f):
+        """
+        Interprets a 3d-surface as a scalar-valued functions over the plane,
+        and sets it to the identity with the help of the Greville abscissae. 
+        """
+
+        gau  = self.knots[0].greville_abscissae()
+        gav  = self.knots[1].greville_abscissae()
+        gu = np.outer(gau,np.ones(gav.size))
+        gv = np.outer(np.ones(gau.size),gav)
+
+        if(self.d==1):           
+            self.cp[0,:,:] = f(gu,gv)            
+        elif(self.d==3):
+            self.cp[0,:,:] = gu
+            self.cp[1,:,:] = gv
+            self.cp[2,:,:] = f(gu,gv)
+
+
+    def evaluate(self,t):
+        """
+        Evaluate the spline surface at a given parameter tuple.
+        """
+        x,xu,xv,xuu,xuv,xvv = bs.evaluate_curve(self.knots[0].data,self.knots[1].data,self.cp,self.knots[0].p,self.knots[1].p,t[0],t[1])
+        
+        if self.knots[0].p<2 or self.knots[1].p<2<2:        
+            xu = 0*xu
+            xv = 0*xv
+            xuu = 0*xuu
+            xuv = 0*xuv
+            xvv = 0*xvv
+      
+        # do xu,xv,xuu,xuv,xvv
+        return x,xu,xv,xuu,xuv,xvv
+        
+    def evaluate_batch(self,t):
+        """
+        Evaluates the spline surface at multiple parameter locations.
+        """
+                
+        x = np.zeros((self.cp.shape[0],t[0].size))
+        xu = np.zeros((self.cp.shape[0],t[0].size))
+        xv = np.zeros((self.cp.shape[0],t[0].size))
+        xuu = np.zeros((self.cp.shape[0],t[0].size))
+        xuv = np.zeros((self.cp.shape[0],t[0].size))
+        xvv = np.zeros((self.cp.shape[0],t[0].size))
+
+        if(t[0].size==t[1].size):
+            
+            for i in range(0,t[0].size):
+            
+                temp = self.evaluate((t[0][i],t[1][i]))
+                x[:,i] = temp[0]
+                xu[:,i] = temp[1]
+                xv[:,i] = temp[2]
+                xuu[:,i] = temp[3]
+                xuv[:,i] = temp[4]
+                xvv[:,i] = temp[5]
+     
+        return x,xu,xv,xuu,xuv,xvv
+
+    def curvature(self,t):
+
+        x,xu,xv,xuu,xuv,xvv = self.evaluate((t[0],t[1]))
+        n = np.cross(xu,xv)
+        n = n/np.linalg.norm(n)
+        
+        II = np.zeros((2,2))
+        II[0,0] = np.inner(n,xuu)
+        II[0,1] = np.inner(n,xuv)
+        II[1,0] = II[0,1]
+        II[1,1] = np.inner(n,xvv)
+        
+        kappa = 0.5*(II[0,0]+II[1,1])
+        gamma = II[0,0]*II[1,1] - II[0,1]+II[1,0]
+        
+        return kappa, gamma, II
+        
+    def principal_curvature_field(self,n):
+        
+        domains = (self.knots[0].get_domain(),self.knots[1].get_domain())
+        u,v = np.meshgrid(np.linspace(domains[0][0],domains[0][-1],n[0]),np.linspace(domains[1][0],domains[1][-1],n[1]))
+
+        maxu = np.zeros(u.shape)
+        maxv = np.zeros(u.shape)
+        minu = np.zeros(u.shape)
+        minv = np.zeros(u.shape)        
+        for i in range(0,u.shape[0]):        
+            for j in range(0,u.shape[1]):
+                kappa, gamma, II = self.curvature((u[i,j],v[i,j]))
+                vals,vecs = np.linalg.eigh(II)
+                maxu[i,j] = vecs[0,0]
+                maxv[i,j] = vecs[1,0]
+                minu[i,j] = vecs[0,1]
+                minv[i,j] = vecs[1,1]
+        
+        return u, v, maxu, maxv, minu, minv
+        
+    def plot(self,n,controlpoints=False,curvature='none'):
+        """
+        Plot surface.
+        """
+        
+        # get domain
+        domains = (self.knots[0].get_domain(),self.knots[1].get_domain())
+        u,v = np.meshgrid(np.linspace(domains[0][0],domains[0][-1],n[0]),np.linspace(domains[1][0],domains[1][-1],n[1]))
+        #x,xu,xv,xuu,xuv,xvv = self.evaluate_batch((u.flatten(),v.flatten()))
+
+        x = np.zeros(u.shape)
+        y = np.zeros(u.shape)
+        z = np.zeros(u.shape)
+        colors = np.zeros(u.shape)
+                
+        cblabel = r'$z$'
+        for i in range(0,u.shape[0]):
+            for j in range(0,u.shape[1]):
+                
+                data = self.evaluate((u[i,j],v[i,j]))
+                x[i,j] = data[0][0]
+                y[i,j] = data[0][1]
+                z[i,j] = data[0][2]
+                
+                n = np.cross(data[1],data[2])
+                n = n/np.linalg.norm(n)
+        
+                xuun = np.inner(n,data[3])
+                xuvn = np.inner(n,data[4])
+                xvvn = np.inner(n,data[5])
+    
+                if(curvature!='none'):
+                    
+                    if(curvature=='mean'):
+                        colors[i,j]=0.5*(xuun+xvvn)
+                        cblabel = 'Mean curvature'
+                    elif (curvature=='Gauss'):
+                        colors[i,j]=xuun*xvvn-xuvn**2
+                        cblabel = 'Gauss curvature'
+                else:
+                    colors[i,j] = z[i,j]
+                            
+        m = cm.ScalarMappable(cmap=cm.jet)
+        m.set_array(colors)                       
+        colors = colors/colors.max()
+
+                    
+        if(self.d==3):
+            fig = plt.figure()
+            ax = fig.add_subplot(111,projection='3d')
+            ax.plot_surface(x,y,z,rstride=1,cstride=1,shade=True,edgecolor='none',facecolors=cm.jet(colors),linewidth=0)
+            cb=plt.colorbar(m)
+            cb.set_label(cblabel, labelpad=10)
+            if controlpoints is True:
+                ax.plot_wireframe(self.cp[0,:,:],self.cp[1,:,:],self.cp[2,:,:],color='red')
+                ax.scatter(self.cp[0,:,:],self.cp[1,:,:],self.cp[2,:,:],c='red',edgecolor='none')
+        
+                    
+                    
+                
+                
+        
+# FIXME: make this a member, derive the graph and override           
 def plot_curve(s,n,controlpoints=False,knotpoints=False,normals=False,annotatespan=-1):
     """
     Plots spline curve or graph.
@@ -382,6 +554,7 @@ def plot_curve(s,n,controlpoints=False,knotpoints=False,normals=False,annotatesp
     domain = s.knots.get_domain();
     t = np.linspace(domain[0],domain[-1],n)
     
+    # what about other cases
     if(s.d==2):
         
         if knotpoints is True:

@@ -5,6 +5,8 @@ static PyObject* find_knot_span(PyObject* self, PyObject* args);
 
 static PyObject* evaluate_curve(PyObject* self, PyObject* args);
 
+static PyObject* evaluate_surface(PyObject* self, PyObject* args);
+
 static PyObject* unwrap_phase(PyObject* self, PyObject* args);
 
 static PyObject* characteristic_function(PyObject* self, PyObject* args);

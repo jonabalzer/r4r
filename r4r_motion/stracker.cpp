@@ -161,7 +161,6 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
     // collect and count feature we already have per scale
     vector<size_t> n = ComputeFeatureDensity(imgs);
     size_t active = std::accumulate(n.begin(),n.end(),0);
-    cout << "Active: " << active << endl;
 
     // only do something if we have too little tracks
     if(active<=size_t(m_params->GetIntParameter("MIN_NO_FEATURES"))) {

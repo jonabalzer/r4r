@@ -87,7 +87,7 @@ private:
     vector<cv::Mat> m_pyramid;
     QTimer m_timer;
     CParameters m_params;
-    CSlidingWindowTracker* m_tracker;
+    CSimpleTracker* m_tracker;
     CPinholeCam m_cam;
     std::map<R4R::vec3f,R4R::rgb> m_map;
 
