@@ -8,7 +8,7 @@ Created on Fri Dec 13 17:57:20 2013
 import numpy as np
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.cm as cm
 from scipy.sparse.linalg import lsqr
 
@@ -541,30 +541,25 @@ class surface:
         return u, v, maxu, maxv, minu, minv, maxvalu, maxvalv
     
     def get_parameter_grid(self,n):
+        """
+        Regular qudrangulation of the parametric domain.
+        """
+        domains = (self.knots[0].get_domain(),self.knots[1].get_domain())
+        return np.meshgrid(np.linspace(domains[0][0],domains[0][-1],n[0]),np.linspace(domains[1][0],domains[1][-1],n[1]))
 
-        if(self.d!=1):
-            domains = (self.knots[0].get_domain(),self.knots[1].get_domain())
-            return np.meshgrid(np.linspace(domains[0][0],domains[0][-1],n[0]),np.linspace(domains[1][0],domains[1][-1],n[1]))
-        else:
-            return np.meshgrid(self.knots[0].greville_abscissae(),self.knots[1].greville_abscissae())
-            
-        
     def plot(self,n,controlpoints=False,curvature='none'):
         """
         Plot surface, its control points, and curvature.
         """
         
         if(self.d==3 or self.d==1):
-            
-            u,v = self.get_parameter_grid(n) 
-            print u.shape
+
             # substitute controlpoints
             if(self.d==1):
-                self.cp = np.vstack((np.reshape(u,(1,u.shape[0],u.shape[1])),np.reshape(v,(1,v.shape[0],v.shape[1])),self.cp))
-
-            print self.cp.shape
-            
-
+                ug,vg = np.meshgrid(self.knots[0].greville_abscissae(),self.knots[1].greville_abscissae())
+                self.cp = np.vstack((np.reshape(ug,(1,ug.shape[0],ug.shape[1])),np.reshape(vg,(1,vg.shape[0],vg.shape[1])),self.cp))
+      
+            u,v = self.get_parameter_grid(n) 
             x = np.zeros(u.shape)
             y = np.zeros(u.shape)
             z = np.zeros(u.shape)
@@ -610,14 +605,14 @@ class surface:
             cb=plt.colorbar(m)
             cb.set_label(cblabel, labelpad=10)
             
-            
             if controlpoints is True:
+                print 'fick'
                 ax.plot_wireframe(self.cp[0,:,:],self.cp[1,:,:],self.cp[2,:,:],color='red')
                 ax.scatter(self.cp[0,:,:],self.cp[1,:,:],self.cp[2,:,:],c='red',edgecolor='none')
                 
-                
+            # put original controlpoints back    
             if(self.d==1):
-                self.cp = np.reshape(self.cp[2,:,:],(self.cp.shape[1],self.cp.shape[2]))    
+                self.cp = np.reshape(self.cp[2,:,:],(1,self.cp.shape[1],self.cp.shape[2]))    
             
                     
     def assemble_interpolation_matrix(self,t):
@@ -665,7 +660,7 @@ class surface:
         return A
 
 
-    def interpolate(self,t,pts):
+    def interpolate(self,A,t,pts):
         """
         Initialize control points by interpolation.
         """
@@ -673,9 +668,8 @@ class surface:
             print "Dimension mismatch..."
             return
         
-        A = self.assemble_interpolation_matrix(t) 
-        
         for i in range(0,self.d):
             result = lsqr(A,pts[i])
+            
             self.cp[i,:,:] = np.reshape(result[0],(self.cp.shape[1],self.cp.shape[2]))                
                 
