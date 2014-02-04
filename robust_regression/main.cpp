@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         CPreconditioner<mat,double> M;
         CConjugateGradientMethodLeastSquares<mat,double> solver(M,10,1e-20,true);
 
-        CRosenbrockFunction problem = CRosenbrockFunction();
+        CRosenbrockFunction problem;
         CLevenbergMarquardt<mat,double> lms(problem,solver,0);
 
         // access solution vector
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
         CPreconditioner<mat,double> M;
         CConjugateGradientMethodLeastSquares<mat,double> solver(M,20,1e-20,true);
 
-        COsbourneFunction problem = COsbourneFunction();
+        COsbourneFunction problem;
         problem.DisturbSamplePoints(10,1);
 
         CLevenbergMarquardt<mat,double> lms(problem,solver,1e-8);
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 
         lms.Iterate(1000,4,1e-20,false,true);
 
-        cout << "Error RWLS:" << endl;
+        cout << "Relative error RWLS:" << endl;
         vec error = model - problem.GetGroundTruth();
 
         for(size_t i=0; i<error.NElems(); i++)
@@ -115,9 +115,6 @@ int main(int argc, char *argv[]) {
     return 0;
 
 }
-
-
-
 
 CRosenbrockFunction::CRosenbrockFunction():
     CLeastSquaresProblem(2,2) {

@@ -323,8 +323,7 @@ void MainWindow::on_actionSave_Motion_triggered() {
     for(it=motion.begin(); it!=motion.end(); it++) {
 
         vecf m = (*it);
-        m.Transpose();
-        out << m << endl;
+        out << m.Get(0) << " " << m.Get(1) << " " << m.Get(2) << " " << m.Get(3) << " " << m.Get(4) << " " << m.Get(5) << " " << endl;
 
     }
 
