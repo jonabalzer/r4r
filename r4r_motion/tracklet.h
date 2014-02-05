@@ -41,8 +41,6 @@
 
 namespace R4R {
 
-typedef CInterestPoint<float,2> imfeature;
-
 /*! \brief feature trajectory
  *
  *
@@ -145,7 +143,7 @@ private:
 };
 
 typedef CTracklet<CRingBuffer> CCircularTracklet;
-typedef CTracklet<list> CContinuousTracklet;
+typedef CTracklet<std::list> CContinuousTracklet;
 
 /*! \brief tracklets for tracking on the selection tree
  *

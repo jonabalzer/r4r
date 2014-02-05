@@ -33,27 +33,24 @@ using namespace cv;
 
 namespace R4R {
 
-CSimpleTracker::CSimpleTracker(CParameters* params):
+CSimpleTracker::CSimpleTracker(const CParameters *params):
 	CTracker(params),
     m_detector(m_params->GetDoubleParameter("FEATURE_THRESHOLD"))
 	{
 
 	// generate sample points for tests performed in BRIEF descriptor
     CBRIEF::GenerateSamplePoints();
-    //CBRIEF::PrintSamplePoints();
 
 }
 
-bool CSimpleTracker::Init(vector<Mat>& pyramid) {
+void CSimpleTracker::Init(const std::vector<Mat>& pyramid) {
 
     // detect and add tracklets
     AddTracklets(pyramid);
 
-	return 0;
-
 }
 
-bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
+void CSimpleTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyramid1) {
 
     // sort features according to scale, this setup allows for scale changes
     vector<vector<Point2f> > points0(pyramid0.size());
@@ -129,11 +126,9 @@ bool CSimpleTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 	m_global_t++;
 
-	return 0;
-
 }
 
-void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
+void CSimpleTracker::Clean(const vector<Mat>& pyramid0, const vector<Mat>& pyramid1) {
 
     list<shared_ptr<mytracklet> >::iterator it;
 
@@ -151,7 +146,7 @@ void CSimpleTracker::Clean(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
 }
 
-bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
+void CSimpleTracker::AddTracklets(const vector<Mat>& pyramid) {
 
     // initialize pyramid of integral images
     vector<CIntImage<size_t> > imgs;
@@ -207,6 +202,9 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
                             CSimpleTrackerTracklet* tracklet = new CSimpleTrackerTracklet(m_global_t,x);
                             this->AddTracklet(tracklet);
 
+                            // also set the reference feature
+                            tracklet->m_reference_feature = x;
+
                         }
 
                     }
@@ -241,18 +239,16 @@ bool CSimpleTracker::AddTracklets(vector<Mat>& pyramid) {
 
         // if feature is still alive and we have a integral image at its scale but
         // it violates the distance assumption, kill it
-        if((*it)->GetStatus() && s<imgs.size() && imgs[s].EvaluateApproximately<float>(x,hsize2)>1) {
+        if((*it)->GetStatus() && s<imgs.size() && imgs[s].EvaluateApproximately<float>(x,hsize2)>1)
             (*it)->SetStatus(false);
-            cout << "Killed tracklet." << endl;
-        }
+
+
 
     }
 
-	return 0;
-
 }
 
-bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
+void CSimpleTracker::UpdateDescriptors(const std::vector<cv::Mat>& pyramid) {
 
     // smooth image for gradient computation
     /*vector<Mat> pyrsmooth;
@@ -358,8 +354,6 @@ bool CSimpleTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
         }
 
     }
-
-	return 0;
 
 }
 

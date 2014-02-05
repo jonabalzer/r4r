@@ -36,7 +36,7 @@ CFourierModulusDescriptor::CFourierModulusDescriptor(CRectangle<double> roi, siz
     CNeighborhoodDescriptor(mat(2*hsize+1,2*hsize+1),roi) {}
 
 
-bool CFourierModulusDescriptor::Compute(Mat& img) {
+bool CFourierModulusDescriptor::Compute(const Mat &img) {
 
     fftw_complex* fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex)*m_container.NElems());
 
@@ -109,7 +109,7 @@ CHistogramOfGradients::CHistogramOfGradients(CRectangle<double> roi, size_t no_c
 
 }
 
-bool CHistogramOfGradients::Compute(cv::Mat& img) {
+bool CHistogramOfGradients::Compute(const Mat &img) {
 
     // number of pixels in patch
     size_t n = m_no_cells*m_cell_size;
@@ -198,7 +198,7 @@ CFMHoGDescriptor::CFMHoGDescriptor(CRectangle<double> roi, size_t hsize, size_t 
     m_hsize(hsize),
     m_no_bins(nbins) {}
 
-bool CFMHoGDescriptor::Compute(cv::Mat& img) {
+bool CFMHoGDescriptor::Compute(const Mat &img) {
 
     // allocate space for histogram
     fftw_complex* fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex)*m_container.NElems());

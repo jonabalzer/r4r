@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <string.h>
 #include <limits>
+#include <list>
 
 #include "trafo.h"
 #include "factor.h"
@@ -146,7 +147,7 @@ CVector<T,n> CTransformation<T,n>::DifferentialTransform(const CVector<T,n>& x) 
 }
 
 template <typename T,u_int n>
-CVector<T,n> CTransformation<T,n>::Transform(const T* x) {
+CVector<T,n> CTransformation<T,n>::Transform(const T* x) const {
 
     CVector<T,n> result;
 
@@ -293,7 +294,7 @@ bool CTransformation<T,n>::Invert() {
 }
 
 template <typename T,u_int n>
-CDenseArray<T> CTransformation<T,n>::GetJacobian() {
+CDenseArray<T> CTransformation<T,n>::GetJacobian() const {
 
     CDenseArray<T> result(n,n);
 
@@ -328,7 +329,7 @@ CVector<T,n> CTransformation<T,n>::GetPrincipalAxis() const {
 }
 
 template <typename T,u_int n>
-bool CTransformation<T,n>::operator ==(const CTransformation<T,n>& x) {
+bool CTransformation<T,n>::operator ==(const CTransformation<T,n>& x) const {
 
     bool result = true;
 
@@ -638,14 +639,13 @@ CRigidMotion<T,3>::CRigidMotion(T t1, T t2, T t3, T o1, T o2, T o3) {
 }
 
 template<typename T>
-CRigidMotion<T,3>::CRigidMotion(const CDenseVector<T>& m) {
+CRigidMotion<T,3>::CRigidMotion(const CVector<T,6>& m) {
 
     // since constructor delegation is not yet supported by gcc 4.6
     m_F[9] = m.Get(0);
     m_F[10] = m.Get(1);
     m_F[11] = m.Get(2);
     CRotation<T,3>::Rodrigues(m.Get(3),m.Get(4),m.Get(5),m_F);
-
 
 }
 
@@ -674,4 +674,42 @@ bool CRigidMotion<T,3>::Invert() {
 template class CRigidMotion<double,3>;
 template class CRigidMotion<float,3>;
 
+template<template<class U, class Allocator = std::allocator<U> > class Container,typename T>
+void C3dTrajectory<Container,T>::Update(T t1, T t2, T t3, T o1, T o2, T o3) {
+
+    CVector<T,6> x = { t1, t2, t3, o1, o2, o3 };
+    m_data.push_back(x);
+
 }
+
+template<template<class U, class Allocator = std::allocator<U> > class Container,typename T>
+void C3dTrajectory<Container,T>::Update(const CRigidMotion<T,3>& F) {
+
+    CVector<T,3> t = F.GetTranslation();
+
+    T o1, o2, o3;
+    CRotation<T,3>::Log(F.Data(),o1,o2,o3);
+
+    CVector<T,6> x = { t.Get(0), t.Get(1), t.Get(2), o1, o2, o3 };
+    m_data.push_back(x);
+
+}
+
+template<template<class U, class Allocator = std::allocator<U> > class Container,typename T>
+CRigidMotion<T,3> C3dTrajectory<Container,T>::GetLatestState() const {
+
+    return CRigidMotion<T,3>(m_data.back());
+
+}
+
+template<template<class U, class Allocator = std::allocator<U> > class Container,typename T>
+CRigidMotion<T,3> C3dTrajectory<Container,T>::GetInitialState() const {
+
+    return CRigidMotion<T,3>(m_data.front());
+
+}
+
+template class C3dTrajectory<list,float>;
+template class C3dTrajectory<list,double>;
+
+} // end of namespace

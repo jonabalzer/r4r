@@ -75,7 +75,7 @@ void CLinearAlgebra::GivensRotation(T a, T b, T& c, T& s, T& r) {
 template void CLinearAlgebra::GivensRotation(double a, double b, double& c, double& s, double& r);
 template void CLinearAlgebra::GivensRotation(float a, float b, float& c, float& s, float& r);
 
-mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const CPinholeCam& cam) {
+mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const CPinholeCam<double>& cam) {
 
 //	mat E0(3,3);
 //	E0.Eye();
@@ -317,7 +317,7 @@ mat CLinearAlgebra::FactorEssentialMatrix(const mat& E) {
 
 }
 
-mat CLinearAlgebra::ZhangFactorization(const mat& H, const CPinholeCam &cam) {
+mat CLinearAlgebra::ZhangFactorization(const mat& H, const CPinholeCam<double> &cam) {
 
 //	mat Kinv = cam.GetInverseProjectionMatrix();
 

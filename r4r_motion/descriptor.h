@@ -46,7 +46,7 @@ class CAbstractDescriptor {
 public:
 
 	//! Triggers computation of the descriptor.
-    virtual bool Compute(cv::Mat& img) = 0;
+    virtual bool Compute(const cv::Mat& img) = 0;
 
 	//! Writes descriptor to a stream.
     virtual void Write(std::ofstream& os) = 0;
@@ -86,7 +86,7 @@ public:
     CDescriptor(const Array& data);
 
     //! \copydoc CAbstractDescriptor::Compute(cv::Mat&)
-    virtual bool Compute(cv::Mat& img) { return 0; }
+    virtual bool Compute(const cv::Mat& img) { return 0; }
 
     //! \copydoc CAbstractDescriptor::Write(std::ofstream&)
     virtual void Write(std::ofstream& ofs) { ofs << m_container; }
@@ -165,7 +165,7 @@ public:
     CIdentityDescriptor(CRectangle<double> roi, size_t method, size_t hsize = 7);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
-    bool Compute(cv::Mat& img);
+    bool Compute(const cv::Mat& img);
 
     //! Normalizes the image patch by subtracting the mean and dividing by the standard deviation.
     void Normalize();
@@ -194,7 +194,7 @@ public:
     CIdentityGradientDescriptor(CRectangle<double> roi, double alpha, size_t method, size_t hsize = 7);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
-    bool Compute(cv::Mat& img);
+    bool Compute(const cv::Mat& img);
 
     /*! \brief Distance between two descriptors.
      *
@@ -230,7 +230,7 @@ public:
     CCurvatureDescriptor(CRectangle<double> roi, double alpha, size_t method, size_t hsize = 7);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
-    bool Compute(cv::Mat& img);
+    bool Compute(const cv::Mat& img);
 
     //! Distance between two curvature  descriptors.
     double Distance(const CCurvatureDescriptor& desc) const;

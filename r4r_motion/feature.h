@@ -35,9 +35,6 @@
 #include "darray.h"
 #include "vecn.h"
 
-
-using namespace std;
-
 namespace R4R {
 
 // some forward declarations
@@ -58,6 +55,12 @@ public:
     CInterestPoint();
 
     //! Constructor.
+    CInterestPoint(std::initializer_list<T> ilist);
+
+    //! Constructor.
+    CInterestPoint(const CVector<T,n>& location);
+
+    //! Constructor.
     CInterestPoint(const CVector<T,n>& location, float scale, T quality);
 
     /*! \brief Copy constructor.
@@ -67,7 +70,7 @@ public:
      * All but one descriptor are ignored during construction.
      *
      */
-    CInterestPoint(const CInterestPoint<T,n>& x, string name);
+    CInterestPoint(const CInterestPoint<T,n>& x, std::string name);
 
     //! Destructor.
     ~CInterestPoint();
@@ -88,7 +91,7 @@ public:
     bool operator!=(const CInterestPoint<T,n>& x) { return !operator==(x); }
 
     //! Adds a descriptor to the feature.
-    void AttachDescriptor(const char* id, shared_ptr<CAbstractDescriptor> descriptor);
+    void AttachDescriptor(const char* id, std::shared_ptr<CAbstractDescriptor> descriptor);
 
     //! Returns the number of descriptors attached to the feature.
     size_t NoDescriptors() const { return m_descriptors.size(); }
@@ -106,16 +109,16 @@ public:
     CVector<T,n> GetLocationAtNativeScale() const;
 
     //! Access to the descriptor container.
-    std::unordered_map<string,shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; }
+    std::unordered_map<std::string,std::shared_ptr<CAbstractDescriptor> >& GetDescriptors() { return m_descriptors; }
 
     //! Looks for descriptor with a specified name. \TODO: Better return iterator.
-    const shared_ptr<CAbstractDescriptor>& GetDescriptor(const char* name) const;
+    const std::shared_ptr<CAbstractDescriptor>& GetDescriptor(const char* name) const;
 
     //! Looks for a descriptor at specified position.
-    const shared_ptr<CAbstractDescriptor>& GetDescriptor(u_int no) const;
+    const std::shared_ptr<CAbstractDescriptor>& GetDescriptor(u_int no) const;
 
     //! Looks for name of descriptor at specified position.
-    string GetDescriptorName(u_int no);
+    std::string GetDescriptorName(u_int no);
 
     //! Writes a feature to an output stream.
     template<typename U,u_int m> friend std::ostream& operator <<(std::ostream& os, const CInterestPoint<U,m>& x);
@@ -141,16 +144,25 @@ public:
      * \param[in] type floating point precision of the container
      * \returns number of features read, \f$-1\f$ on error
      */
-    static int LoadFromFile(const char* filename, std::vector<CInterestPoint<T,n> >& features, string& comment);
+    static int LoadFromFile(const char* filename, std::vector<CInterestPoint<T,n> >& features, std::string& comment);
 
 private:
 
     CVector<T,n> m_location;                                                          //! feature location
     float m_scale;                                                                    //!< scale
     T m_quality;                                                                      //!< quality measure, e.g., for storing motion estimation residual
-    std::unordered_map<string,shared_ptr<CAbstractDescriptor> > m_descriptors;        //!< attached descriptors
+    std::unordered_map<std::string,std::shared_ptr<CAbstractDescriptor> > m_descriptors;        //!< attached descriptors
 
 };
+
+typedef CInterestPoint<float,2> imfeature;
+
+template<typename T>
+using C2dFeature = CInterestPoint<T,2>;
+
+template<typename T>
+using C3dFeature = CInterestPoint<T,3>;
+
 
 } // end of namespace
 

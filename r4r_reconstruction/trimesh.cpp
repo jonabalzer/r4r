@@ -195,7 +195,7 @@ vec3f CTriangleMesh::Barycenter(FaceHandle fh) {
 
 }
 
-vec3f CTriangleMesh::Barycenter() {
+vec3f CTriangleMesh::Barycenter() const {
 
     vec3f barycenter;
     size_t counter = 0;
@@ -630,7 +630,7 @@ void CTriangleMesh::ComputeGradientOperator(smatf& nabla) {
 
 
 
-vec3f CTriangleMesh::Point(VertexHandle vh) {
+vec3f CTriangleMesh::Point(VertexHandle vh) const {
 
     vec3f point = { this->point(vh)[0], this->point(vh)[1], this->point(vh)[2] };
 
@@ -638,7 +638,7 @@ vec3f CTriangleMesh::Point(VertexHandle vh) {
 
 }
 
-vec3f CTriangleMesh::Normal(VertexHandle vh) {
+vec3f CTriangleMesh::Normal(VertexHandle vh) const {
 
     vec3f normal = { this->normal(vh)[0], this->normal(vh)[1], this->normal(vh)[2] };
 
@@ -646,7 +646,7 @@ vec3f CTriangleMesh::Normal(VertexHandle vh) {
 
 }
 
-vec3f CTriangleMesh::Normal(FaceHandle fh) {
+vec3f CTriangleMesh::Normal(FaceHandle fh) const {
 
     vec3f normal = { this->normal(fh)[0], this->normal(fh)[1], this->normal(fh)[2] };
 
@@ -654,7 +654,7 @@ vec3f CTriangleMesh::Normal(FaceHandle fh) {
 
 }
 
-void CTriangleMesh::BoundingBox(vec3f& lower, vec3f& upper) {
+void CTriangleMesh::BoundingBox(vec3f& lower, vec3f& upper) const {
 
     for(u_int i=0; i<3; i++) {
 
@@ -684,7 +684,7 @@ void CTriangleMesh::BoundingBox(vec3f& lower, vec3f& upper) {
 }
 
 
-CBoundingBox<float> CTriangleMesh::BoundingBox() {
+CBoundingBox<float> CTriangleMesh::BoundingBox() const {
 
     vec3f lower, upper;
 

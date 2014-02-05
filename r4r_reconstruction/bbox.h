@@ -24,8 +24,10 @@
 #ifndef R4RBBOX_H
 #define R4RBBOX_H
 
-#include "vecn.h"
 #include <vector>
+
+#include "vecn.h"
+
 
 namespace R4R {
 

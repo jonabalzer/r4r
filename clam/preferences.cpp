@@ -80,6 +80,7 @@ void Preferences::on_saveButton_clicked() {
     params.Set("OUTLIER_REJECTION_THRESHOLD_MOTION",ui->outlierMotionEdit->text().toDouble());
     params.Set("SU",ui->suEdit->text().toInt());
     params.Set("SV",ui->svEdit->text().toInt());
+    params.Set("FU",ui->fuEdit->text().toDouble());
     params.Set("FV",ui->fvEdit->text().toDouble());
     params.Set("CU",ui->cuEdit->text().toDouble());
     params.Set("CV",ui->cvEdit->text().toDouble());

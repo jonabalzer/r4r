@@ -68,7 +68,7 @@ CIdentityDescriptor::CIdentityDescriptor(CRectangle<double> roi, size_t method, 
     CNeighborhoodDescriptor(matf(2*hsize+1,2*hsize+1),roi),
     m_method(method) {}
 
-bool CIdentityDescriptor::Compute(cv::Mat& img) {
+bool CIdentityDescriptor::Compute(const Mat &img) {
 
     double dx = 2.0/(double)(m_container.NCols()-1);
     double dy = 2.0/(double)(m_container.NRows()-1);
@@ -154,7 +154,7 @@ CIdentityGradientDescriptor::CIdentityGradientDescriptor(CRectangle<double> roi,
 
 }
 
-bool CIdentityGradientDescriptor::Compute(cv::Mat& img) {
+bool CIdentityGradientDescriptor::Compute(const Mat &img) {
 
     size_t h = m_container.NRows()/2;
     double dx = 2.0/(double)(m_container.NCols()-1);
@@ -261,7 +261,7 @@ CCurvatureDescriptor::CCurvatureDescriptor(CRectangle<double> roi, double alpha,
     CIdentityGradientDescriptor(roi,alpha,method,hsize),
     m_kappa(2*hsize+1,2*hsize+1) {}
 
-bool CCurvatureDescriptor::Compute(cv::Mat& img) {
+bool CCurvatureDescriptor::Compute(const Mat &img) {
 
     // compute gradient field
     CIdentityGradientDescriptor::Compute(img);

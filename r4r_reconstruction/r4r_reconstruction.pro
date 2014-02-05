@@ -32,11 +32,13 @@ DEFINES += R4R_RECONSTRUCTION_LIBRARY
 
 SOURCES += viewer.cpp \
     trimesh.cpp \
-    bbox.cpp
+    bbox.cpp \
+    pcl.cpp
 
 HEADERS += viewer.h \
     trimesh.h \
-    bbox.h
+    bbox.h \
+    pcl.h
 
 # find OpenMesh library
 OM = $$system(find /usr -name libOpenMeshCore* 2>/dev/null)
@@ -51,10 +53,12 @@ LIBS += -L$$OMLIBPATH \
         -lOpenMeshTools
 
 # local inlude path
-INCLUDEPATH += $$PWD/../r4r_core
+INCLUDEPATH += $$PWD/../r4r_core \
+               $$PWD/../r4r_motion
 
 # make sure that r4r_core is up to date
-DEPENDPATH += $$PWD/../r4r_core
+DEPENDPATH += $$PWD/../r4r_core \
+              $$PWD/../r4r_motion
 
 CONFIG += create_prl no_install_prl create_pc
 

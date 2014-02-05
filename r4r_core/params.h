@@ -26,7 +26,7 @@
 
 #include <stdlib.h>
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 namespace R4R {
@@ -44,10 +44,10 @@ public:
 	bool OpenFromFile(const char* filename);
 
 	//! Write parameters to file.
-	bool SaveToFile(const char* filename);
+    bool SaveToFile(const char* filename) const;
 
     //! Writes all parameters to an output stream.
-    friend std::ostream& operator << (std::ostream& os, CParameters& x);
+    friend std::ostream& operator << (std::ostream& os, const CParameters& x);
 
     //! Sets a string parameter.
 	void Set(const char* name, const char* val);
@@ -59,19 +59,19 @@ public:
     void Set(const char* name, double val);
 
 	//! Gets a string parameter.
-	std::string GetStringParameter(const char* name);
+    std::string GetStringParameter(const char* name) const;
 
 	//! Gets an integer parameter.
-	int GetIntParameter(const char* name);
+    int GetIntParameter(const char* name) const;
 
 	//! Gets a float parameter.
-	double GetDoubleParameter(const char* name);
+    double GetDoubleParameter(const char* name) const;
 
 private:
 
-    std::map<std::string,int> m_int_params;					//!< container for integer parameters
-    std::map<std::string,double> m_double_params;			//!< container for real parameters
-    std::map<std::string,std::string> m_string_params;		//!< container for string parameters
+    std::unordered_map<std::string,int> m_int_params;					//!< container for integer parameters
+    std::unordered_map<std::string,double> m_double_params;             //!< container for real parameters
+    std::unordered_map<std::string,std::string> m_string_params;		//!< container for string parameters
 
 };
 

@@ -27,8 +27,27 @@
 #include "cam.h"
 #include "stracker.h"
 #include "lm.h"
+#include "pcl.h"
 
 namespace R4R {
+
+class CMotionTrackerTracklet:public CSimpleTrackerTracklet {
+
+    friend class CMotionTracker;
+
+public:
+
+    //! Deleted constructor.
+    CMotionTrackerTracklet() = delete;
+
+    //! Constructor.
+    CMotionTrackerTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200):CSimpleTrackerTracklet(t0,x0,maxlength),m_pmap_point(nullptr){}
+
+private:
+
+    CInterestPoint<float,3>* m_pmap_point;    //!< a pointer to the corresponding point in the map, FIXME: exchange this with iterator to explore neighborhood in map
+
+};
 
 /*! \brief motion tracker
  *
@@ -39,38 +58,32 @@ class CMotionTracker: public CSimpleTracker {
 public:
 
     //! Constructor.
-    CMotionTracker(CParameters* params, CPinholeCam& cam);
+    CMotionTracker(const CParameters* params, CPinholeCam<float>& cam);
 
     /*! \copybrief CTracker::Update(cv::Mat&,cv::Mat&)
      *
      *
      *
      */
-    bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1);
+    void Update(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1);
 
-    /*! \copybrief CTracker::Update(std::vector<cv::Mat>&)
-     *
-     * \param[in] pyramid color image pyramid
-     *
-     * Color is attached to the scene points as a descriptor and can be exported to the .PLY file.
-     *
-     */
-    //bool UpdateDescriptors(std::vector<cv::Mat>& pyramid);
+    //! \copydoc CSimpleTracker::AddTracklets(cv::Mat&)
+    void AddTracklets(const std::vector<cv::Mat>& pyramid);
 
     //! Returns a reference to the point cloud.
-    std::list<std::pair<vec2f,vec3f> >& GetMap() { return m_map; }
+    const CPointCloud<std::list,float,3>& GetMap() { return m_map; }
 
     //! Access to the motion.
-    std::list<vecf> GetMotion() { return m_motion; }
+    const C3dTrajectory<std::list,float>& GetMotion() { return m_motion; }
 
     //! Computes the last view.
     CView<float> GetLatestView();
 
 private:
 
-    CPinholeCam m_cam;                                //!< camera
-    std::list<vecf> m_motion;                         //!< motion
-    std::list<std::pair<vec2f,vec3f> > m_map;         //!< map
+    CPinholeCam<float> m_cam;                  //!< camera
+    C3dTrajectory<std::list,float> m_motion;   //!< motion
+    CPointCloud<std::list,float,3> m_map;      //!< map
 
 };
 
@@ -79,7 +92,7 @@ class CMagicSfM:public CLeastSquaresProblem<smatf,float> {
 public:
 
 	//! Constructor.
-    CMagicSfM(CPinholeCam cam, std::pair<std::vector<vec2f>,std::vector<vec2f> >& corri2i, std::pair<std::vector<vec3f>,std::vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv);
+    CMagicSfM(CPinholeCam<float> cam, std::pair<std::vector<vec2f>,std::vector<vec2f> >& corri2i, std::pair<std::vector<vec3f>,std::vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv);
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
     void ComputeResidual(vecf& r);
@@ -92,7 +105,7 @@ public:
 
 protected:
 
-    CPinholeCam& m_cam;													//!< intrinsic camera parameters
+    CPinholeCam<float>& m_cam;											//!< intrinsic camera parameters
     std::pair<std::vector<vec2f>,std::vector<vec2f> >& m_corri2i;    	//!< image-to-image correspondences
     std::pair<std::vector<vec3f>,std::vector<vec2f> >& m_corrs2i;		//!< scene-to-image correspondences
     CRigidMotion<float,3> m_F0inv;										//!< transformation from first frame of image pair to world coordinates

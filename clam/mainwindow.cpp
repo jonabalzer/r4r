@@ -48,9 +48,9 @@ MainWindow::MainWindow(QWidget* parent) :
     m_pyramid(),
     m_timer(this),
     m_params(),
-    m_tracker(),
+    m_tracker(nullptr),
     m_cam(),
-    m_map() {
+    m_viewer(nullptr) {
 
     ui->setupUi(this);
     this->setFixedSize(this->width(),this->height());
@@ -73,8 +73,19 @@ MainWindow::MainWindow(QWidget* parent) :
 
 MainWindow::~MainWindow() {
 
-    delete m_tracker;
-    m_cap.release();
+    if(m_tracker!=nullptr) {
+        delete m_tracker;
+        m_tracker = nullptr;
+    }
+
+    if(m_cap.isOpened())
+        m_cap.release();
+
+    if(m_viewer!=nullptr) {
+        delete m_viewer;
+        m_viewer=nullptr;
+    }
+
     delete ui;
 
 }
@@ -82,13 +93,12 @@ MainWindow::~MainWindow() {
 void MainWindow::set_params(CParameters params) {
 
     m_params = params;
-    m_cam = CPinholeCam(m_params.GetIntParameter("SU"),
-                        m_params.GetIntParameter("SV"),
-                        m_params.GetDoubleParameter("FU"),
-                        m_params.GetDoubleParameter("FV"),
-                        m_params.GetDoubleParameter("CU"),
-                        m_params.GetDoubleParameter("CV"));
-
+    m_cam = CPinholeCam<float>(m_params.GetIntParameter("SU"),
+                               m_params.GetIntParameter("SV"),
+                               m_params.GetDoubleParameter("FU"),
+                               m_params.GetDoubleParameter("FV"),
+                               m_params.GetDoubleParameter("CU"),
+                               m_params.GetDoubleParameter("CV"));
 
 }
 
@@ -154,7 +164,7 @@ void MainWindow::on_stepButton_clicked()
     m_tracker->Update(pyramid,m_pyramid);
 
     // get map and color it
-    if(ui->renderCheckBox->isChecked()) {
+    /*if(ui->renderCheckBox->isChecked()) {
 
         CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
         CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
@@ -176,7 +186,7 @@ void MainWindow::on_stepButton_clicked()
         CView<float> view = tracker->GetLatestView();
         viewer->update_display(view);
 
-    }
+    }*/
 
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
@@ -287,6 +297,9 @@ void MainWindow::on_actionOpen_triggered()
     show_image(qimg);
     emit show_memoryUsage();
 
+    // CREATE VIEWER WIDGET, pass pointer to the const reference
+    // make the pointers constant in viewer!!!!
+
 }
 
 void MainWindow::on_showMemoryUsage_triggered() {
@@ -339,7 +352,7 @@ void MainWindow::on_actionSave_Map_triggered() {
                                tr("(*.ply)"));
 
 
-    CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
+    /*CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
     list<pair<vec3f,rgb> >& pts = viewer->get_map();
 
     list<pair<vec3f,rgb> >::iterator it;
@@ -368,7 +381,7 @@ void MainWindow::on_actionSave_Map_triggered() {
     for(it=pts.begin(); it!=pts.end(); it++)
         out << it->first.Get(0) << " " << it->first.Get(1) << " " << it->first.Get(2) << " " << (unsigned int)it->second.Get(0) << " " <<  (unsigned int)it->second.Get(1) << " " <<  (unsigned int)it->second.Get(2) << endl;
 
-    out.close();
+    out.close();*/
 
 }
 
@@ -388,13 +401,20 @@ void MainWindow::on_actionClose_triggered()
 {
 
     m_timer.stop();
-    ui->labelImage->clear();
-    delete m_tracker;
-    m_cap.release();
 
-    CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
-    viewer->get_map().clear();
-    viewer->repaint();
+    ui->labelImage->clear();
+
+    if(m_tracker!=nullptr) {
+        delete m_tracker;
+        m_tracker = nullptr;
+    }
+
+    if(m_cap.isOpened())
+        m_cap.release();
+
+    //CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
+    //viewer->get_map().clear();
+    //viewer->repaint();
 
     emit show_memoryUsage();
 

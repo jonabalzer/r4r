@@ -58,7 +58,8 @@ packagesExist(fftw3) {
 DEPENDPATH += $$PWD/../r4r_core
 
 # local inlude path
-INCLUDEPATH += $$PWD/../r4r_core
+INCLUDEPATH += $$PWD/../r4r_core \
+               $$PWD/../r4r_reconstruction
 
 # since we have dependencies, create a pc file
 CONFIG += create_prl no_install_prl create_pc

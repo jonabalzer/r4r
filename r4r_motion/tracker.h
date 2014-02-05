@@ -65,7 +65,7 @@ public:
     CTracker();
 
 	//! Standard constructor.
-    CTracker(CParameters* params);
+    CTracker(const CParameters* params);
 
     //! Standard destructor.
 	virtual ~CTracker();
@@ -101,7 +101,7 @@ public:
 	 * \param[in] img initial image
 	 *
 	 */
-    virtual bool Init(std::vector<cv::Mat>& pyramid) = 0;
+    virtual void Init(const std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Executes one step of differential motion estimation.
 	 *
@@ -109,23 +109,23 @@ public:
      * \param[in] img1 frame at \f$t+1\f$
 	 *
 	 */
-    virtual bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) = 0;
+    virtual void Update(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1) = 0;
 
-	//! Adds new features to the tracker.
-    virtual bool AddTracklets(std::vector<cv::Mat>& pyramid) = 0;
-
-	/*! \brief Updates all descriptors if any.
-	 *
-	 * \param[in] img0 frame at t
-	 * \param[in] img1 frame at t+1
-	 *
-	 */
-    virtual bool UpdateDescriptors(std::vector<cv::Mat>& pyramid) = 0;
+    /*! \brief Updates all descriptors if any.
+     *
+     * \param[in] img0 frame at t
+     * \param[in] img1 frame at t+1
+     *
+     */
+    virtual void UpdateDescriptors(const std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Marks tracks as invalid.
 	 *
 	 */
     virtual void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) = 0;
+
+    //! Adds new features to the tracker.
+    virtual void AddTracklets(const std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Saves all tracklets to file.
 	 *
@@ -182,18 +182,18 @@ public:
 #endif
 
     //! Triggers aggregation of all tracklets.
-    template<class Array> std::list<imfeature> Aggregate(const CDescriptorAggregator<Array,TrackletContainer>& aggregator, const string& name) const;
+    template<class Array> std::list<imfeature> Aggregate(const CDescriptorAggregator<Array,TrackletContainer>& aggregator, const std::string& name) const;
 
 protected:
 
     TrackerContainer<std::shared_ptr<CTracklet<TrackletContainer> > >  m_data;     //!< container holding the tracklets
-    CParameters* m_params;                                                         //!< container for user-defined parameters
+    const CParameters* m_params;                                                   //!< container for user-defined parameters
     size_t m_global_t;                                                             //!< global time variable
 
 };
 
-typedef CTracker<list,CRingBuffer> CSlidingWindowTracker;
-typedef CTracker<list,list> CContinuousTracker;
+typedef CTracker<std::list,CRingBuffer> CSlidingWindowTracker;
+typedef CTracker<std::list,std::list> CContinuousTracker;
 
 } // end of namespace
 

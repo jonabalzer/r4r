@@ -34,27 +34,25 @@ using namespace cv;
 
 namespace R4R {
 
-CMotionTracker::CMotionTracker(CParameters* params, CPinholeCam &cam):
+CMotionTracker::CMotionTracker(const CParameters* params, CPinholeCam<float> &cam):
         CSimpleTracker(params),
         m_cam(cam),
-        m_motion() {
+        m_motion(),
+        m_map() {
 
-    m_motion.push_back(vecf(6));
+    // set initial frame to the identity
+    m_motion.Update(0,0,0,0,0,0);
 
 }
 
 CView<float> CMotionTracker::GetLatestView() {
 
-    vecf m0 = m_motion.back();
-
-    CRigidMotion<float,3> F(m0);
-    CView<float> view(m_cam,F);
-
-    return view;
+    CRigidMotion<float,3> F = m_motion.GetLatestState();
+    return CView<float>(m_cam,F);
 
 }
 
-bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
+void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyramid1) {
 
     // do LK tracking at every time instance
     CSimpleTracker::Update(pyramid0,pyramid1);
@@ -63,12 +61,11 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
     if(m_global_t>0 && (m_global_t)%kfr==0) {
 
-        vecf m0 = m_motion.back();
-        CRigidMotion<float,3> F0inv(m0);
+        CRigidMotion<float,3> F0inv = m_motion.GetLatestState();
         F0inv.Invert();
 
-        vector<vec3f> xs;
-        vector<vec2f> p0s, p1s, p1ss;
+        vector<vec3f> xs;                                   // map points of view 0
+        vector<vec2f> p0s, p1s, p1ss;                       //
         vector<mytracklet*> trackletss2i, trackletsi2i;
 
         list<shared_ptr<mytracklet> >::iterator it;
@@ -79,18 +76,19 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
             vec2f p1 = (*it)->GetLatestLocationAtNativeScale();
 
             // cast to special tracklet type
-            shared_ptr<CSimpleTrackerTracklet> tracklet = static_pointer_cast<CSimpleTrackerTracklet>(*it);
+            shared_ptr<CMotionTrackerTracklet> tracklet = static_pointer_cast<CMotionTrackerTracklet>(*it);
 
-            if((*it)->GetStatus() && !tracklet->m_reference_feature.GetLocation().IsZero()) {
+            if((*it)->GetStatus() && tracklet->m_pmap_point!=nullptr) {
 
                 // extract scene point
-                xs.push_back(tracklet->m_reference_feature.GetLocation());
+                xs.push_back(tracklet->m_pmap_point->GetLocation());
                 p1ss.push_back(p1);
                 trackletss2i.push_back((*it).get());
 
             }
             else if((*it)->GetStatus() && (*it)->GetLifetime()>(size_t)kfr) {
 
+                // check for the ringbuffer wether this is ok!!!
                 vec2f u0 = (*it)->GetPastLocationAtNativeScale((size_t)kfr);
 
                 p0s.push_back(u0);
@@ -124,8 +122,11 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         for(size_t i=0; i<p0s.size(); i++)
             model(i) = m_params->GetDoubleParameter("INIT_DISTANCE");
 
+        // get motion
+        const list<CVector<float,6> >& mdata = m_motion.GetData();
+        CVector<float,6> m0 = mdata.back();
         for(size_t i=0; i<6; i++)
-            model(p0s.size()+i) = m0(i);
+            model(p0s.size()+i) = m0.Get(i);
 
         // iterate
         vecf r = lms.Iterate(m_params->GetIntParameter("LM_NITER_OUTER"),
@@ -144,18 +145,18 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         x = F0inv.Transform(x);
 
         // clear last map
-        m_map.clear();
+        //m_map.clear();//????? This was storing only new points which were added to the map in the mainwindow class.
 
         for(size_t i=0; i<p0s.size(); i++) {
 
             if(fabs(r.Get(i))<threshold && fabs(r.Get(p0s.size()+i))<threshold) {
 
-                // inject into map container
-                m_map.push_back(pair<vec2f,vec3f>(corri2i.first[i],x[i]));
-
                 // cast to special tracklet type and set reference point
-                CSimpleTrackerTracklet* tracklet = reinterpret_cast<CSimpleTrackerTracklet*>(trackletsi2i[i]);
-                tracklet->m_reference_feature.SetLocation(x[i]);
+                CMotionTrackerTracklet* tracklet = reinterpret_cast<CMotionTrackerTracklet*>(trackletsi2i[i]);
+
+                // inject into map container
+                CInterestPoint<float,3> feature(x[i],0,0);  // FIXME: use scale and quality tracklet, etc.
+                tracklet->m_pmap_point = m_map.Insert(feature);
 
             }
             else
@@ -166,11 +167,13 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
         // process motion
         threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_MOTION");
 
-        vecf m1(6);
-        for(size_t i=0; i<6; i++)
-            m1(i) = model(p0s.size()+i);
-
-        m_motion.push_back(m1);
+        // inject into trajectory
+        m_motion.Update(model.Get(p0s.size()),
+                        model.Get(p0s.size()+1),
+                        model.Get(p0s.size()+2),
+                        model.Get(p0s.size()+3),
+                        model.Get(p0s.size()+4),
+                        model.Get(p0s.size()+5));
 
         // reject outliers
         for(size_t i=0; i<xs.size(); i++) {
@@ -182,68 +185,110 @@ bool CMotionTracker::Update(vector<Mat>& pyramid0, vector<Mat>& pyramid1) {
 
     }
 
-    return 0;
-
 }
 
-/*bool CMotionTracker::UpdateDescriptors(std::vector<cv::Mat>& pyramid) {
+void CMotionTracker::AddTracklets(const std::vector<Mat>& pyramid) {
 
-    list<shared_ptr<CCircularTracklet> >::iterator it;
+    // initialize pyramid of integral images
+    vector<CIntImage<size_t> > imgs;
+    for(u_int s=0; s<pyramid.size(); s++)
+        imgs.push_back(CIntImage<size_t>(pyramid[s].cols,pyramid[s].rows));
 
-    for(it=m_data.begin(); it!=m_data.end(); it++) {
+    // collect and count feature we already have per scale
+    vector<size_t> n = ComputeFeatureDensity(imgs);
+    size_t active = std::accumulate(n.begin(),n.end(),0);
 
-        if((*it)->GetStatus()) {
+    // only do something if we have too little tracks
+    if(active<=size_t(m_params->GetIntParameter("MIN_NO_FEATURES"))) {
 
-            imfeature& x = (*it)->GetLatestState();
-            vec2f u0 = x.GetLocation();
-            int s = int(x.GetScale());
+        int hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_INIT");
+        vec2f hsize2 = { float(hsize), float(hsize) };
 
-            // create new feature
-            CRectangle<double> droi(u0.Get(0),
-                                    u0.Get(1),
-                                    m_params->GetIntParameter("DESCRIPTOR_HSIZE"),
-                                    m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
+        for(u_int s = 0; s<pyramid.size(); s++) {
 
-            // adjust region to scale
-            if(s)
-                droi.Scale(1.0/double(2<<(s-1)));
+            // how many to add per scale
+            int ntoadd = m_params->GetIntParameter("MAX_NO_FEATURES") - (int)n[s];
 
-            //droi.RotateTo(motion(5));
+            // if we have enough, don't do anything
+            if(ntoadd>0) {
 
-            // compute brief descriptor
-            CBRIEF* briefdesc1 = new CBRIEF(droi);
-            shared_ptr<CAbstractDescriptor> brief(briefdesc1);
-            brief->Compute(pyramid[s]);
-            //brief->Compute(pyramid[s]);
-            x.AttachDescriptor("BRIEF",brief);
+                // detect
+                vector<KeyPoint> keypoints;
+                m_detector.detect(pyramid[s],keypoints);
 
-            // compute quality
-            shared_ptr<CSimpleTrackerTracklet> tracklet = static_pointer_cast<CSimpleTrackerTracklet>(*it);
-            float quality = 0;
-            if((*it)->GetCreationTime()==m_global_t)
-                tracklet->m_reference_feature.AttachDescriptor("BRIEF",brief);
-            else {
+                // only do something if there were detections at scale s
+                if(keypoints.size()>0) {
 
-                if(tracklet->m_reference_feature.HasDescriptor("BRIEF")) {
+                    // keep the best but no more than the number to add
+                    KeyPointsFilter::retainBest(keypoints,ntoadd);
 
-                    shared_ptr<CAbstractDescriptor> desc0 = tracklet->m_reference_feature.GetDescriptor("BRIEF");
-                    shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
-                    quality = briefdesc0->Distance(*briefdesc1);
+                    // add potential
+                    for(size_t i=0; i<keypoints.size(); i++)
+                        imgs[s].AddMass(keypoints[i].pt.y,keypoints[i].pt.x,1);
+
+                    // compute the integral image
+                    imgs[s].Compute();
+
+                    for(size_t i=0; i<keypoints.size(); i++) {
+
+                        vec2f loc = { float(keypoints[i].pt.x), float(keypoints[i].pt.y) };
+
+                        // only features that are separated from all other candidates and existing features are accepted
+                        if(imgs[s].EvaluateApproximately(loc,hsize2)==1) {
+
+                            // create feature
+                            imfeature x(loc,s,0);
+
+                            // create new tracklet with feature, FIXME: get size restriction from parameters
+                            CMotionTrackerTracklet* tracklet = new CMotionTrackerTracklet(m_global_t,x);
+                            this->AddTracklet(tracklet);
+
+                            // also set the reference feature
+                            tracklet->m_reference_feature = x;
+
+                        }
+
+                    }
 
                 }
 
             }
-            x.SetQuality(quality);
 
         }
 
     }
+    else {  // only compute integral images
 
-    return 0;
+        for(u_int s = 0; s<pyramid.size(); s++)
+            imgs[s].Compute();
 
-}*/
+    }
 
-CMagicSfM::CMagicSfM(CPinholeCam cam, pair<vector<vec2f>,vector<vec2f> >& corri2i, pair<vector<vec3f>,vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv):
+    // since we already have the integral images computed, we might as well
+    //  check whether two tracks got too close to each other
+    list<shared_ptr<mytracklet> >::iterator it;
+
+    int hsize = m_params->GetIntParameter("MINIMAL_FEATURE_HDISTANCE_CLEAN");
+    vec2f hsize2 = { float(hsize), float(hsize) };
+
+    // now go through all tracklets
+    for(it=m_data.begin(); it!=m_data.end(); it++) {
+
+        const imfeature& f = (*it)->GetLatestState();
+        const vec2f& x = f.GetLocation();
+        u_int s = u_int(f.GetScale());
+
+        // if feature is still alive and we have a integral image at its scale but
+        // it violates the distance assumption, kill it
+        if((*it)->GetStatus() && s<imgs.size() && imgs[s].EvaluateApproximately<float>(x,hsize2)>1)
+            (*it)->SetStatus(false);
+
+
+
+    }
+}
+
+CMagicSfM::CMagicSfM(CPinholeCam<float> cam, pair<vector<vec2f>,vector<vec2f> >& corri2i, pair<vector<vec3f>,vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv):
     CLeastSquaresProblem<smatf,float>::CLeastSquaresProblem(2*(corri2i.first.size()+corrs2i.first.size()),corri2i.first.size()+6),
 	m_cam(cam),
 	m_corri2i(corri2i),

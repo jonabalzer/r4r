@@ -37,12 +37,12 @@
 
 using namespace std;
 
-
 namespace R4R {
 
-vector<vec2> CAbstractCam::Project(const vector<vec3>& x) const {
+template<typename T>
+vector<CVector<T,2> > CAbstractCam<T>::Project(const vector<CVector<T,3> >& x) const {
 
-    vector<vec2> result(x.size());
+    vector<CVector<T,2> > result(x.size());
 
 //#ifndef HAVE_TBB
     for(size_t i=0; i<x.size(); i++)
@@ -61,20 +61,10 @@ vector<vec2> CAbstractCam::Project(const vector<vec3>& x) const {
 
 }
 
-vector<vec2f> CAbstractCam::Project(const vector<vec3f>& x) const {
+template<typename T>
+vector<CVector<T,3> > CAbstractCam<T>::Normalize(const vector<CVector<T,2> >& u) const {
 
-    vector<vec2f> result(x.size());
-
-    for(size_t i=0; i<x.size(); i++)
-        result[i] = Project(x[i]);
-
-    return result;
-
-}
-
-vector<vec3> CAbstractCam::Normalize(const vector<vec2>& u) const {
-
-    vector<vec3> result(u.size());
+    vector<CVector<T,3> > result(u.size());
 
     for(size_t i=0; i<u.size(); i++)
         result[i] = Normalize(u[i]);
@@ -83,20 +73,11 @@ vector<vec3> CAbstractCam::Normalize(const vector<vec2>& u) const {
 
 }
 
-vector<vec3f> CAbstractCam::Normalize(const std::vector<vec2f> &u) const {
 
-    vector<vec3f> result(u.size());
+template<typename T>
+vector<CVector<T,2> > CAbstractCam<T>::Flow(const std::vector<CVector<T,3> >& x, const std::vector<CVector<T,3> >& dx) const {
 
-    for(size_t i=0; i<u.size(); i++)
-        result[i] = Normalize(u[i]);
-
-    return result;
-
-}
-
-vector<vec2> CAbstractCam::Flow(const std::vector<vec3>& x, const std::vector<vec3>& dx) const {
-
-    vector<vec2> result(x.size());
+    vector<CVector<T,2> > result(x.size());
 
     for(size_t i=0; i<x.size(); i++)
         result[i] = Flow(x[i],dx[i]);
@@ -105,18 +86,11 @@ vector<vec2> CAbstractCam::Flow(const std::vector<vec3>& x, const std::vector<ve
 
 }
 
-vector<vec2f> CAbstractCam::Flow(const std::vector<vec3f>& x, const std::vector<vec3f>& dx) const {
+template class CAbstractCam<float>;
+template class CAbstractCam<double>;
 
-    vector<vec2f> result(x.size());
-
-    for(size_t i=0; i<x.size(); i++)
-        result[i] = Flow(x[i],dx[i]);
-
-    return result;
-
-}
-
-CPinholeCam::CPinholeCam() {
+template<typename T>
+CPinholeCam<T>::CPinholeCam() {
 
     fill_n(m_size,2,0);
     fill_n(m_f,2,0);
@@ -126,7 +100,8 @@ CPinholeCam::CPinholeCam() {
 
 }
 
-CPinholeCam::CPinholeCam(double fu, double fv, double cu, double cv) {
+template<typename T>
+CPinholeCam<T>::CPinholeCam(T fu, T fv, T cu, T cv) {
 
     fill_n(m_size,2,0);
     m_f[0] = fu;
@@ -138,7 +113,8 @@ CPinholeCam::CPinholeCam(double fu, double fv, double cu, double cv) {
 
 }
 
-CPinholeCam::CPinholeCam(size_t w, size_t h, double fu, double fv, double cu, double cv) {
+template<typename T>
+CPinholeCam<T>::CPinholeCam(size_t w, size_t h, T fu, T fv, T cu, T cv) {
 
     m_size[0] = w;
     m_size[1] = h;
@@ -151,8 +127,8 @@ CPinholeCam::CPinholeCam(size_t w, size_t h, double fu, double fv, double cu, do
 
 }
 
-
-CPinholeCam::CPinholeCam(size_t w, size_t h) {
+template<typename T>
+CPinholeCam<T>::CPinholeCam(size_t w, size_t h) {
 
     m_size[0] = w;
     m_size[1] = h;
@@ -168,22 +144,23 @@ CPinholeCam::CPinholeCam(size_t w, size_t h) {
 
 }
 
-vec2 CPinholeCam::Project(const vec3& x) const {
+template<typename T>
+CVector<T,2> CPinholeCam<T>::Project(const CVector<T,3>& x) const {
 
-    vec2 xn = { x.Get(0)/x.Get(2), x.Get(1)/x.Get(2) };
+    CVector<T,2> xn = { x.Get(0)/x.Get(2), x.Get(1)/x.Get(2) };
 
     // radial distortion
-    double r = xn.Norm2();
+    T r = xn.Norm2();
 
-    vec2 dx;
+    CVector<T,2> dx;
     dx(0) = 2*m_k[2]*xn.Get(0)*xn.Get(1) + m_k[3]*(r*r + 2*xn.Get(0)*xn.Get(0));
     dx(1) = m_k[2]*(r*r + 2*xn.Get(1)*xn.Get(1)) + 2*m_k[3]*xn.Get(0)*xn.Get(1);
 
     double fac = 1 + m_k[0]*r*r + m_k[1]*r*r*r*r + m_k[4]*r*r*r*r*r*r;
-    vec2 xd = xn*fac + dx;
+    CVector<T,2> xd = xn*fac + dx;
 
     // transform to pixel coordinates
-    vec2 xp;
+    CVector<T,2> xp;
     xp(0) = m_f[0]*(xd.Get(0) + m_alpha*xd.Get(1)) + m_c[0];
     xp(1) = m_f[1]*xd.Get(1) + m_c[1];
 
@@ -191,31 +168,8 @@ vec2 CPinholeCam::Project(const vec3& x) const {
 
 }
 
-vec2f CPinholeCam::Project(const vec3f& x) const {
-
-    vec2f xn = { x.Get(0)/x.Get(2), x.Get(1)/x.Get(2) };
-
-    // radial distortion
-    double r = xn.Norm2();
-
-    vec2f dx;
-    dx(0) = 2*m_k[2]*xn.Get(0)*xn.Get(1) + m_k[3]*(r*r + 2*xn.Get(0)*xn.Get(0));
-    dx(1) = m_k[2]*(r*r + 2*xn.Get(1)*xn.Get(1)) + 2*m_k[3]*xn.Get(0)*xn.Get(1);
-
-    double fac = 1 + m_k[0]*r*r + m_k[1]*r*r*r*r + m_k[4]*r*r*r*r*r*r;
-    vec2f xd = xn*fac + dx;
-
-    // transform to pixel coordinates
-    vec2f xp;
-    xp(0) = m_f[0]*(xd.Get(0) + m_alpha*xd.Get(1)) + m_c[0];
-    xp(1) = m_f[1]*xd.Get(1) + m_c[1];
-
-    return xp;
-
-}
-
-
-void CPinholeCam::Project(const vec3& x, vec2& u, mat& J) const {
+template<typename T>
+void CPinholeCam<T>::Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J) const {
 
     u = Project(x);
 
@@ -226,52 +180,28 @@ void CPinholeCam::Project(const vec3& x, vec2& u, mat& J) const {
 
 }
 
-void CPinholeCam::Project(const vec3f& x, vec2f& u, matf& J) const {
 
-    u = Project(x);
+template<typename T>
+CVector<T,2> CPinholeCam<T>::Flow(const CVector<T,3>& x, const CVector<T,3>& dx) const {
 
-    J(0,0) = m_f[0]/x.Get(2);
-    J(0,2) = -(u.Get(0)-m_c[0])/x.Get(2);
-    J(1,1) = m_f[1]/x.Get(2);
-    J(1,2) = -(u.Get(1)-m_c[1])/x.Get(2);
+    CVector<T,2> u = Project(x);
 
-}
+    T J00 = m_f[0]/x.Get(2);
+    T J02 = -(u.Get(0)-m_c[0])/x.Get(2);
+    T J11 = m_f[1]/x.Get(2);
+    T J12 = -(u(1)-m_c[1])/x.Get(2);
 
-vec2 CPinholeCam::Flow(const vec3& x, const vec3& dx) const {
-
-    vec2 u = Project(x);
-
-    double J00 = m_f[0]/x.Get(2);
-    double J02 = -(u.Get(0)-m_c[0])/x.Get(2);
-    double J11 = m_f[1]/x.Get(2);
-    double J12 = -(u(1)-m_c[1])/x.Get(2);
-
-    vec2 du = { J00*dx.Get(0) + J02*dx.Get(2), J11*dx.Get(1) + J12*dx.Get(2) };
+    CVector<T,2> du = { J00*dx.Get(0) + J02*dx.Get(2), J11*dx.Get(1) + J12*dx.Get(2) };
 
     return du;
 
 }
 
-vec2f CPinholeCam::Flow(const vec3f& x, const vec3f& dx) const {
-
-    vec2f u = Project(x);
-
-    float J00 = m_f[0]/x.Get(2);
-    float J02 = -(u.Get(0)-m_c[0])/x.Get(2);
-    float J11 = m_f[1]/x.Get(2);
-    float J12 = -(u(1)-m_c[1])/x.Get(2);
-
-    vec2f du = { J00*dx.Get(0) + J02*dx.Get(2), J11*dx.Get(1) + J12*dx.Get(2) };
-
-    return du;
-
-}
-
-
-vec3 CPinholeCam::Normalize(const vec2& u) const {
+template<typename T>
+CVector<T,3> CPinholeCam<T>::Normalize(const CVector<T,2>& u) const {
 
     // FIXME: add undistortion
-    vec3 x;
+    CVector<T,3> x;
     x(0) = (1.0/m_f[0])*(u.Get(0)-m_c[0]);
     x(1) = (1.0/m_f[1])*(u.Get(1)-m_c[1]);
     x(2) = 1.0;
@@ -280,19 +210,8 @@ vec3 CPinholeCam::Normalize(const vec2& u) const {
 
 }
 
-vec3f CPinholeCam::Normalize(const vec2f& u) const {
-
-    // TODO: add undistortion
-    vec3f x;
-    x(0) = (1.0/m_f[0])*(u.Get(0)-m_c[0]);
-    x(1) = (1.0/m_f[1])*(u.Get(1)-m_c[1]);
-    x(2) = 1.0;
-
-    return x;
-
-}
-
-ostream& operator<< (ostream& os, const CPinholeCam& x) {
+template<typename U>
+ostream& operator<< (ostream& os, const CPinholeCam<U>& x) {
 
     os << "# dims" << endl;
     os << x.m_size[0] << " " << x.m_size[1] << endl;
@@ -309,7 +228,11 @@ ostream& operator<< (ostream& os, const CPinholeCam& x) {
 
 }
 
-istream& operator >> (istream& is, CPinholeCam& x) {
+template ostream& operator <<(ostream&, const CPinholeCam<float>& x);
+template ostream& operator <<(ostream&, const CPinholeCam<double>& x);
+
+template<typename U>
+istream& operator >> (istream& is, CPinholeCam<U>& x) {
 
     string linebuffer;
 
@@ -348,9 +271,11 @@ istream& operator >> (istream& is, CPinholeCam& x) {
 
 }
 
-bool CPinholeCam::operator==(CAbstractCam& cam) {
 
-    CPinholeCam* pcam = dynamic_cast<CPinholeCam*>(&cam);
+template<typename T>
+bool CPinholeCam<T>::operator==(CAbstractCam<T>& cam) {
+
+    CPinholeCam<T>* pcam = dynamic_cast<CPinholeCam<T>*>(&cam);
 
     bool result = (m_size[0]==pcam->m_size[0] &&
                    m_size[1]==pcam->m_size[1] &&
@@ -368,9 +293,10 @@ bool CPinholeCam::operator==(CAbstractCam& cam) {
 
 }
 
-mat CPinholeCam::GetProjectionMatrix() const {
+template<typename T>
+CDenseArray<T> CPinholeCam<T>::GetProjectionMatrix() const {
 
-    mat P(3,3);
+    CDenseArray<T> P(3,3);
 
     P(0,0) = m_f[0];
     P(1,1) = m_f[1];
@@ -382,16 +308,18 @@ mat CPinholeCam::GetProjectionMatrix() const {
 
 }
 
+template class CPinholeCam<float>;
+template class CPinholeCam<double>;
 
 template<typename T>
-CView<T>::CView(CAbstractCam& cam, u_int index):
+CView<T>::CView(CAbstractCam<T>& cam, u_int index):
     m_cam(cam),
     m_F(),
     m_Finv(),
     m_index(index) {}
 
 template<typename T>
-CView<T>::CView(CAbstractCam& cam, const CRigidMotion<T,3> &F, u_int index):
+CView<T>::CView(CAbstractCam<T>& cam, const CRigidMotion<T,3> &F, u_int index):
     m_cam(cam),
     m_F(F),
     m_Finv(F),

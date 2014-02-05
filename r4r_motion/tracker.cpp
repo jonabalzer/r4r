@@ -38,7 +38,7 @@ CTracker<TrackerContainer,TrackletContainer>::CTracker():
     m_global_t(0) {}
 
 template<template<class Tracklet, class Allocator = std::allocator<Tracklet> > class TrackerContainer,template<class T, class Allocator = std::allocator<T> > class TrackletContainer>
-CTracker<TrackerContainer,TrackletContainer>::CTracker(CParameters* params):
+CTracker<TrackerContainer,TrackletContainer>::CTracker(const CParameters *params):
     m_data(),
     m_params(params),
     m_global_t(0) {}

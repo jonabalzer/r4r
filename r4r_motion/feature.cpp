@@ -41,6 +41,27 @@ CInterestPoint<T,n>::CInterestPoint():
     m_descriptors() {}
 
 template<typename T,u_int n>
+CInterestPoint<T,n>::CInterestPoint(std::initializer_list<T> ilist):
+    m_location(),
+    m_scale(0),
+    m_quality(0),
+    m_descriptors() {
+
+    u_int i = 0;
+
+    for(auto it = ilist.begin(); it!=ilist.end(); ++i, ++it)
+        m_location(i) = *it;
+
+}
+
+template<typename T,u_int n>
+CInterestPoint<T,n>::CInterestPoint(const CVector<T,n>& location):
+    m_location(location),
+    m_scale(0),
+    m_quality(0),
+    m_descriptors() {}
+
+template<typename T,u_int n>
 CInterestPoint<T,n>::CInterestPoint(const CVector<T,n>& location, float scale, T quality):
     m_location(location),
     m_scale(scale),
@@ -166,6 +187,7 @@ ostream& operator<<(ostream& os, const CInterestPoint<U,m>& x) {
 }
 
 template ostream& operator<<(ostream& os, const CInterestPoint<float,2>& x);
+template ostream& operator<<(ostream& os, const CInterestPoint<float,3>& x);
 
 template<typename U,u_int m>
 ofstream& operator<<(ofstream& os, const CInterestPoint<U,m>& x) {
@@ -211,6 +233,7 @@ ofstream& operator<<(ofstream& os, const CInterestPoint<U,m>& x) {
 }
 
 template ofstream& operator<<(ofstream& os, const CInterestPoint<float,2>& x);
+template ofstream& operator<<(ofstream& os, const CInterestPoint<float,3>& x);
 
 template<typename U,u_int m>
 ifstream& operator>>(ifstream& is, CInterestPoint<U,m>& x) {
@@ -377,6 +400,10 @@ bool CInterestPoint<T,n>::SaveToFile(const char* filename, const Container<CInte
 template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const vector<CInterestPoint<float,2> >& features, const char* comment);
 template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const list<CInterestPoint<float,2> >& features, const char* comment);
 template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const CRingBuffer<CInterestPoint<float,2> >& features, const char* comment);
+template bool CInterestPoint<float,3>::SaveToFile(const char* filename, const vector<CInterestPoint<float,3> >& features, const char* comment);
+template bool CInterestPoint<float,3>::SaveToFile(const char* filename, const list<CInterestPoint<float,3> >& features, const char* comment);
+template bool CInterestPoint<float,3>::SaveToFile(const char* filename, const CRingBuffer<CInterestPoint<float,3> >& features, const char* comment);
+
 
 template<typename T,u_int n>
 int CInterestPoint<T,n>::LoadFromFile(const char* filename, std::vector<CInterestPoint<T,n> >& features, string& comment) {

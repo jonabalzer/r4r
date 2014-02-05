@@ -36,6 +36,7 @@ namespace R4R {
 class CSimpleTracker;
 class CMotionTracker;
 
+
 // only for testing to switch between different implementations
 typedef CCircularTracklet mytracklet;
 
@@ -57,7 +58,7 @@ public:
 
 private:
 
-    CInterestPoint<float,3> m_reference_feature;        //! reference feature, may be a map point
+    imfeature m_reference_feature;        //! reference feature
 
 };
 
@@ -92,7 +93,7 @@ class CSimpleTracker: public CSlidingWindowTracker {
 public:
 
 	//! Constructor.
-    CSimpleTracker(CParameters* params);
+    CSimpleTracker(const CParameters* params);
 
 	/*! \copydoc CTracker::Init(cv::Mat& img)
 	 *
@@ -101,19 +102,19 @@ public:
 	 * to the tracker.
 	 *
 	 */
-	bool Init(std::vector<cv::Mat>& pyramid);
+    void Init(const std::vector<cv::Mat>& pyramid);
 
 	//! \copydoc CTracker::Update(std::vector<cv::Mat>&,std::vector<cv::Mat>&)
-	bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1);
+    void Update(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1);
 
 	//! \copydoc CTracker::Update(std::vector<cv::Mat>&)
-	bool UpdateDescriptors(std::vector<cv::Mat>& pyramid);
+    void UpdateDescriptors(const std::vector<cv::Mat>& pyramid);
 
 	//! \copydoc CTracker::Clean(cv::Mat&,cv::Mat&)
-    void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1);
+    void Clean(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1);
 
 	//! \copydoc CTracker::AddTracklets(cv::Mat&)
-	bool AddTracklets(std::vector<cv::Mat>& pyramid);
+    void AddTracklets(const std::vector<cv::Mat>& pyramid);
 
 protected:
 

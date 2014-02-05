@@ -35,7 +35,7 @@ class CDescriptorAggregator {
 public:
 
     //! Triggers aggregation.
-    virtual void Aggregate(const CTracklet<Container>& tracklet, const string& name, list<imfeature>& result) const = 0;
+    virtual void Aggregate(const CTracklet<Container>& tracklet, const std::string& name, std::list<imfeature>& result) const = 0;
 
 };
 
@@ -48,7 +48,7 @@ public:
     CInitFrameAggregator() {}
 
     //! \copydoc CDescriptorAggregator<Array,Container>::Aggregate(const CTracklet<Container>&,const string&,list<imfeature>&) const
-    void Aggregate(const CTracklet<Container>& tracklet, const string& name, list<imfeature>& result) const;
+    void Aggregate(const CTracklet<Container>& tracklet, const std::string& name, std::list<imfeature>& result) const;
 
 };
 
@@ -61,7 +61,7 @@ public:
     CMeanAggregator() {}
 
     //! \copydoc CDescriptorAggregator<Array,Container>::Aggregate(const CTracklet<Container>&,const string&,list<imfeature>&) const
-    void Aggregate(const CTracklet<Container>& tracklet, const string& name, list<imfeature>& result) const;
+    void Aggregate(const CTracklet<Container>& tracklet, const std::string& name, std::list<imfeature>& result) const;
 
 };
 
@@ -74,7 +74,7 @@ public:
     CSplineInterpolationAggregator(size_t n, u_int p):m_n(n),m_p(p) {}
 
     //! \copydoc CDescriptorAggregator<Array,Container>::Aggregate(const CTracklet<Container>&,const string&,list<imfeature>&) const
-    void Aggregate(const CTracklet<Container>& tracklet, const string& name, list<imfeature>& result) const;
+    void Aggregate(const CTracklet<Container>& tracklet, const std::string& name, std::list<imfeature>& result) const;
 
 private:
 

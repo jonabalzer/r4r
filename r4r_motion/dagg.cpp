@@ -27,6 +27,8 @@
 #include "factor.h"
 #include "kernels.h"
 
+using namespace std;
+
 namespace R4R {
 
 template<class Array,template<class T, class Allocator = std::allocator<T> > class Container>

@@ -78,7 +78,7 @@ public:
     vec3f Barycenter(FaceHandle fh);
 
     //! Returns the barycenter of the entire mesh.
-    vec3f Barycenter();
+    vec3f Barycenter() const;
 
 	//! Exterior normal at a boundary vertex.
     CTriangleMesh::Normal ExteriorNormal(VertexHandle vh);
@@ -115,19 +115,19 @@ public:
     void SimpleSmooth(u_int n, bool boundary);
 
     //! Casts point into R4R data structure.
-    vec3f Point(VertexHandle vh);
+    vec3f Point(VertexHandle vh) const;
 
     //! Casts normal into R4R data structure.
-    vec3f Normal(VertexHandle vh);
+    vec3f Normal(VertexHandle vh) const;
 
     //! Casts normal into R4R data structure.
-    vec3f Normal(FaceHandle vh);
+    vec3f Normal(FaceHandle vh) const;
 
     //! Computes the bounding box of the mesh.
-    void BoundingBox(vec3f& lower, vec3f& upper);
+    void BoundingBox(vec3f& lower, vec3f& upper) const;
 
     //! Computes bounding box of the mesh.
-    CBoundingBox<float> BoundingBox();
+    CBoundingBox<float> BoundingBox() const;
 
     //! Average edge length.
     float MeanEdgeLength();
