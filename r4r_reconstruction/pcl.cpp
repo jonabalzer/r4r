@@ -47,9 +47,15 @@ typename Container<CInterestPoint<T,n> >::iterator CPointCloud<Container,T,n>::F
 template<template<class U, class Allocator = std::allocator<U> > class Container,typename T,u_int n>
 CBoundingBox<T> CPointCloud<Container,T,n>::BoundingBox() const {
 
+
+
     typename Container<CInterestPoint<T,n> >::const_iterator it;
 
     CVector<T,n> lower, upper;
+
+    if(this->Size()==0)
+        return CBoundingBox<T>(lower,upper);
+
     for(u_int i=0; i<n; i++) {
 
         lower(i) = std::numeric_limits<float>::max();

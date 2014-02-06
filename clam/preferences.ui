@@ -311,7 +311,7 @@
        <item>
         <widget class="QLineEdit" name="minFeatEdit">
          <property name="text">
-          <string>200</string>
+          <string>50</string>
          </property>
         </widget>
        </item>
@@ -551,7 +551,7 @@
        <item>
         <widget class="QSpinBox" name="kfrSpinBox">
          <property name="value">
-          <number>2</number>
+          <number>10</number>
          </property>
         </widget>
        </item>
@@ -775,7 +775,7 @@
        <item>
         <widget class="QLineEdit" name="outlierDepthEdit">
          <property name="text">
-          <string>1</string>
+          <string>3</string>
          </property>
         </widget>
        </item>

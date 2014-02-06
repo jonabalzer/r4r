@@ -53,6 +53,14 @@ INSTALLS += target
 
 RESOURCES += clamicon.qrc
 
+# find OpenMesh library
+OM = $$system(find /usr -name libOpenMeshCore* 2>/dev/null)
+isEmpty(OM) {
+    error("Could not resolve dependency on OpenMesh.")
+}
+OM = $$first(OM)
+OMLIBPATH = $$dirname(OM)
+
 unix:!symbian|win32: {
 
     LIBS += -L$$OUT_PWD/../r4r_core/ \
@@ -69,7 +77,11 @@ unix:!symbian|win32: {
             -lopencv_features2d\
             -lopencv_calib3d \
             -llapack \
-            -lgomp
+            -lgomp \
+            -L$$OMLIBPATH \
+            -lOpenMeshCore \
+            -lOpenMeshTools
+
 
    INCLUDEPATH += /usr/include/r4r/
 

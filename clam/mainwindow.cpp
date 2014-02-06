@@ -63,12 +63,6 @@ MainWindow::MainWindow(QWidget* parent) :
     // set parameters
     m_preferences->on_applyButton_clicked();
 
-    // delete the one we already have and replace it
-    /*CView<float> view(m_cam);
-    ui->openGlWidget = new CViewer(view,this);
-    ui->openGlWidget->setObjectName(QString::fromUtf8("openGlWidget"));
-    ui->openGlWidget->setGeometry(QRect(640, 45, 640, 480));*/
-
 }
 
 MainWindow::~MainWindow() {
@@ -210,9 +204,15 @@ void MainWindow::on_stepButton_clicked()
     m_tracker->Draw(qimg,5);
     show_image(qimg);
 
+    // update open gl window
+    CView<float> view(m_cam,m_tracker->GetMotion().GetLatestState());
+    m_viewer->updateView(view);
+    m_viewer->update();
+
     // display frame no and mem usage
     ui->frameLcdNumber->display((int)m_tracker->GetTime());
     emit show_memoryUsage();
+
 
 }
 
@@ -298,16 +298,21 @@ void MainWindow::on_actionOpen_triggered()
     emit show_memoryUsage();
 
     // only if there is none, create viewer
+    CView<float> view0(m_cam,m_tracker->GetMotion().GetInitialState());
     if(m_viewer==nullptr) {
 
-        CView<float> view0(m_cam,m_tracker->GetMotion().GetInitialState());
-        m_viewer = new CPointCloudViewer(view0,&m_tracker->GetMap(),this);
+        m_viewer = new CPointCloudViewer(view0,&m_tracker->GetMap());
         m_viewer->setWindowTitle("CLAM");
-        m_viewer->show();
+
+
+    } else {
+
+        m_viewer->setPointCloud(&m_tracker->GetMap());
+        m_viewer->updateView(view0);
 
     }
-    // CREATE VIEWER WIDGET, pass pointer to the const reference
-    // make the pointers constant in viewer!!!!
+
+    m_viewer->show();
 
 }
 
@@ -361,10 +366,9 @@ void MainWindow::on_actionSave_Map_triggered() {
                                tr("(*.ply)"));
 
 
-    /*CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
-    list<pair<vec3f,rgb> >& pts = viewer->get_map();
 
-    list<pair<vec3f,rgb> >::iterator it;
+    const list<CInterestPoint<float,3> >& data = m_tracker->GetMap().GetData();
+    list<CInterestPoint<float,3> >::const_iterator it;
 
     ofstream out(filename.toStdString().c_str());
 
@@ -378,19 +382,19 @@ void MainWindow::on_actionSave_Map_triggered() {
     out << "ply" << endl;
     out <<  "format ascii 1.0" << endl;
     out <<  "comment" << endl;
-    out << "element vertex " << pts.size() << endl;
+    out << "element vertex " << data.size() << endl;
     out << "property float32 x" << endl;
     out << "property float32 y" << endl;
     out << "property float32 z" << endl;
-    out << "property uchar red" << endl;
-    out << "property uchar green" << endl;
-    out << "property uchar blue" << endl;
+    //out << "property uchar red" << endl;
+    //out << "property uchar green" << endl;
+    //out << "property uchar blue" << endl;
     out << "end_header" << endl;
 
-    for(it=pts.begin(); it!=pts.end(); it++)
-        out << it->first.Get(0) << " " << it->first.Get(1) << " " << it->first.Get(2) << " " << (unsigned int)it->second.Get(0) << " " <<  (unsigned int)it->second.Get(1) << " " <<  (unsigned int)it->second.Get(2) << endl;
+    for(it=data.begin(); it!=data.end(); it++)
+        out << it->GetLocation().Get(0) << " " << it->GetLocation().Get(1) << " " << it->GetLocation().Get(2) << endl; // " " << (unsigned int)it->second.Get(0) << " " <<  (unsigned int)it->second.Get(1) << " " <<  (unsigned int)it->second.Get(2) << endl;
 
-    out.close();*/
+    out.close();
 
 }
 
@@ -421,9 +425,9 @@ void MainWindow::on_actionClose_triggered()
     if(m_cap.isOpened())
         m_cap.release();
 
-    //CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
-    //viewer->get_map().clear();
-    //viewer->repaint();
+    // disconnect the point cloud (better with slots?)
+    m_viewer->setPointCloud(nullptr);
+    m_viewer->hide();
 
     emit show_memoryUsage();
 

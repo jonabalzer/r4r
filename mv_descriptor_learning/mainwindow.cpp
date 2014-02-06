@@ -104,7 +104,7 @@ void MainWindow::on_actionOpen_triggered()
     QString filename = QFileDialog::getOpenFileName(this,
                                                     "Open video file...",
                                                     ".",
-                                                    "(*.mov);;(*.avi);;(*.mpv);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
+                                                    "(*.mov);;(*.avi);;(*.mp4);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
 
 
     // check if it is an image or video
@@ -167,10 +167,6 @@ void MainWindow::on_actionOpen_triggered()
     // display
     show_image(qimg);
     emit show_memoryUsage();
-
-    //m_viewer = new CTriMeshViewer<float>(m_views.back());
-    //m_mvs_viewer->setWindowTitle("Photometric Optimization");
-
 
 }
 

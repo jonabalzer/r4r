@@ -81,6 +81,9 @@ public:
     //! Computes the boundig box.
     CBoundingBox<T> BoundingBox() const;
 
+    //! Number of points in the cloud.
+    size_t Size() const { return m_data.size(); }
+
 private:
 
     Container<CInterestPoint<T,n> > m_data;         //!< container holding the data

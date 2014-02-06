@@ -37,7 +37,7 @@ CViewer::CViewer(const R4R::CView<float>& view, QWidget* parent):
     QGLWidget(parent),
     m_view(view),
     m_znear(1),
-    m_zfar(10.0),
+    m_zfar(20.0),
     m_last_point(),
     m_center(),
     m_show_color(true) {
@@ -182,6 +182,17 @@ void CViewer::paintGL(){
 
     glVertex3f(0.0f,1.0f,2.0f);
 
+    glEnd();
+
+    // draw some points
+    glPointSize(5.0f);
+    glBegin(GL_POINTS);
+    glColor3f(1.0f,1.0f,1.0f);
+    glVertex3f(0.0f,2.0f,2.0f);
+    glColor3f(1.0f,1.0f,1.0f);
+    glVertex3f(2.0f,2.0f,2.0f);
+    glColor3f(1.0f,1.0f,1.0f);
+    glVertex3f(2.0f,0.0f,2.0f);
     glEnd();
 
 }
@@ -352,6 +363,9 @@ void CTriMeshViewer::setMesh(const CTriangleMesh *mesh) {
 
 void CTriMeshViewer::updateBoundingBox() {
 
+    if(m_mesh==nullptr)
+        return;
+
     // recompute bounding box
     m_bbox = m_mesh->BoundingBox();
 
@@ -365,6 +379,9 @@ CDenseArray<int> CTriMeshViewer::getFaceMap(const CView<float>& view) {
     // allocate result
     QSize ws = this->size();
     CDenseArray<int> fm(ws.height(),ws.width());
+
+    if(m_mesh==nullptr)
+        return fm;
 
     // turn lighting off and set clear color to black
     glDisable(GL_LIGHTING);
@@ -469,6 +486,9 @@ void CTriMeshViewer::updateView(const R4R::CView<float>& view) {
 
 void CTriMeshViewer::updateClipDepth(const CView<float>& view, float tolerance) {
 
+    if(m_mesh==nullptr)
+        return;
+
     vector<CVector<float,3> > corners = m_bbox.Corners();
 
     float minz = std::numeric_limits<float>::max();
@@ -498,7 +518,13 @@ void CTriMeshViewer::updateClipDepth(const CView<float>& view, float tolerance) 
     ftol = 1.0/ntol;
 
     m_znear = ntol*minz;
-    m_zfar = ftol*maxz;
+
+    if(m_znear<=0)
+        m_znear = 1e-3;
+
+    float newfar = ftol*maxz;
+    if(newfar>m_znear)
+        m_zfar = newfar;
 
     // send new projection matrix to graphics card
     loadProjectionMatrix();
@@ -580,6 +606,9 @@ void CPointCloudViewer::setPointCloud(const C3dPointCloud *pcl) {
 
 void CPointCloudViewer::updateBoundingBox() {
 
+    if(m_pcl==nullptr)
+        return;
+
     // recompute bounding box
     m_bbox = m_pcl->BoundingBox();
 
@@ -597,7 +626,7 @@ void CPointCloudViewer::updateView(const R4R::CView<float>& view) {
     loadView(view);
 
     // update clip depths
-    updateClipDepth(view);
+    //updateClipDepth(view);
 
     // render
     updateGL();
@@ -605,6 +634,9 @@ void CPointCloudViewer::updateView(const R4R::CView<float>& view) {
 }
 
 void CPointCloudViewer::updateClipDepth(const CView<float>& view, double tolerance) {
+
+    if(m_pcl==nullptr)
+        return;
 
     vector<CVector<float,3> > corners = m_bbox.Corners();
 
@@ -635,7 +667,16 @@ void CPointCloudViewer::updateClipDepth(const CView<float>& view, double toleran
     ftol = 1.0/ntol;
 
     m_znear = ntol*minz;
-    m_zfar = ftol*maxz;
+
+    if(m_znear<=0)
+        m_znear = 1e-3;
+
+    float newfar = ftol*maxz;
+    if(newfar>m_znear)
+        m_zfar = newfar;
+
+    //if(m_zfar<m_znear)
+    //    m_zfar = m_znear;
 
     // send new projection matrix to graphics card
     loadProjectionMatrix();
@@ -664,13 +705,14 @@ void CPointCloudViewer::paintGL() {
     const list<CInterestPoint<float,3> >& data = m_pcl->GetData();
     list<CInterestPoint<float,3> >::const_iterator it;
 
+    glPointSize(5.0f);
     glBegin(GL_POINTS);
 
     for(it=data.begin(); it!=data.end(); ++it) {
 
         vec3f location = it->GetLocation();
 
-        glColor3ub(255,255,255);
+        glColor3f(1.0f,1.0f,1.0f);
         glVertex3f(location.Get(0),location.Get(1),location.Get(2));
 
     }
