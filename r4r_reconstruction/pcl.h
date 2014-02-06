@@ -64,7 +64,7 @@ public:
      * \returns pointer to the newly created element in the map
      *
      */
-    const CInterestPoint<T,n>* Insert(const CInterestPoint<T,n>& x) { m_data.push_back(x); return &m_data.back(); }
+    typename Container<CInterestPoint<T,n> >::const_iterator Insert(const CInterestPoint<T,n>& x) { m_data.push_back(x); return --m_data.end(); }
 
     //! Read-only access to the data.
     const Container<CInterestPoint<T,n> >& GetData() const { return m_data; }

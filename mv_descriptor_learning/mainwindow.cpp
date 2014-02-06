@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_pyramid(),
     m_timer(this),
     m_params(),
-    m_tracker()
+    m_tracker(nullptr)
 {
 
     // set gui
@@ -167,6 +167,10 @@ void MainWindow::on_actionOpen_triggered()
     // display
     show_image(qimg);
     emit show_memoryUsage();
+
+    //m_viewer = new CTriMeshViewer<float>(m_views.back());
+    //m_mvs_viewer->setWindowTitle("Photometric Optimization");
+
 
 }
 

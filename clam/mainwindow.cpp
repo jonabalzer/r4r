@@ -297,6 +297,15 @@ void MainWindow::on_actionOpen_triggered()
     show_image(qimg);
     emit show_memoryUsage();
 
+    // only if there is none, create viewer
+    if(m_viewer==nullptr) {
+
+        CView<float> view0(m_cam,m_tracker->GetMotion().GetInitialState());
+        m_viewer = new CPointCloudViewer(view0,&m_tracker->GetMap(),this);
+        m_viewer->setWindowTitle("CLAM");
+        m_viewer->show();
+
+    }
     // CREATE VIEWER WIDGET, pass pointer to the const reference
     // make the pointers constant in viewer!!!!
 
@@ -314,7 +323,7 @@ void MainWindow::on_showMemoryUsage_triggered() {
 
 void MainWindow::on_actionSave_Motion_triggered() {
 
-    QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
+    /*QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
                                tr("(*.txt)"));
 
@@ -341,7 +350,7 @@ void MainWindow::on_actionSave_Motion_triggered() {
 
     }
 
-    out.close();
+    out.close();*/
 
 }
 

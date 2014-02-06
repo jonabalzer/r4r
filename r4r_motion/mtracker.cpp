@@ -78,7 +78,7 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
             // cast to special tracklet type
             shared_ptr<CMotionTrackerTracklet> tracklet = static_pointer_cast<CMotionTrackerTracklet>(*it);
 
-            if((*it)->GetStatus() && tracklet->m_pmap_point!=nullptr) {
+            if((*it)->GetStatus()&& tracklet->m_pmap_point!=m_map.GetData().end()) {
 
                 // extract scene point
                 xs.push_back(tracklet->m_pmap_point->GetLocation());
@@ -144,8 +144,6 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
             x[i] = x[i]*model.Get(i);
         x = F0inv.Transform(x);
 
-        // clear last map
-        //m_map.clear();//????? This was storing only new points which were added to the map in the mainwindow class.
 
         for(size_t i=0; i<p0s.size(); i++) {
 
@@ -239,8 +237,9 @@ void CMotionTracker::AddTracklets(const std::vector<Mat>& pyramid) {
                             // create feature
                             imfeature x(loc,s,0);
 
-                            // create new tracklet with feature, FIXME: get size restriction from parameters
-                            CMotionTrackerTracklet* tracklet = new CMotionTrackerTracklet(m_global_t,x);
+                            // create new tracklet with feature, set the iterator to the end of the map
+                            // FIXME: get size restriction from parameters
+                            CMotionTrackerTracklet* tracklet = new CMotionTrackerTracklet(m_global_t,x,m_map.GetData().end());
                             this->AddTracklet(tracklet);
 
                             // also set the reference feature

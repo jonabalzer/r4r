@@ -122,7 +122,7 @@ public:
 	/*! \brief Marks tracks as invalid.
 	 *
 	 */
-    virtual void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) = 0;
+    virtual void Clean(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1) = 0;
 
     //! Adds new features to the tracker.
     virtual void AddTracklets(const std::vector<cv::Mat>& pyramid) = 0;

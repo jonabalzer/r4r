@@ -87,7 +87,7 @@ private:
     vector<cv::Mat> m_pyramid;
     QTimer m_timer;
     CParameters m_params;
-    CSimpleTracker* m_tracker;
+    CMotionTracker* m_tracker;
     CPinholeCam<float> m_cam;
     R4R::CPointCloudViewer* m_viewer;
 

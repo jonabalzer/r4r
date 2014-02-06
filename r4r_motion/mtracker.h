@@ -41,11 +41,11 @@ public:
     CMotionTrackerTracklet() = delete;
 
     //! Constructor.
-    CMotionTrackerTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200):CSimpleTrackerTracklet(t0,x0,maxlength),m_pmap_point(nullptr){}
+    CMotionTrackerTracklet(size_t t0, const imfeature& x0, std::list<CInterestPoint<float,3> >::const_iterator it, size_t maxlength = 200):CSimpleTrackerTracklet(t0,x0,maxlength),m_pmap_point(it){}
 
 private:
 
-    CInterestPoint<float,3>* m_pmap_point;    //!< a pointer to the corresponding point in the map, FIXME: exchange this with iterator to explore neighborhood in map
+    std::list<CInterestPoint<float,3> >::const_iterator m_pmap_point;    //!< iterator directed to point in the map
 
 };
 

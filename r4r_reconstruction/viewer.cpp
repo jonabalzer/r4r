@@ -331,8 +331,8 @@ CDenseArray<float> CViewer::getDepthMap(const CView<float>& view) {
 
 }
 
-CTriMeshViewer::CTriMeshViewer(const CView<float>& view, const CTriangleMesh* mesh):
-    CViewer(view),
+CTriMeshViewer::CTriMeshViewer(const CView<float>& view, const CTriangleMesh* mesh, QWidget* parent):
+    CViewer(view,parent),
     m_mesh(mesh),
     m_bbox() {
 
@@ -559,8 +559,8 @@ void CTriMeshViewer::paintGL() {
 
 }
 
-CPointCloudViewer::CPointCloudViewer(const CView<float>& view, const C3dPointCloud *pcl):
-    CViewer(view),
+CPointCloudViewer::CPointCloudViewer(const CView<float>& view, const C3dPointCloud *pcl, QWidget* parent):
+    CViewer(view,parent),
     m_pcl(pcl),
     m_bbox() {
 

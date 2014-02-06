@@ -105,7 +105,7 @@ class CTriMeshViewer:public CViewer {
 public:
 
     //! Constructor.
-    explicit CTriMeshViewer(const R4R::CView<float>& view, const CTriangleMesh* mesh = nullptr);
+    explicit CTriMeshViewer(const R4R::CView<float>& view, const CTriangleMesh* mesh = nullptr, QWidget* parent = nullptr);
 
     //! Updates mesh and recompute its bounding box.
     void setMesh(const CTriangleMesh* mesh);
@@ -156,7 +156,7 @@ class CPointCloudViewer:public CViewer {
 public:
 
     //! Constructor.
-    explicit CPointCloudViewer(const R4R::CView<float>& view, const C3dPointCloud* pcl=nullptr);
+    explicit CPointCloudViewer(const R4R::CView<float>& view, const C3dPointCloud* pcl=nullptr, QWidget* parent = nullptr);
 
     //! Updates point cloud and recompute its bounding box.
     void setPointCloud(const C3dPointCloud* pcl);
