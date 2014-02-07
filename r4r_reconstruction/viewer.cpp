@@ -36,10 +36,11 @@ namespace R4R {
 CViewer::CViewer(const R4R::CView<float>& view, QWidget* parent):
     QGLWidget(parent),
     m_view(view),
-    m_znear(1),
-    m_zfar(20.0),
+    m_znear(0.1),
+    m_zfar(100.0),
     m_last_point(),
     m_center(),
+    m_bbox(),
     m_show_color(true) {
 
     // set up window size according to resolution of camera
@@ -284,6 +285,19 @@ void CViewer::keyPressEvent(QKeyEvent* event) {
 
     }
 
+    if(event->key() == Qt::Key_B) {
+
+        updateBoundingBox();
+        cout << m_bbox.Lower() << endl;
+        cout << m_bbox.Upper() << endl;
+
+        m_center = m_bbox.Barycenter();
+
+        cout << m_center << endl;
+        updateGL();
+
+    }
+
     // turn color rendering on/off
     if(event->key() == Qt::Key_C) {
 
@@ -344,8 +358,7 @@ CDenseArray<float> CViewer::getDepthMap(const CView<float>& view) {
 
 CTriMeshViewer::CTriMeshViewer(const CView<float>& view, const CTriangleMesh* mesh, QWidget* parent):
     CViewer(view,parent),
-    m_mesh(mesh),
-    m_bbox() {
+    m_mesh(mesh) {
 
     if(m_mesh!=nullptr)
         updateBoundingBox();
@@ -587,20 +600,13 @@ void CTriMeshViewer::paintGL() {
 
 CPointCloudViewer::CPointCloudViewer(const CView<float>& view, const C3dPointCloud *pcl, QWidget* parent):
     CViewer(view,parent),
-    m_pcl(pcl),
-    m_bbox() {
-
-    if(m_pcl!=nullptr)
-        updateBoundingBox();
+    m_pcl(pcl) {
 
 }
 
 void CPointCloudViewer::setPointCloud(const C3dPointCloud *pcl) {
 
     m_pcl = pcl;
-
-    // update bounding box
-    updateBoundingBox();
 
 }
 
@@ -611,25 +617,6 @@ void CPointCloudViewer::updateBoundingBox() {
 
     // recompute bounding box
     m_bbox = m_pcl->BoundingBox();
-
-    // update clip depths
-    updateClipDepth(m_view,NEAR_PLANE_TOL);
-
-}
-
-void CPointCloudViewer::updateView(const R4R::CView<float>& view) {
-
-    // set the member variable
-    m_view = view;
-
-    // send the view to the graphics card
-    loadView(view);
-
-    // update clip depths
-    //updateClipDepth(view);
-
-    // render
-    updateGL();
 
 }
 
@@ -675,22 +662,8 @@ void CPointCloudViewer::updateClipDepth(const CView<float>& view, double toleran
     if(newfar>m_znear)
         m_zfar = newfar;
 
-    //if(m_zfar<m_znear)
-    //    m_zfar = m_znear;
-
     // send new projection matrix to graphics card
     loadProjectionMatrix();
-
-}
-
-void CPointCloudViewer::mouseReleaseEvent(QMouseEvent *event) {
-
-    // update clip depths only after change is done
-    this->updateClipDepth(m_view,NEAR_PLANE_TOL);
-
-    updateGL();
-
-    event->accept();
 
 }
 

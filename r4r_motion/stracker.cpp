@@ -199,7 +199,7 @@ void CSimpleTracker::AddTracklets(const vector<Mat>& pyramid) {
                             imfeature x(loc,s,0);
 
                             // create new tracklet with feature, FIXME: get size restriction from parameters
-                            CSimpleTrackerTracklet* tracklet = new CSimpleTrackerTracklet(m_global_t,x);
+                            CSimpleTrackerTracklet* tracklet = new CSimpleTrackerTracklet(m_global_t,x,m_params->GetIntParameter("BUFFER_LENGTH"));
                             this->AddTracklet(tracklet);
 
                             // also set the reference feature

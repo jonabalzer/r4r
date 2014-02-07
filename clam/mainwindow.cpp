@@ -68,16 +68,20 @@ MainWindow::MainWindow(QWidget* parent) :
 MainWindow::~MainWindow() {
 
     if(m_tracker!=nullptr) {
+
         delete m_tracker;
         m_tracker = nullptr;
+
     }
 
     if(m_cap.isOpened())
         m_cap.release();
 
     if(m_viewer!=nullptr) {
+
         delete m_viewer;
-        m_viewer=nullptr;
+        m_viewer = nullptr;
+
     }
 
     delete ui;
@@ -157,31 +161,6 @@ void MainWindow::on_stepButton_clicked()
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
 
-    // get map and color it
-    /*if(ui->renderCheckBox->isChecked()) {
-
-        CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
-        CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
-        list<pair<vec2f,vec3f> >& newpts = tracker->GetMap();
-        list<pair<vec3f,rgb> >& allpts = viewer->get_map();
-
-        // color them and send them to the viewer
-        list<pair<vec2f,vec3f> >::iterator it;
-        for(it=newpts.begin(); it!=newpts.end(); it++) {
-
-            CVector<size_t,2> p = CVector<size_t,2>(it->first);
-
-            rgb red = { img.at<Vec3b>(p.Get(1),p.Get(0))[2], img.at<Vec3b>(p.Get(1),p.Get(0))[1], img.at<Vec3b>(p.Get(1),p.Get(0))[0] };
-            allpts.push_back(pair<vec3f,rgb>(it->second,red));
-
-         }
-
-        // update view
-        CView<float> view = tracker->GetLatestView();
-        viewer->update_display(view);
-
-    }*/
-
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
 
@@ -190,8 +169,6 @@ void MainWindow::on_stepButton_clicked()
     //trackers[i]->DeleteInvalidTracks();
 
     // add new tracks
-    //size_t noactive = m_tracker->GetNumberOfActiveTracks();
-    //if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
     m_tracker->AddTracklets(m_pyramid);
 
     // compute and display framerate
@@ -204,7 +181,7 @@ void MainWindow::on_stepButton_clicked()
     m_tracker->Draw(qimg,5);
     show_image(qimg);
 
-    // update open gl window
+    // draw with new view and points
     CView<float> view(m_cam,m_tracker->GetMotion().GetLatestState());
     m_viewer->updateView(view);
     m_viewer->update();
@@ -328,34 +305,11 @@ void MainWindow::on_showMemoryUsage_triggered() {
 
 void MainWindow::on_actionSave_Motion_triggered() {
 
-    /*QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
+    QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
                                tr("(*.txt)"));
 
-    CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
-
-    list<vecf> motion = tracker->GetMotion();
-
-    ofstream out(filename.toStdString().c_str());
-
-    if(!out) {
-
-        QMessageBox::critical(this,"Error","Could not save file.");
-        return;
-
-     }
-
-    list<vecf>::iterator it;
-
-    for(it=motion.begin(); it!=motion.end(); it++) {
-
-        vecf m = (*it);
-        m.Transpose();
-        out << m << endl;
-
-    }
-
-    out.close();*/
+    m_tracker->GetMotion().WriteToFile(filename.toStdString().c_str());
 
 }
 

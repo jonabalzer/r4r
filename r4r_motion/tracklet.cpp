@@ -76,6 +76,25 @@ const vec2f& CTracklet<Container>::GetPastLocation(size_t steps) const {
 
 }
 
+template<>
+const vec2f& CTracklet<CRingBuffer>::GetPastLocation(size_t steps) const {
+
+    // specialize this because we have random-access for ringbuffer and vector
+    typename CRingBuffer<imfeature>::const_reverse_iterator rit = m_data.rbegin();
+    rit += steps;
+    return rit->GetLocation();
+
+}
+
+template<>
+const vec2f& CTracklet<vector>::GetPastLocation(size_t steps) const {
+
+    typename vector<imfeature>::const_reverse_iterator rit = m_data.rbegin();
+    rit += steps;
+    return rit->GetLocation();
+
+}
+
 template<template<class T, class Allocator = std::allocator<T> > class Container>
 vec2f CTracklet<Container>::GetPastLocationAtNativeScale(size_t steps) const {
 
@@ -87,6 +106,25 @@ vec2f CTracklet<Container>::GetPastLocationAtNativeScale(size_t steps) const {
     return rit->GetLocationAtNativeScale();
 
 }
+
+template<>
+vec2f CTracklet<CRingBuffer>::GetPastLocationAtNativeScale(size_t steps) const {
+
+    typename CRingBuffer<imfeature>::const_reverse_iterator rit = m_data.rbegin();
+    rit += steps;
+    return rit->GetLocationAtNativeScale();
+
+}
+
+template<>
+vec2f CTracklet<vector>::GetPastLocationAtNativeScale(size_t steps) const {
+
+    typename vector<imfeature>::const_reverse_iterator rit = m_data.rbegin();
+    rit += steps;
+    return rit->GetLocationAtNativeScale();
+
+}
+
 
 template<template<class T, class Allocator = std::allocator<T> > class C>
 ostream& operator<<(ostream& os, const CTracklet<C>& x) {

@@ -84,6 +84,9 @@ public:
     //! Number of points in the cloud.
     size_t Size() const { return m_data.size(); }
 
+    //! Barycenter.
+    CVector<T,n> Barycenter() const;
+
 private:
 
     Container<CInterestPoint<T,n> > m_data;         //!< container holding the data

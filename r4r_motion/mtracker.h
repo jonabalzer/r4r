@@ -87,7 +87,7 @@ private:
 
 };
 
-class CMagicSfM:public CLeastSquaresProblem<smatf,float> {
+class CMagicSfM:public CLeastSquaresProblem<CCSRMatrix<float>,float> {
 
 public:
 
@@ -98,7 +98,7 @@ public:
     void ComputeResidual(vecf& r);
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&,Matrix&,const vec&)
-    void ComputeResidualAndJacobian(vecf& r, smatf& J);
+    void ComputeResidualAndJacobian(vecf& r, CCSRMatrix<float>& J);
 
 	//! \copydoc CLeastSquaresProblem::ComputeDispersion(vec&)
     vecf ComputeDispersion(const vecf& r);

@@ -105,16 +105,16 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
         cout << "No of correspondences (2d-2d/3d-2d): " << p0s.size() << " " << xs.size() << endl;
 
         // init linear solver
-        CPreconditioner<smatf,float> M;
-        CConjugateGradientMethodLeastSquares<smatf,float> solver(M,
-                                                                 m_params->GetIntParameter("CGLS_NITER"),                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),
-                                                                 true);
+        CPreconditioner<CCSRMatrix<float>,float> M;
+        CConjugateGradientMethodLeastSquares<CCSRMatrix<float>,float> solver(M,
+                                                                             m_params->GetIntParameter("CGLS_NITER"),                                                                                     m_params->GetDoubleParameter("CGLS_EPS"),
+                                                                             true);
 
         // init least-squares problem
         CMagicSfM problem(m_cam,corri2i,corrs2i,F0inv);
 
         // set up LM method
-        CLevenbergMarquardt<smatf,float> lms(problem,solver,m_params->GetDoubleParameter("LM_LAMBDA"));
+        CLevenbergMarquardt<CCSRMatrix<float>,float> lms(problem,solver,m_params->GetDoubleParameter("LM_LAMBDA"));
 
         // initialize
         vecf& model = problem.Get();
@@ -153,7 +153,9 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
                 CMotionTrackerTracklet* tracklet = reinterpret_cast<CMotionTrackerTracklet*>(trackletsi2i[i]);
 
                 // inject into map container
-                CInterestPoint<float,3> feature(x[i],0,0);  // FIXME: use scale and quality tracklet, etc.
+                CInterestPoint<float,3> feature(x[i],
+                                                tracklet->GetLatestState().GetScale(),
+                                                tracklet->GetLatestState().GetQuality());
                 tracklet->m_pmap_point = m_map.Insert(feature);
 
             }
@@ -238,8 +240,7 @@ void CMotionTracker::AddTracklets(const std::vector<Mat>& pyramid) {
                             imfeature x(loc,s,0);
 
                             // create new tracklet with feature, set the iterator to the end of the map
-                            // FIXME: get size restriction from parameters
-                            CMotionTrackerTracklet* tracklet = new CMotionTrackerTracklet(m_global_t,x,m_map.GetData().end());
+                            CMotionTrackerTracklet* tracklet = new CMotionTrackerTracklet(m_global_t,x,m_map.GetData().end(),m_params->GetIntParameter("BUFFER_LENGTH"));
                             this->AddTracklet(tracklet);
 
                             // also set the reference feature
@@ -288,7 +289,7 @@ void CMotionTracker::AddTracklets(const std::vector<Mat>& pyramid) {
 }
 
 CMagicSfM::CMagicSfM(CPinholeCam<float> cam, pair<vector<vec2f>,vector<vec2f> >& corri2i, pair<vector<vec3f>,vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv):
-    CLeastSquaresProblem<smatf,float>::CLeastSquaresProblem(2*(corri2i.first.size()+corrs2i.first.size()),corri2i.first.size()+6),
+    CLeastSquaresProblem<CCSRMatrix<float>,float>::CLeastSquaresProblem(2*(corri2i.first.size()+corrs2i.first.size()),corri2i.first.size()+6),
 	m_cam(cam),
 	m_corri2i(corri2i),
 	m_corrs2i(corrs2i),
@@ -326,14 +327,17 @@ void CMagicSfM::ComputeResidual(vecf& r) {
     vector<vec2f> p1p = view1.Project(x);
 
     // enter error in residual vector
+    size_t row = 0;
     for(size_t i=0; i<m; i++) {
 
         // projection error
         vec2f dp = p1p[i] - m_corri2i.second[i];
 
         // copy weighted error
-        r(i)   = m_weights.Get(i)*dp.Get(0);
-        r(m+i) = m_weights.Get(m+i)*dp.Get(1);
+        r(row)   = m_weights.Get(row)*dp.Get(0);
+        row++;
+        r(row) = m_weights.Get(row)*dp.Get(1);
+        row++;
 
     }
 
@@ -346,14 +350,16 @@ void CMagicSfM::ComputeResidual(vecf& r) {
         vec2f dp = p1p[i] - m_corrs2i.second[i];
 
         // set residual
-        r(2*m+i)   = m_weights.Get(2*m+i)*dp.Get(0);
-        r(2*m+n+i) = m_weights.Get(2*m+n+i)*dp.Get(1);
+        r(row)   = m_weights.Get(row)*dp.Get(0);
+        row++;
+        r(row) = m_weights.Get(row)*dp.Get(1);
+        row++;
 
     }
 
 }
 
-void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
+void CMagicSfM::ComputeResidualAndJacobian(vecf& r, CCSRMatrix<float> &J) {
 
     /* Jacobian w.r.t.
      * - rotation need backprojected point in world coordinates,
@@ -362,6 +368,15 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
      * - all involve Jacobian of second pinhole projection.
      *
     */
+
+    // init matrix data, the sizes are set by the calling LM routine
+    vector<size_t>* rowptr(new vector<size_t>());
+    vector<size_t>* cols(new vector<size_t>());
+    vector<float>* vals(new vector<float>());
+
+    // nnz counter
+    size_t nnz = 0;
+    rowptr->push_back(nnz);
 
     // get sizes for easier book-keeping of residual indices
     size_t m = m_corri2i.first.size();
@@ -390,15 +405,12 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
                                               DR1y.Data().get(),
                                               DR1z.Data().get());
 
-
-    // create second view
-    CView<float> view1(m_cam,F1);
-
     // normalize pixel in first frame
     vector<vec3f> x0n = m_cam.CAbstractCam::Normalize(m_corri2i.first);
 
     // multiply by current depth
     vector<vec3f> x0;
+    x0.reserve(x0n.size());
     for(size_t i=0; i<x0n.size(); i++)
         x0.push_back(x0n[i]*m_model.Get(i));
 
@@ -409,11 +421,15 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
     x0n = Fr.DifferentialTransform(x0n);
 
     // projection error for image-to-image correspondences
-    for(size_t i=0; i<m; i++) {
+    size_t row = 0;
+    size_t mp1, mp2, mp3, mp4, mp5;
+    mp1 = m + 1;
+    mp2 = m + 2;
+    mp3 = m + 3;
+    mp4 = m + 4;
+    mp5 = m + 5;
 
-        float wi, wim;
-        wi = m_weights.Get(i);
-        wim = m_weights.Get(m+i);
+    for(size_t i=0; i<m; i++) {
 
         // transform point into frame 1
         vec3f x1 = F1.Transform(x0[i]);
@@ -426,40 +442,73 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
         // projection error
         vec2f dp = p1p - m_corri2i.second[i];
 
-        // set residual
-        r(i)   = wi*dp.Get(0);
-        r(m+i) = wim*dp.Get(1);
-
-        // depth derivatives
-        J(i,i)   = wi*(Jpi.Get(0,0)*x0n[i].Get(0) + Jpi.Get(0,2)*x0n[i].Get(2));
-        J(m+i,i) = wim*(Jpi.Get(1,1)*x0n[i].Get(1) + Jpi.Get(1,2)*x0n[i].Get(2));
-
-        // translational derivative
-        J(i,m)   = wi*Jpi(0,0);     J(i,m+1)   = wi*Jpi(0,1);	J(i,m+2)   = wi*Jpi(0,2);
-        J(m+i,m) = wim*Jpi(1,0); 	J(m+i,m+1) = wim*Jpi(1,1); 	J(m+i,m+2) = wim*Jpi(1,2);
-
         // rotational derivatives
         vec3f do1 = DR1x*x0[i];
         vec3f do2 = DR1y*x0[i];
         vec3f do3 = DR1z*x0[i];
 
-        J(i,m+3)   = wi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2));
-        J(m+i,m+3) = wim*(Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2));
+        // one row for the u coordinate
+        float wi = m_weights.Get(row);
+        r(row) = wi*dp.Get(0);
 
-        J(i,m+4)   = wi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2));
-        J(m+i,m+4) = wim*(Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2));
+        // depth derivatives
+        vals->push_back(wi*(Jpi.Get(0,0)*x0n[i].Get(0) + Jpi.Get(0,2)*x0n[i].Get(2)));
+        cols->push_back(i);
 
-        J(i,m+5)   = wi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2));
-        J(m+i,m+5) = wim*(Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2));
+        // translational derivative
+        vals->push_back(wi*Jpi.Get(0,0));
+        vals->push_back(wi*Jpi.Get(0,1));
+        vals->push_back(wi*Jpi.Get(0,2));
+        cols->push_back(m);
+        cols->push_back(mp1);
+        cols->push_back(mp2);
+
+        // rotational derivative
+        vals->push_back(wi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2)));
+        vals->push_back(wi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2)));
+        vals->push_back(wi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2)));
+        cols->push_back(mp3);
+        cols->push_back(mp4);
+        cols->push_back(mp5);
+
+        // increment row and nnz counter
+        row++;
+        nnz += 7;
+        rowptr->push_back(nnz);
+
+        // same procedure for the v coordinate
+        wi = m_weights.Get(row);
+        r(row) = wi*dp.Get(1);
+
+        // depth derivative
+        vals->push_back(wi*(Jpi.Get(1,1)*x0n[i].Get(1) + Jpi.Get(1,2)*x0n[i].Get(2)));
+        cols->push_back(i);
+
+        // translational derivative
+        vals->push_back(wi*Jpi(1,0));
+        vals->push_back(wi*Jpi(1,1));
+        vals->push_back(wi*Jpi(1,2));
+        cols->push_back(m);
+        cols->push_back(mp1);
+        cols->push_back(mp2);
+
+        // rotational derivative
+        vals->push_back(wi*(Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2)));
+        vals->push_back(wi*(Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2)));
+        vals->push_back(wi*(Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2)));
+        cols->push_back(mp3);
+        cols->push_back(mp4);
+        cols->push_back(mp5);
+
+        // update counters
+        row++;
+        nnz += 7;
+        rowptr->push_back(nnz);
 
     }
 
     // scene-to-image correspondences
     for(size_t i=0; i<n; i++) {
-
-        float w2mi, w2min;
-        w2mi = m_weights.Get(2*m+i);
-        w2min = m_weights.Get(2*m+n+i);
 
         // transform map points to frame 1
         vec3f x1 = F1.Transform(m_corrs2i.first[i]);
@@ -472,29 +521,64 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, smatf& J) {
         // projection error
         vec2f dp = p1p - m_corrs2i.second[i];
 
-        // set residual
-        r(2*m+i)   = w2mi*dp.Get(0);
-        r(2*m+n+i) = w2min*dp.Get(1);
-
-        // translational derivative
-        J(2*m+i,m)   = w2mi*Jpi(0,0);   J(2*m+i,m+1)   = w2mi*Jpi(0,1);		J(2*m+i,m+2)   = w2mi*Jpi(0,2);
-        J(2*m+n+i,m) = w2min*Jpi(1,0); 	J(2*m+n+i,m+1) = w2min*Jpi(1,1);    J(2*m+n+i,m+2) = w2min*Jpi(1,2);
-
         // rotational derivatives
         vec3f do1 = DR1x*m_corrs2i.first[i];
         vec3f do2 = DR1y*m_corrs2i.first[i];
         vec3f do3 = DR1z*m_corrs2i.first[i];
 
-        J(2*m+i,m+3)   = w2mi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2));
-        J(2*m+n+i,m+3) = w2min*(Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2));
+        // first the u direction
+        float wi = m_weights.Get(row);
+        r(row) = wi*dp.Get(0);
 
-        J(2*m+i,m+4)   = w2mi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2));
-        J(2*m+n+i,m+4) = w2min*(Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2));
+        // translational derivative
+        vals->push_back(wi*Jpi.Get(0,0));
+        vals->push_back(wi*Jpi.Get(0,1));
+        vals->push_back(wi*Jpi.Get(0,2));
+        cols->push_back(m);
+        cols->push_back(mp1);
+        cols->push_back(mp2);
 
-        J(2*m+i,m+5)   = w2mi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2));
-        J(2*m+n+i,m+5) = w2min*(Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2));
+        // rotational derivatives
+        vals->push_back(wi*(Jpi.Get(0,0)*do1.Get(0) + Jpi.Get(0,2)*do1.Get(2)));
+        vals->push_back(wi*(Jpi.Get(0,0)*do2.Get(0) + Jpi.Get(0,2)*do2.Get(2)));
+        vals->push_back(wi*(Jpi.Get(0,0)*do3.Get(0) + Jpi.Get(0,2)*do3.Get(2)));
+        cols->push_back(mp3);
+        cols->push_back(mp4);
+        cols->push_back(mp5);
+
+        // increment row and nnz counter
+        row++;
+        nnz += 6;
+        rowptr->push_back(nnz);
+
+        // now the v direction
+        wi = m_weights.Get(row);
+        r(row) = wi*dp.Get(1);
+
+        // translational derivative
+        vals->push_back(wi*Jpi.Get(1,0));
+        vals->push_back(wi*Jpi.Get(1,1));
+        vals->push_back(wi*Jpi.Get(1,2));
+        cols->push_back(m);
+        cols->push_back(mp1);
+        cols->push_back(mp2);
+
+        // rotational derivative
+        vals->push_back(wi*(Jpi.Get(1,1)*do1.Get(1) + Jpi.Get(1,2)*do1.Get(2)));
+        vals->push_back(wi*(Jpi.Get(1,1)*do2.Get(1) + Jpi.Get(1,2)*do2.Get(2)));
+        vals->push_back(wi*(Jpi.Get(1,1)*do3.Get(1) + Jpi.Get(1,2)*do3.Get(2)));
+        cols->push_back(mp3);
+        cols->push_back(mp4);
+        cols->push_back(mp5);
+
+        // increment row and nnz counter
+        row++;
+        nnz += 6;
+        rowptr->push_back(nnz);
 
     }
+
+    J.SetData(rowptr,cols,vals);
 
 }
 

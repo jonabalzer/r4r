@@ -143,6 +143,9 @@ public:
      */
     CCSRMatrix(size_t m, size_t n, const std::shared_ptr<std::vector<U> >& rowptr, const std::shared_ptr<std::vector<U> >& cols, const std::shared_ptr<std::vector<T> >& vals);
 
+    //! Resets the internal pointers to a different location.
+    void SetData(std::vector<U>* rowptr, std::vector<U>* cols, std::vector<T>* vals);
+
     //! Verifies the structure.
     bool Verify() const;
 
@@ -181,6 +184,9 @@ public:
 
     //! Deep copy.
     CCSRMatrix<T,U> Clone() const;
+
+    //! In-place transpose.
+    void Transpose() { m_transpose = !m_transpose; }
 
 protected:
 
@@ -301,6 +307,9 @@ public:
 
     //! Transposition.
     static CCSCMatrix<T,U> Transpose(const CCSCMatrix<T,U>& x);
+
+    //! In-place transposition.
+    void Transpose() { m_transpose = !m_transpose; }
 
 private:
 

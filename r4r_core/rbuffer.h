@@ -25,9 +25,13 @@ public:
 
       iterator():m_i(0),m_n(0),m_data(nullptr) {}
 
-      iterator(size_t i, size_t n, T* data):m_i(i),m_n(n),m_data(data) {}
+      iterator(int i, size_t n, T* data):m_i(i),m_n(n),m_data(data) {}
 
       void operator++() { m_i = ++m_i%m_n; }
+
+      iterator operator+(int i) const { return iterator((m_i+i)%m_n,m_n,m_data); }
+
+      void operator+=(int i) { m_i=(m_i+i)%m_n; }
 
       T& operator*() { return m_data[m_i]; }
 
@@ -37,7 +41,7 @@ public:
 
     private:
 
-        size_t m_i;
+        int m_i;
         size_t m_n;
         T* m_data;
 
@@ -49,9 +53,13 @@ public:
 
       const_iterator():m_i(0),m_n(0),m_data(nullptr) {}
 
-      const_iterator(size_t i, size_t n, const T* data):m_i(i),m_n(n),m_data(data) {}
+      const_iterator(int i, size_t n, const T* data):m_i(i),m_n(n),m_data(data) {}
 
       void operator++() { m_i = ++m_i%m_n; }
+
+      const_iterator operator+(int i) const { return const_iterator((m_i+i)%m_n,m_n,m_data); }
+
+      void operator+=(int i) { m_i=(m_i+i)%m_n; }
 
       const T* operator->() const { return &(operator*()); }
 
@@ -61,12 +69,11 @@ public:
 
     private:
 
-        size_t m_i;
+        int m_i;
         size_t m_n;
         const T* m_data;
 
     };
-
 
     class reverse_iterator {
 
@@ -74,9 +81,13 @@ public:
 
       reverse_iterator():m_i(0),m_n(0),m_data(nullptr) {}
 
-      reverse_iterator(size_t i, size_t n, T* data):m_i(n-1-i),m_n(n),m_data(data) {}
+      reverse_iterator(int i, size_t n, T* data):m_i(n-1-i),m_n(n),m_data(data) {}
 
       void operator++() { m_i = ++m_i%m_n; }
+
+      reverse_iterator operator+(int i) const { return reverse_iterator((m_i+i)%m_n,m_n,m_data); }
+
+      void operator+=(int i) { m_i=(m_i+i)%m_n; }
 
       T& operator*() { return m_data[m_n-1-m_i]; }
 
@@ -86,7 +97,7 @@ public:
 
     private:
 
-        size_t m_i;
+        int m_i;
         size_t m_n;
         T* m_data;
 
@@ -98,9 +109,13 @@ public:
 
       const_reverse_iterator():m_i(0),m_n(0),m_data(nullptr) {}
 
-      const_reverse_iterator(size_t i, size_t n, const T* data):m_i(n-1-i),m_n(n),m_data(data) {}
+      const_reverse_iterator(int i, size_t n, const T* data):m_i(n-1-i),m_n(n),m_data(data) {}
 
       void operator++() { m_i = ++m_i%m_n; }
+
+      const_reverse_iterator operator+(int i) const { return const_reverse_iterator((m_i+i)%m_n,m_n,m_data); }
+
+      void operator+=(int i) { m_i=(m_i+i)%m_n; }
 
       const T& operator*() const { return m_data[m_n-1-m_i]; }
 
@@ -111,7 +126,7 @@ public:
     private:
 
         int m_i;
-        int m_n;
+        size_t m_n;
         const T* m_data;
 
     };
@@ -146,7 +161,7 @@ public:
 
     /*! \brief Creates forward iterator pointing to the "end".
      *
-     * FIXME: This is suboptimal because it effectively shortens the buffer by
+     * TODO: This is suboptimal because it effectively shortens the buffer by
      * one element.
      *
      */

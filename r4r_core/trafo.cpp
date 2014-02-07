@@ -709,6 +709,36 @@ CRigidMotion<T,3> C3dTrajectory<Container,T>::GetInitialState() const {
 
 }
 
+template<template<class U, class Allocator = std::allocator<U> > class Container,typename T>
+bool C3dTrajectory<Container,T>::WriteToFile(const char* filename, bool format) const {
+
+    typename Container<CVector<T,6 > >::const_iterator it;
+
+    ofstream output(filename);
+
+    if(!output.is_open()) {
+
+        cerr << "ERROR: Could not open file..." << endl;
+        return 1;
+
+    }
+
+    for(it=m_data.begin(); it!=m_data.end(); ++it) {
+
+        if(!format)
+            output << it->Get(0) << " " << it->Get(1) << " " << it->Get(2) << " " << it->Get(3) << " " << it->Get(4) << " " << it->Get(5) << endl;
+        else
+            output << CRigidMotion<T,3>(*it) << endl;
+
+    }
+
+    output.close();
+
+    return 0;
+
+}
+
+
 template class C3dTrajectory<list,float>;
 template class C3dTrajectory<list,double>;
 

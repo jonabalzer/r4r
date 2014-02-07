@@ -166,21 +166,21 @@ public:
 
 private:
 
-    Matrix m_K;                                             //! stack of two linear operators
-    const Matrix& m_nabla;                                  //! gradient operator
-    const CDenseArray<T>& m_f;                              //! force vector
-    CDenseArray<T>& m_u;                                    //! solution vector
+    Matrix m_K;                                             //!< stack of two linear operators
+    const Matrix& m_nabla;                                  //!< gradient operator
+    const CDenseArray<T>& m_f;                              //!< force vector
+    CDenseArray<T>& m_u;                                    //!< solution vector
     CDenseArray<T> m_nablau;
     CDenseArray<T> m_d;
     CDenseArray<T> m_b;
-    DIM m_dim_grad;                                         //! dimensionality of the gradient
-    const CIterativeLinearSolver<Matrix,T>& m_solver;       //! linear solver
-    T m_mu;                                                 //! \f$\mu\f$
-    T m_lambda;                                             //! \f$\lambda\f$
-    double m_eps;                                           //! tolerance
+    DIM m_dim_grad;                                         //!< dimensionality of the gradient
+    const CIterativeLinearSolver<Matrix,T>& m_solver;       //!< linear solver
+    T m_mu;                                                 //!< \f$\mu\f$
+    T m_lambda;                                             //!< \f$\lambda\f$
+    double m_eps;                                           //!< tolerance
     size_t m_k;
-    std::vector<double> m_total_error;                      //! total error over time
-    std::vector<double> m_constraint_violation;             //! constraint violation over time
+    std::vector<double> m_total_error;                      //!< total error over time
+    std::vector<double> m_constraint_violation;             //!< constraint violation over time
 
     //! Dimensionality-specific shrinking operator.
     void Shrink();

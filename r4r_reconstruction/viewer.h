@@ -47,6 +47,9 @@ public:
     //! Computes depth map for a view.
     CDenseArray<float> getDepthMap(const CView<float>& view);
 
+    //! Method stump.
+    virtual void updateBoundingBox() {}
+
 signals:
 
 public slots:
@@ -66,16 +69,16 @@ protected:
     void paintGL();
 
     //! Translating wheel event into zooming.
-    virtual void wheelEvent(QWheelEvent* event);
+    void wheelEvent(QWheelEvent* event);
 
     //! Handling of mouse clicks.
-    virtual void mousePressEvent(QMouseEvent* event);
+    void mousePressEvent(QMouseEvent* event);
 
     //! Handling of mouse drags.
-    virtual void mouseMoveEvent(QMouseEvent* event);
+    void mouseMoveEvent(QMouseEvent* event);
 
     //! Handling of keyboard inputs.
-    virtual void keyPressEvent(QKeyEvent* event);
+    void keyPressEvent(QKeyEvent* event);
 
     //! Method stump.
     virtual void updateClipDepth(const CView<float>& view, double tolerance = 1.0) {}
@@ -87,6 +90,7 @@ protected:
     float m_zfar;                          //!< far clipping plane
     QPoint m_last_point;                   //!< auxiliary variable to store mouse pointer locations
     CVector<float,3> m_center;             //!< center of camera rotations
+    CBoundingBox<float> m_bbox;            //!< bounding box of the scene
     bool m_show_color;                     //!< color flag
 
     //! Sends a view to OpenGL.
@@ -127,7 +131,7 @@ public slots:
      * vantage point changes.
      *
      */
-    virtual void updateView(const R4R::CView<float>& view);
+    void updateView(const R4R::CView<float>& view);
 
 protected:
 
@@ -135,15 +139,14 @@ protected:
     void paintGL();
 
     //! Handling of mouse release event.
-    virtual void mouseReleaseEvent(QMouseEvent* event);
+    void mouseReleaseEvent(QMouseEvent* event);
 
     //! Update clip depth based on the bounding box approximation of the current mesh.
-    virtual void updateClipDepth(const CView<float>& view, float tolerance = 1.0);
+    void updateClipDepth(const CView<float>& view, float tolerance = 1.0);
 
 private:
 
     const CTriangleMesh* m_mesh;                //!< pointer to the point cloud
-    CBoundingBox<float> m_bbox;                     //!< bounding box of the mesh
 
 };
 
@@ -169,29 +172,19 @@ public:
 
 public slots:
 
-    /*! \copybrief CViewer::updateView(const R4R::CView<double>&)
-     *
-     * This needs to be overridden because we have to adjust the clip depths if the
-     * vantage point changes.
-     *
-     */
-    virtual void updateView(const R4R::CView<float>& view);
 
 protected:
 
     //! \copydoc CViewer::paintGL()
     void paintGL();
 
-    //! Handling of mouse release event.
-    virtual void mouseReleaseEvent(QMouseEvent* event);
-
     //! Update clip depth based on the bounding box approximation of the current point cloud.
-    virtual void updateClipDepth(const CView<float>& view, double tolerance = 1.0);
+    void updateClipDepth(const CView<float>& view, double tolerance = 1.0);
 
 private:
 
     const C3dPointCloud* m_pcl;     //!< pointer to a point cloud
-    CBoundingBox<float> m_bbox;     //!< bounding box of the mesh
+
 
 };
 

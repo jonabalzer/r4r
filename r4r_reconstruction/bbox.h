@@ -46,10 +46,13 @@ public:
     std::vector<R4R::CVector<T,3> > Corners() const;
 
     //! Access to the lower corner.
-    const R4R::CVector<T,3>& Lower() { return m_lower; }
+    const CVector<T,3>& Lower() { return m_lower; }
 
     //! Access to the upper corner.
-    const R4R::CVector<T,3>& Upper() { return m_upper; }
+    const CVector<T,3>& Upper() { return m_upper; }
+
+    //! Barycenter.
+    CVector<T,3>  Barycenter() { return (m_upper + m_lower)*0.5; }
 
 private:
 

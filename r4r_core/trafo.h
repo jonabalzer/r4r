@@ -348,6 +348,14 @@ public:
     //! Provides read-only access to the data.
     const Container<CVector<T,6> >& GetData() const { return m_data; }
 
+    /*! Writes the trajectory to file.
+     *
+     * \param[in] filename file name
+     * \param[in] format flag indicating whether to store the motion in
+     * exponential coordinates or as full frames
+     */
+    bool WriteToFile(const char* filename, bool format = false) const;
+
 private:
 
     Container<CVector<T,6> > m_data;

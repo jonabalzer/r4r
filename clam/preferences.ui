@@ -35,7 +35,7 @@
        <x>340</x>
        <y>10</y>
        <width>261</width>
-       <height>251</height>
+       <height>301</height>
       </rect>
      </property>
      <property name="title">
@@ -221,6 +221,32 @@
         <widget class="QLineEdit" name="trackSizeEdit">
          <property name="text">
           <string>19</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_29">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>240</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="ringBufferLayout">
+       <item>
+        <widget class="QLabel" name="ringBufferLabel">
+         <property name="text">
+          <string>Tracklet buffer length</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="ringBufferEdit">
+         <property name="text">
+          <string>50</string>
          </property>
         </widget>
        </item>
@@ -551,7 +577,7 @@
        <item>
         <widget class="QSpinBox" name="kfrSpinBox">
          <property name="value">
-          <number>10</number>
+          <number>2</number>
          </property>
         </widget>
        </item>

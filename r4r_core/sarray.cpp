@@ -165,6 +165,16 @@ CCSRMatrix<T,U>::CCSRMatrix(size_t m, size_t n, const std::shared_ptr<std::vecto
     m_cols(cols),
     m_vals(vals) {}
 
+
+template<typename T, typename U>
+void CCSRMatrix<T,U>::SetData(std::vector<U>* rowptr, std::vector<U>* cols, std::vector<T>* vals) {
+
+    m_rowptr.reset(rowptr);
+    m_cols.reset(cols);
+    m_vals.reset(vals);
+
+}
+
 template<typename T, typename U>
 bool CCSRMatrix<T,U>::Verify() const {
 

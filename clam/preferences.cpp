@@ -50,6 +50,7 @@ void Preferences::on_saveButton_clicked() {
     params.Set("FEATURE_THRESHOLD",ui->thresholdEdit->text().toDouble());
     params.Set("MIN_NO_FEATURES",ui->minFeatEdit->text().toInt());
     params.Set("MAX_NO_FEATURES",ui->maxFeatEdit->text().toInt());
+    params.Set("BUFFER_LENGTH",ui->ringBufferEdit->text().toInt());
     params.Set("TRACKING_HSIZE",ui->trackSizeEdit->text().toInt());
     params.Set("DESCRIPTOR_HSIZE",ui->descSizeEdit->text().toInt());
     params.Set("GRAD_SMOOTH_SIGMA",ui->sigmaEdit->text().toDouble());
@@ -111,6 +112,7 @@ void Preferences::on_loadButton_clicked() {
     ui->thresholdEdit->setText(QString::number(params.GetDoubleParameter("FEATURE_THRESHOLD")));
     ui->maxFeatEdit->setText(QString::number(params.GetIntParameter("MAX_NO_FEATURES")));
     ui->minFeatEdit->setText(QString::number(params.GetIntParameter("MIN_NO_FEATURES")));
+    ui->ringBufferEdit->setText(QString::number(params.GetIntParameter("BUFFER_LENGTH")));
     ui->trackSizeEdit->setText(QString::number(params.GetIntParameter("TRACKING_HSIZE")));
     ui->descSizeEdit->setText(QString::number(params.GetIntParameter("DESCRIPTOR_HSIZE")));
     ui->sigmaEdit->setText(QString::number(params.GetDoubleParameter("GRAD_SMOOTH_SIGMA")));
@@ -163,6 +165,7 @@ void Preferences::on_applyButton_clicked() {
     params.Set("FEATURE_THRESHOLD",ui->thresholdEdit->text().toDouble());
     params.Set("MIN_NO_FEATURES",ui->minFeatEdit->text().toInt());
     params.Set("MAX_NO_FEATURES",ui->maxFeatEdit->text().toInt());
+    params.Set("BUFFER_LENGTH",ui->ringBufferEdit->text().toInt());
     params.Set("TRACKING_HSIZE",ui->trackSizeEdit->text().toInt());
     params.Set("DESCRIPTOR_HSIZE",ui->descSizeEdit->text().toInt());
     params.Set("GRAD_SMOOTH_SIGMA",ui->sigmaEdit->text().toDouble());

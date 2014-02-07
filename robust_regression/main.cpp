@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
         CConjugateGradientMethodLeastSquares<mat,double> solver(M,10,1e-20,true);
 
         CRosenbrockFunction problem = CRosenbrockFunction();
-        CLevenbergMarquardt<mat,double> lms(problem,solver,0);
+        CLevenbergMarquardt<mat,double> lms(problem,solver,1.0);
 
         // access solution vector
         vec& model = problem.Get();

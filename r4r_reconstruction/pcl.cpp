@@ -47,13 +47,11 @@ typename Container<CInterestPoint<T,n> >::iterator CPointCloud<Container,T,n>::F
 template<template<class U, class Allocator = std::allocator<U> > class Container,typename T,u_int n>
 CBoundingBox<T> CPointCloud<Container,T,n>::BoundingBox() const {
 
-
-
     typename Container<CInterestPoint<T,n> >::const_iterator it;
 
     CVector<T,n> lower, upper;
 
-    if(this->Size()==0)
+    if(m_data.size()==0)
         return CBoundingBox<T>(lower,upper);
 
     for(u_int i=0; i<n; i++) {
@@ -80,6 +78,22 @@ CBoundingBox<T> CPointCloud<Container,T,n>::BoundingBox() const {
     }
 
     return CBoundingBox<T>(lower,upper);
+
+}
+
+template<template<class U, class Allocator = std::allocator<U> > class Container,typename T,u_int n>
+CVector<T,n> CPointCloud<Container,T,n>::Barycenter() const {
+
+    typename Container<CInterestPoint<T,n> >::const_iterator it;
+
+    CVector<T,n> bc;
+
+    for(it=m_data.begin(); it!=m_data.end(); ++it)
+        bc = bc + it->GetLocation();
+
+    bc = bc*(1/T(m_data.size()));
+
+    return bc;
 
 }
 
