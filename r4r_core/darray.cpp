@@ -35,9 +35,8 @@
 #include <chrono>
 #include <random>
 
-#ifdef HAVE_TBB
+#ifdef _OPENMP
 #include <parallel/algorithm>
-#include <tbb/tbb.h>
 #endif
 
 using namespace std;
@@ -201,7 +200,7 @@ CDenseArray<T> CDenseArray<T>::Clone() const {
 
     // copy data
     T* newdata = result.Data().get();
-    T* thisdata = m_data.get();
+    const T* thisdata = m_data.get();
     memcpy(newdata,thisdata,m_nrows*m_ncols*sizeof(T));
 
     return result;
@@ -1609,7 +1608,7 @@ void CDenseArray<T>::Subtract(const T& scalar) {
 }
 
 template <typename T>
-T CDenseArray<T>::Median() {
+T CDenseArray<T>::Median() const {
 
     CDenseArray<T> temp = this->Clone();
 
@@ -1627,14 +1626,14 @@ T CDenseArray<T>::Median() {
 }
 
 template <typename T>
-T CDenseArray<T>::Variance() {
+T CDenseArray<T>::Variance() const {
 
 	T mean = this->Mean();
 
     CDenseArray<T> temp = this->Clone();
 
     T* pdata = temp.m_data.get();
-    T* pthisdata = m_data.get();
+    const T* pthisdata = m_data.get();
 
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] = (pthisdata[i] - mean)*(pthisdata[i] - mean);
@@ -1644,14 +1643,14 @@ T CDenseArray<T>::Variance() {
 }
 
 template <typename T>
-T CDenseArray<T>::MAD() {
+T CDenseArray<T>::MAD() const {
 
     T median = Median();
 
     CDenseArray<T> temp = this->Clone();
 
     T* pdata = temp.m_data.get();
-    T* pthisdata = m_data.get();
+    const T* pthisdata = m_data.get();
 
     for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] = fabs(pthisdata[i]-median);
@@ -1661,14 +1660,14 @@ T CDenseArray<T>::MAD() {
 }
 
 template <>
-rgb CDenseArray<rgb>::MAD() {
+rgb CDenseArray<rgb>::MAD() const {
 
     rgb median = Median();
 
     CDenseArray<rgb> temp = this->Clone();
 
     rgb* pdata = temp.m_data.get();
-    rgb* pthisdata = m_data.get();
+    const rgb* pthisdata = m_data.get();
 
     for(size_t i=0; i<m_nrows*m_ncols; i++) {
 
@@ -1682,7 +1681,7 @@ rgb CDenseArray<rgb>::MAD() {
 }
 
 template <>
-vec3 CDenseArray<vec3>::MAD() {
+vec3 CDenseArray<vec3>::MAD() const {
 
     //! FIXME: This is not per channel but w.r.t. to order-relation of vec3.
     vec3 median = Median();
@@ -1690,7 +1689,7 @@ vec3 CDenseArray<vec3>::MAD() {
     CDenseArray<vec3> temp = this->Clone();
 
     vec3* pdata = temp.m_data.get();
-    vec3* pthisdata = m_data.get();
+    const vec3* pthisdata = m_data.get();
 
     for(size_t i=0; i<m_nrows*m_ncols; i++) {
 
@@ -1854,13 +1853,13 @@ template CDenseVector<float>::CDenseVector<3>(CVector<float,3>& x);
 template CDenseVector<float>::CDenseVector<2>(CVector<float,2>& x);
 
 template <typename T>
-CDenseVector<T> CDenseVector<T>::Clone() {
+CDenseVector<T> CDenseVector<T>::Clone() const {
 
     CDenseVector<T> result(m_nrows,m_ncols);
 
     // copy data
     T* newdata = result.Data().get();
-    T* thisdata = m_data.get();
+    const T* thisdata = m_data.get();
     memcpy(newdata,thisdata,m_nrows*m_ncols*sizeof(T));
 
     return result;

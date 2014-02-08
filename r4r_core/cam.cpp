@@ -26,15 +26,9 @@
 #include <fstream>
 #include <string>
 
-//#ifdef HAVE_TBB
-//#include <tbb/tbb.h>
-//using namespace tbb;
-//#endif
-
 #include "cam.h"
 #include "rutils.h"
 #include "factor.h"
-
 using namespace std;
 
 namespace R4R {
@@ -44,18 +38,9 @@ vector<CVector<T,2> > CAbstractCam<T>::Project(const vector<CVector<T,3> >& x) c
 
     vector<CVector<T,2> > result(x.size());
 
-//#ifndef HAVE_TBB
+#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Project(x[i]);
-/* #else
-    parallel_for(blocked_range<size_t>(0,x.size()),[&](const blocked_range<size_t>& r){
-
-        for(size_t i=r.begin(); i!=r.end(); i++){
-            result[i] = Project(x[i]);
-        }
-
-    });
-#endif*/
 
     return result;
 
@@ -66,6 +51,7 @@ vector<CVector<T,3> > CAbstractCam<T>::Normalize(const vector<CVector<T,2> >& u)
 
     vector<CVector<T,3> > result(u.size());
 
+#pragma omp parallel for
     for(size_t i=0; i<u.size(); i++)
         result[i] = Normalize(u[i]);
 
@@ -73,12 +59,12 @@ vector<CVector<T,3> > CAbstractCam<T>::Normalize(const vector<CVector<T,2> >& u)
 
 }
 
-
 template<typename T>
 vector<CVector<T,2> > CAbstractCam<T>::Flow(const std::vector<CVector<T,3> >& x, const std::vector<CVector<T,3> >& dx) const {
 
     vector<CVector<T,2> > result(x.size());
 
+#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Flow(x[i],dx[i]);
 

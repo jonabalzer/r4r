@@ -95,13 +95,10 @@ public:
     CMagicSfM(CPinholeCam<float> cam, std::pair<std::vector<vec2f>,std::vector<vec2f> >& corri2i, std::pair<std::vector<vec3f>,std::vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv);
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
-    void ComputeResidual(vecf& r);
+    void ComputeResidual(vecf& r) const;
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&,Matrix&,const vec&)
-    void ComputeResidualAndJacobian(vecf& r, CCSRMatrix<float>& J);
-
-	//! \copydoc CLeastSquaresProblem::ComputeDispersion(vec&)
-    vecf ComputeDispersion(const vecf& r);
+    void ComputeResidualAndJacobian(vecf& r, CCSRMatrix<float>& J) const;
 
 protected:
 

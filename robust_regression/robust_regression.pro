@@ -41,7 +41,10 @@ unix:!symbian|win32 {
     INCLUDEPATH += /usr/include/r4r/
 
     LIBS += -L$$OUT_PWD/../r4r_core/ \
-            -lr4r_core
+            -lr4r_core \
+            #-lgomp
+
+    #packagesExist(openmp) { LIBS += -lgomp }
 
     target.path = $$OUT_PWD/../bin
     INSTALLS += target \

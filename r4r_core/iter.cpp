@@ -198,7 +198,7 @@ template class CConjugateGradientMethod<CSymmetricCSRMatrix<double,size_t>,doubl
 
 template<class Matrix,typename T>
 CConjugateGradientMethodLeastSquares<Matrix,T>::CConjugateGradientMethodLeastSquares(const CPreconditioner<Matrix,T>& M, size_t n, double eps, bool silent):
-    CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent) {}
+    CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent){}
 
 template<class Matrix,typename T>
 vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) const {
@@ -316,13 +316,14 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
 
     // residual of the non-square system
     CDenseVector<T> r = b - A*x;
+    CDenseVector<T> rlambda = x*(-m_lambda);
 
     // residuals
     vector<double> res;
-    res.push_back(r.Norm2());
+    res.push_back(r.Norm2()+rlambda.Norm2());
 
     // residual of the normal equation
-    CDenseVector<T> rnormal = At*r;
+    CDenseVector<T> rnormal = At*r + rlambda*m_lambda;
 
     // preconditioning
     CDenseVector<T> z = rnormal.Clone();
@@ -342,15 +343,16 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
         CDenseVector<T> q = A*p;
 
         // step size (recycle deltao for computation of beta)
-        T alpha = deltao/CDenseArray<T>::InnerProduct(q,q);
+        T alpha = deltao/(CDenseArray<T>::InnerProduct(q,q) + m_lambda*m_lambda*CDenseArray<T>::InnerProduct(p,p));
 
         // perform descent step
         x = x + p*alpha;
 
         q.Scale(alpha);
         r = r - q;				// update residual of non-square system
+        rlambda = rlambda - p*(m_lambda*alpha);
 
-        res.push_back(r.Norm2());
+        res.push_back(r.Norm2()+rlambda.Norm2());
 
         k++;
 
@@ -361,7 +363,7 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
             break;
 
         // update residual of normal equation
-        rnormal = At*r;
+        rnormal = At*r + rlambda*m_lambda;
 
         // apply preconditioner
         m_M.Solve(z,rnormal);

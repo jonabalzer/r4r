@@ -283,7 +283,10 @@ public:
 	size_t NElems() const { return m_nrows*m_ncols; }
 
 	//! Get pointer to the data.
-    std::shared_ptr<T> Data() const { return m_data; }
+    std::shared_ptr<T>& Data() { return m_data; }
+
+    //! Get const pointer to the data.
+    const std::shared_ptr<T>& Data() const { return m_data; }
 
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
@@ -304,13 +307,13 @@ public:
 	T Mean() const { return Sum()/NElems(); }
 
 	//! Empirical variance of matrix entries.
-    T Variance();
+    T Variance() const;
 
 	//! Median of matrix entries;
-    T Median();
+    T Median() const;
 
     //! Median of absolute deviations.
-    T MAD();
+    T MAD() const;
 
 	//! Minimum of matrix entries;
 	T Min() const;
@@ -432,7 +435,7 @@ public:
     CDenseVector<T> operator=(const CDenseVector<T>& array);
 
     //! Deep copy.
-    CDenseVector<T> Clone();
+    CDenseVector<T> Clone() const;
 
 	//! Adds a scalar to a vector.
     CDenseVector<T> operator+(const T& scalar) const;

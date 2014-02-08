@@ -77,13 +77,12 @@ unix:!symbian|win32: {
             -lopencv_features2d\
             -lopencv_calib3d \
             -llapack \
-            -lgomp \
             -L$$OMLIBPATH \
             -lOpenMeshCore \
-            -lOpenMeshTools
+            -lOpenMeshTools \
+            -lgomp
 
-
-   INCLUDEPATH += /usr/include/r4r/
+    INCLUDEPATH += /usr/include/r4r/
 
 }
 

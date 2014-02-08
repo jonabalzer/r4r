@@ -42,10 +42,10 @@ public:
     CRosenbrockFunction();
 
     //! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&,Matrix&)
-    void ComputeResidualAndJacobian(vec& r, mat& J);
+    void ComputeResidualAndJacobian(vec& r, mat& J) const;
 
     //! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
-    void ComputeResidual(vec& r);
+    void ComputeResidual(vec& r) const;
 
     //! Prints out the ground truth parameters.
     vec GetGroundTruth() { vec x(2); x(0) = 1; x(1) = 1; return x; }
@@ -62,10 +62,10 @@ public:
     COsbourneFunction();
 
     //! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&,Matrix&)
-    void ComputeResidualAndJacobian(vec& r, mat& J);
+    void ComputeResidualAndJacobian(vec& r, mat& J) const;
 
     //! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
-    void ComputeResidual(vec& r);
+    void ComputeResidual(vec& r) const;
 
     //! Generates abscissae and ordinates pairs.
     void DisturbSamplePoints(size_t noutlier, double strength);

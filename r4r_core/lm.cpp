@@ -57,19 +57,15 @@ CLeastSquaresProblem<Matrix,T>::CLeastSquaresProblem(size_t nopts, size_t nopara
 }
 
 template <class Matrix,typename T>
-CDenseVector<T> CLeastSquaresProblem<Matrix,T>::ComputeDispersion(CDenseVector<T>& r) {
+CDenseVector<T> CLeastSquaresProblem<Matrix,T>::ComputeDispersion(const CDenseVector<T>& r) const {
 
-    /* this is ok, actually we are computing the inverse of the covariance
-     * for normalization of the residuals later, which then only requires multiplication*/
-    T fac = (1.0/1.4826);
+    T s = 1.4826*r.MAD();
 
-    T s = fac/r.MAD();
+    CDenseVector<T> sigmainv(r.NElems());
+    sigmainv.Ones();
+    sigmainv.Scale(1.0/s);
 
-    CDenseVector<T> sigma(r.NElems());
-	sigma.Ones();
-	sigma.Scale(s);
-
-	return sigma;
+    return sigmainv;
 
 }
 
@@ -77,6 +73,62 @@ template class CLeastSquaresProblem<mat,double>;
 template class CLeastSquaresProblem<smat,double>;
 template class CLeastSquaresProblem<smatf,float>;
 template class CLeastSquaresProblem<CCSRMatrix<float>,float>;
+
+template<typename T>
+T CHuberWeightFunction<T>::operator()(const CDenseVector<T>& r, CDenseVector<T>& w) const {
+
+    // estimate standard deviation for normalization of residuals
+    T si = 1.4826*r.MAD();
+    if(si!=0)
+        si = 1.0/(si);
+
+
+    // tuning factor from literature
+    T tune = 1.345;
+
+    for(size_t i=0; i<w.NElems(); i++) {
+
+        T x = (r.Get(i)*si)/tune;
+
+        w(i) = 1/max(1.0,(double)fabs(x));
+
+    }
+
+    return si;
+
+}
+
+template class CHuberWeightFunction<float>;
+template class CHuberWeightFunction<double>;
+
+template<typename T>
+T CBiSquareWeightFunction<T>::operator()(const CDenseVector<T>& r, CDenseVector<T>& w) const {
+
+    // estimate standard deviation for normalization of residuals
+    T si = 1.4826*r.MAD();
+    if(si!=0)
+        si = 1.0/(si);
+
+    // tuning factor from literature
+    T tune = 4.685;
+
+    for(size_t i=0; i<w.NElems(); i++) {
+
+        T x = (r.Get(i)*si)/tune;
+
+        if(x>=-1 && x<=1)
+            w(i) = sqrt((1-x*x)*(1-x*x));
+        else
+            w(i) = 0;
+
+    }
+
+    return si;
+
+}
+
+template class CBiSquareWeightFunction<float>;
+template class CBiSquareWeightFunction<double>;
 
 template <class Matrix,typename T>
 const T CLevenbergMarquardt<Matrix,T>::m_params[5] = { 0.25, 0.75 , 2, 1.0/3.0, 3.0 };
@@ -98,24 +150,16 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
     CDenseVector<T>& x = m_problem.Get();
 
 	// initial residual, Jacobian
-    CDenseVector<T> r(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters());
+    CDenseVector<T> r(m_problem.GetNumberOfDataPoints());
     Matrix J(m_problem.GetNumberOfDataPoints(),m_problem.GetNumberOfModelParameters());
 	m_problem.ComputeResidualAndJacobian(r,J);
 
     // initial value for lambda, TODO: do this depending on trace of J'*J
 	m_lambda = m_tau*1;
 
-    // residual norm, TODO: why are we not counting the value of the step size?
+    // residual norm
     T res = r.Norm2();
     m_residuals.push_back(res);
-
-    // init regularization matrix
-    Matrix I(m_problem.GetNumberOfModelParameters(),m_problem.GetNumberOfModelParameters());
-    I.Eye();
-    I.Scale(sqrt(m_lambda));
-
-    // append it to J
-    J.Concatenate(I,0);
 
 	// gradient norm
 	J.Transpose();
@@ -139,8 +183,9 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
 
 	while(true) {
 
-		// solve linear system
+        // solve linear system after setting lmbda in the CGLS solver
         CDenseVector<T> step(m_problem.GetNumberOfModelParameters());
+        m_solver.SetLambda(sqrt(m_lambda));
         m_solver.Iterate(J,r,step);
 
         // save old state before advancing
@@ -150,11 +195,11 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
         x = x - step;
 
         // compute tentative residual and Jacobian
-        CDenseVector<T> rt(m_problem.GetNumberOfDataPoints()+m_problem.GetNumberOfModelParameters());
+        CDenseVector<T> rt(m_problem.GetNumberOfDataPoints());
         Matrix Jt(m_problem.GetNumberOfDataPoints(),m_problem.GetNumberOfModelParameters());
         m_problem.ComputeResidualAndJacobian(rt,Jt);
 
-        // residual norm, the regularzing part of J is not needed
+        // residual norm
         res = rt.Norm2();
 
 		// compute rho
@@ -180,11 +225,6 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
             // keep Jacobian and residual, should be ok to move pointers
             r = rt;
             J = Jt;
-
-            // add regularizer back
-            I.Eye();
-            I.Scale(sqrt(m_lambda));
-            J.Concatenate(I,0);
 
             // update gradient norm, this contains step size parameter (but maybe it should not?)
             J.Transpose();
@@ -237,18 +277,15 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t n, T epsilon1, T e
 }
 
 template <class Matrix,typename T>
-CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t nouter, size_t ninner, T epsilon, bool silentouter, bool silentinner) {
+CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t nouter, const CWeightFunction<T>& w, size_t ninner, T epsilon, bool silentouter, bool silentinner) {
 
     vector<T> residuals;
-
     CDenseVector<T>& weights = m_problem.GetWeights();
     CDenseVector<T> r(m_problem.GetNumberOfDataPoints());
-	m_problem.ComputeResidual(r);
 
+    m_problem.ComputeResidual(r);
     T res = r.Norm2();
 	residuals.push_back(res);
-
-    CDenseVector<T> sigma; // = 1;
 
 	size_t k = 0;
 
@@ -259,17 +296,18 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t nouter, size_t nin
 
 	}
 
+    T sinv;
+
 	while(k<nouter) {
 
         // run LM method
 		Iterate(ninner,1e-10,1e-10,silentinner);
 
-		// compute weight function from unweighted residual vector residual
-		weights.Ones();
+        // compute weight function from unweighted (!) residual vector residual
 		m_problem.ComputeResidual(r);
 
         // update weights used in inner iteration
-		sigma = BiSquareWeightFunction(r,weights);
+        sinv = w(r,weights);
 
 		// save norm of residual
 		res = r.Norm2();
@@ -289,15 +327,15 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::Iterate(size_t nouter, size_t nin
 
     // express residual in numbers of variance
 	for(size_t i=0;i<r.NElems();i++)
-        r(i) = r.Get(i)*sigma.Get(i);
+        r(i) = r.Get(i)*sinv;
 
-
+    // return residual
 	return r;
 
 }
 
 template <class Matrix,typename T>
-CDenseVector<T> CLevenbergMarquardt<Matrix,T>::BiSquareWeightFunction(CDenseVector<T>& r, CDenseVector<T>& w) {
+CDenseVector<T> CLevenbergMarquardt<Matrix,T>::BiSquareWeightFunction(const CDenseVector<T>& r, CDenseVector<T>& w) const {
 
 	// estimate standard deviation for normalization of residuals
     CDenseVector<T> sigma = m_problem.ComputeDispersion(r);
@@ -321,7 +359,7 @@ CDenseVector<T> CLevenbergMarquardt<Matrix,T>::BiSquareWeightFunction(CDenseVect
 }
 
 template <class Matrix,typename T>
-CDenseVector<T> CLevenbergMarquardt<Matrix,T>::HuberWeightFunction(CDenseVector<T>& r, CDenseVector<T>& w) {
+CDenseVector<T> CLevenbergMarquardt<Matrix,T>::HuberWeightFunction(const CDenseVector<T>& r, CDenseVector<T>& w) const {
 
 	// estimate standard deviation for normalization of residuals
     CDenseVector<T> sigma = m_problem.ComputeDispersion(r);

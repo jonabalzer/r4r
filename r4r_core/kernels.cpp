@@ -29,9 +29,8 @@
 #include <smmintrin.h>
 #endif
 
-#ifdef HAVE_TBB
-#include <tbb/tick_count.h>
-using namespace tbb;
+#ifdef _OPENMP
+#include <omp.h>
 #endif
 
 #include "kernels.h"
@@ -187,9 +186,9 @@ void CMercerKernel<float>::TestKernel(KERNEL no, int n, size_t notests) {
 
     CMercerKernel<float>* kernel = CMercerKernel<float>::Create(no,n);
 
-#ifdef HAVE_TBB
-    tick_count t0, t1;
-    t0 = tick_count::now();
+#ifdef _OPENMP
+    double t0, t1;
+    t0 = omp_get_wtime();
 #endif
 
     float result;
@@ -197,17 +196,17 @@ void CMercerKernel<float>::TestKernel(KERNEL no, int n, size_t notests) {
     for(size_t k=0; k<notests; k++)
         result = kernel->Evaluate(x,y);
 
-#ifdef HAVE_TBB
-    t1 = tick_count::now();
-    cout << "Parallel evaluation time: " << (t1-t0).seconds() << " s" << endl;
+#ifdef _OPENMP
+    t1 = omp_get_wtime();
+    cout << "Parallel evaluation time: " << t1-t0 << " s" << endl;
 #endif
 
     cout << result << endl;
 
     float comparison = 0;
 
-#ifdef HAVE_TBB
-    t0 = tick_count::now();
+#ifdef _OPENMP
+    t0 = omp_get_wtime();
 #endif
 
     switch(no) {
@@ -280,9 +279,9 @@ void CMercerKernel<float>::TestKernel(KERNEL no, int n, size_t notests) {
     }
 
 
-#ifdef HAVE_TBB
-    t1 = tick_count::now();
-    cout << "Sequential evaluation time: " << (t1-t0).seconds() << " s" << endl;
+#ifdef _OPENMP
+    t1 = omp_get_wtime();
+    cout << "Sequential evaluation time: " << t1-t0 << " s" << endl;
 #endif
 
     cout << comparison << endl;

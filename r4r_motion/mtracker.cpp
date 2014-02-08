@@ -129,11 +129,13 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
             model(p0s.size()+i) = m0.Get(i);
 
         // iterate
+        CBiSquareWeightFunction<float> weight;
         vecf r = lms.Iterate(m_params->GetIntParameter("LM_NITER_OUTER"),
+                             weight,
                              m_params->GetIntParameter("LM_NITER_INNER"),
                              m_params->GetDoubleParameter("LM_EPS"),
-                             false,
-                             false);
+                             true,
+                             true);
 
         // add new points to the map
         float threshold = m_params->GetDoubleParameter("OUTLIER_REJECTION_THRESHOLD_DEPTH");
@@ -144,10 +146,10 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
             x[i] = x[i]*model.Get(i);
         x = F0inv.Transform(x);
 
-
+        size_t row = 0;
         for(size_t i=0; i<p0s.size(); i++) {
 
-            if(fabs(r.Get(i))<threshold && fabs(r.Get(p0s.size()+i))<threshold) {
+            if(fabs(r.Get(row))<threshold && fabs(r.Get(row+1))<threshold) {
 
                 // cast to special tracklet type and set reference point
                 CMotionTrackerTracklet* tracklet = reinterpret_cast<CMotionTrackerTracklet*>(trackletsi2i[i]);
@@ -161,6 +163,8 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
             }
             else
                 trackletsi2i[i]->SetStatus(false);
+
+            row += 2;
 
         }
 
@@ -178,8 +182,10 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
         // reject outliers
         for(size_t i=0; i<xs.size(); i++) {
 
-            if(fabs(r.Get(2*p0s.size()+i))>threshold || fabs(r.Get(2*p0s.size()+xs.size()+i))>threshold)
+            if(fabs(r.Get(row))>threshold || fabs(r.Get(row+1))>threshold)
                 trackletss2i[i]->SetStatus(false);
+
+            row += 2;
 
        }
 
@@ -297,7 +303,7 @@ CMagicSfM::CMagicSfM(CPinholeCam<float> cam, pair<vector<vec2f>,vector<vec2f> >&
 
 }
 
-void CMagicSfM::ComputeResidual(vecf& r) {
+void CMagicSfM::ComputeResidual(vecf& r) const {
 
     size_t m = m_corri2i.first.size();
     size_t n = m_corrs2i.first.size();
@@ -334,9 +340,9 @@ void CMagicSfM::ComputeResidual(vecf& r) {
         vec2f dp = p1p[i] - m_corri2i.second[i];
 
         // copy weighted error
-        r(row)   = m_weights.Get(row)*dp.Get(0);
+        r(row) = dp.Get(0);
         row++;
-        r(row) = m_weights.Get(row)*dp.Get(1);
+        r(row) = dp.Get(1);
         row++;
 
     }
@@ -350,16 +356,16 @@ void CMagicSfM::ComputeResidual(vecf& r) {
         vec2f dp = p1p[i] - m_corrs2i.second[i];
 
         // set residual
-        r(row)   = m_weights.Get(row)*dp.Get(0);
+        r(row) = dp.Get(0);
         row++;
-        r(row) = m_weights.Get(row)*dp.Get(1);
+        r(row) = dp.Get(1);
         row++;
 
     }
 
 }
 
-void CMagicSfM::ComputeResidualAndJacobian(vecf& r, CCSRMatrix<float> &J) {
+void CMagicSfM::ComputeResidualAndJacobian(vecf& r, CCSRMatrix<float> &J) const {
 
     /* Jacobian w.r.t.
      * - rotation need backprojected point in world coordinates,
@@ -579,45 +585,6 @@ void CMagicSfM::ComputeResidualAndJacobian(vecf& r, CCSRMatrix<float> &J) {
     }
 
     J.SetData(rowptr,cols,vals);
-
-}
-
-vecf CMagicSfM::ComputeDispersion(const vecf& r) {
-
-    vecf sigma(r.NElems());
-
-    size_t m = m_corri2i.first.size();
-    size_t n = m_corrs2i.first.size();
-
-    // get pointer to the data
-    float* rdata = r.Data().get();
-
-    // copy into subarrays (one for each dimension and part of the functional)
-    vecf ri2iu(m,shared_ptr<float>(&rdata[0]));
-    vecf ri2iv(m,shared_ptr<float>(&rdata[m]));
-    vecf rs2iu(n,shared_ptr<float>(&rdata[2*m]));
-    vecf rs2iv(n,shared_ptr<float>(&rdata[2*m+n]));
-
-    float si2iu = 1.0/(1.4826*ri2iu.MAD());
-    float si2iv = 1.0/(1.4826*ri2iv.MAD());
-    float ss2iu = 1.0/(1.4826*rs2iu.MAD());
-    float ss2iv = 1.0/(1.4826*rs2iv.MAD());
-
-    for(size_t i=0; i<m; i++) {
-
-        sigma(i) = si2iu;
-        sigma(m+i) = si2iv;
-
-    }
-
-    for(size_t i=0; i<n; i++) {
-
-        sigma(2*m+i) = ss2iu;
-        sigma(2*m+n+i) = ss2iv;
-
-    }
-
-    return sigma;
 
 }
 
