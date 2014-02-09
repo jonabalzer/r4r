@@ -24,6 +24,8 @@
 #ifndef R4RTRIMESH_H_
 #define R4RTRIMESH_H_
 
+#ifdef HAVE_OM
+
 #define COTAN_EPSILON 1e-10
 
 #include <set>
@@ -51,12 +53,7 @@ public:
 /*! \brief triangle mesh
  *
  *
- *typedef pair<VertexHandle,float> vd;
-
-class CVertexDistanceComparator {
-public:
-    bool operator()(const vd& x, const vd& y) { return x.second<=y.second; }
-};
+ *
  */
 class CTriangleMesh:public TriangleMesh {
 
@@ -180,4 +177,6 @@ private:
 
 }
 
-#endif /* TRIMESH_H_ */
+#endif // HAVE_OM?
+
+#endif // TRIMESH_H_

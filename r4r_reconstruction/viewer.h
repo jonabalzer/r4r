@@ -102,6 +102,8 @@ protected:
 
 };
 
+#ifdef HAVE_OM
+
 class CTriMeshViewer:public CViewer {
 
     Q_OBJECT
@@ -149,6 +151,8 @@ private:
     const CTriangleMesh* m_mesh;                //!< pointer to the point cloud
 
 };
+
+#endif
 
 class CPointCloudViewer:public CViewer {
 

@@ -21,6 +21,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
+#ifdef HAVE_OM
+
 #include <assert.h>
 #include <limits>
 #include <algorithm>
@@ -805,32 +807,6 @@ map<VertexHandle,float> CTriangleMesh::Dijkstra(VertexHandle vh, const set<Verte
 
 }
 
-
-
-
-/*void CTriangleMesh::Diffuse(VertexHandle vh, size_t h, std::map<int,float>& funcin, std::map<int,float>& funcout) {
-
-    TriangleMesh::VertexVertexIter vv_it;
-    float sum = 0;
-    for (vv_it = this->vv_iter(vh); vv_it; ++vv_it) {
-        sum += funcin[vv_it.handle().idx()];
-    }
-    funcout[vh.idx()] = funcin[vh.idx()] + sum;
-    funcout[vh.idx()] /= float(this->valence(vh));
-
-    // base case of recursion
-    if(h==0)
-        return;
-
-    for (vv_it = this->vv_iter(vh); vv_it; ++vv_it) {
-
-        if(funcout.find(vv_it.handle().idx())==funcout.end())
-            Diffuse(vv_it.handle(),h-1,funcin,funcout);
-
-    }
-
-}*/
-
-
-
 }
+
+#endif

@@ -47,6 +47,7 @@ isEmpty(OM) {
 }
 OM = $$first(OM)
 OMLIBPATH = $$dirname(OM)
+DEFINES += HAVE_OM
 
 LIBS += -L$$OMLIBPATH \
         -lOpenMeshCore \

@@ -21,37 +21,19 @@
 #
 ######################################################################################
 
-TEMPLATE = subdirs
-
-CONFIG += ordered
-
-SUBDIRS += r4r_core \
-           r4r_motion \
-           r4r_hardware \
-           r4r_reconstruction
-
-GT = $$system(find /usr -name gtest.h 2>/dev/null)
-exists($$GT) {
-    GT = $$first($$GT)
-    GT = $$dirname($$GT)
-    SUBDIRS += unit_tests
-}
-else {
-    message("Could not locate GoogleTest framework.")
-}
-
-equals( HAVE_EXAMPLES, 1 ) {
-
-    SUBDIRS += robust_regression \
-               tvdenoising \
-               mv_descriptor_learning \
-               clam \
-
-}
+TEMPLATE = app
+CONFIG += console
+TARGET = r4r_unit_tests
 
 QMAKE_CXXFLAGS += -std=c++0x
 
-# doxygen target
-dox.target = doc
-dox.commands = doxygen $$PWD/doxyfile
-QMAKE_EXTRA_TARGETS += dox
+SOURCES += main.cpp \
+    test_darray.cpp
+
+LIBS += -lgtest \
+        -lpthread \
+        -L$$OUT_PWD/../r4r_core/ \
+        -lr4r_core
+
+INCLUDEPATH += $$PWD/../r4r_core
+DEPENDPATH += $$PWD/../r4r_core

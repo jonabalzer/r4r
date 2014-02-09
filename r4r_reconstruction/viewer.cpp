@@ -25,7 +25,6 @@
 
 #include <iostream>
 
-
 #define NEAR_PLANE_TOL 0.8
 #define FAR_PLANE_TOL 1.6
 
@@ -356,6 +355,9 @@ CDenseArray<float> CViewer::getDepthMap(const CView<float>& view) {
 
 }
 
+
+#ifdef HAVE_OM
+
 CTriMeshViewer::CTriMeshViewer(const CView<float>& view, const CTriangleMesh* mesh, QWidget* parent):
     CViewer(view,parent),
     m_mesh(mesh) {
@@ -597,6 +599,8 @@ void CTriMeshViewer::paintGL() {
     glEnd();
 
 }
+
+#endif
 
 CPointCloudViewer::CPointCloudViewer(const CView<float>& view, const C3dPointCloud *pcl, QWidget* parent):
     CViewer(view,parent),
