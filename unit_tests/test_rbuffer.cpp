@@ -21,43 +21,42 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef R4RFACTOR_H_
-#define R4RFACTOR_H_
+#include <gtest/gtest.h>
+#include "rbuffer.h"
 
-#include "darray.h"
+using namespace R4R;
 
-namespace R4R {
+class CRingBufferTests:public testing::Test {
 
-/*! \brief LAPACK wrapper
- *
- */
-template <class T>
-class CMatrixFactorization {
+protected:
 
-public:
+    CRingBufferTests():
+        m_float_buffer(5){}
 
-	/*! \brief Singular value decomposition.
-	 *
-	 * \param[in] A matrix to decompose
-	 *
-	 * \details
-	 *
-	 */
-    static bool SVD(const CDenseArray<T>& A, CDenseArray<T>& U, CDenseArray<T>& S, CDenseArray<T>& Vt);
+    virtual void SetUp() {
 
-	//! In-place Cholesky decomposition of a symmetric matrix.
-    static bool Cholesky(CDenseArray<T>& A);
+        // [ 3, 5, 1, 0, 0 ]
+        m_float_buffer.push_back(3);
+        m_float_buffer.push_back(5);
+        m_float_buffer.push_back(1);
 
-	//! In-place matrix inversion by Cholesky decomposition.
-    static bool InvertSymmetric(CDenseArray<T>& A);
+    }
 
-	//! Rank of matrix.
-    static size_t Rank(const CDenseArray<T>& A, T tol);
-
-private:
+    CRingBuffer<float> m_float_buffer;              //!< ring buffer of floats
 
 };
 
-}
 
-#endif /* FACTOR_H_ */
+TEST_F(CRingBufferTests, BasicFunctionality) {
+
+    EXPECT_EQ(1,m_float_buffer.back());
+    EXPECT_EQ(0,m_float_buffer.front());
+
+    // [ 3, 5, 1, 2, 4 ]
+    m_float_buffer.push_back(2);
+    m_float_buffer.push_back(4);
+    EXPECT_EQ(4,m_float_buffer.back());
+    EXPECT_EQ(3,m_float_buffer.front());
+
+
+}

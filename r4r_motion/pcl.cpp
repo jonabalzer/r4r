@@ -98,5 +98,6 @@ CVector<T,n> CPointCloud<Container,T,n>::Barycenter() const {
 }
 
 template class CPointCloud<list,float,3>;
+template class CPointCloud<vector,float,3>;
 
 }

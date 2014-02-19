@@ -37,7 +37,7 @@ namespace R4R {
  * simplest case, this could be a STL container such as a list. In a more advanced scenario, this could
  * be a tree data structure to facilitate fast lookup, or even something like an (a,b)-tree to store and
  * search very large maps efficiently. 2. The precision for of location coordinates. 3. The dimension of
- * the space. This parameter allows using this class not only as a 3d map but for example as a collection
+ * the space. This parameter allows using this class not only as a 3-d map but for example as a collection
  * of interest points in the image plane.
  *
  * The interface should provide the following functionality:

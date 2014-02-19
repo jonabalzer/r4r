@@ -162,6 +162,14 @@ public:
     //! Projection matrix.
     CDenseArray<T> GetProjectionMatrix() const;
 
+    /*! \brief Projection matrix for use in OpenGL context.
+     *
+     * OpenGL matrices are also column-major, so the result can be directly sent
+     * to the graphics card via a pointer to the data.
+     *
+     */
+    CDenseArray<T> GetOpenGLProjectionMatrix(T znear, T zfar) const;
+
 private:
 
     size_t m_size[2];			//!< pixel size
@@ -323,8 +331,12 @@ public:
      */
     void Orbit(const CVector<T,3>& center, const CVector<T,3>& axis);
 
-    //! Rotates the view so that it looks at a given point.
-    void LookAt(CVector<T,3> x);
+    /*! \brief Computes a combined OpenGL model view/projection matrix.
+     *
+     * This requires the camera to be of type CPinholeCam<T>.
+     *
+     */
+    CDenseArray<T> ModelViewProjectionMatrix(T znear, T zfar) const;
 
 protected:
 

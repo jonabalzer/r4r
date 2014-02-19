@@ -155,30 +155,40 @@ void MainWindow::on_stepButton_clicked()
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
     // start measuring time
-    double t0, t1;
+    double t0, t1, t2, t3, t4;
     t0 = omp_get_wtime();
 
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
+    t1 = omp_get_wtime();
 
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
+    t2 = omp_get_wtime();
 
     // check validity of tracks
     m_tracker->Clean(pyramid,m_pyramid);
     //trackers[i]->DeleteInvalidTracks();
+    t3 = omp_get_wtime();
 
     // add new tracks
     m_tracker->AddTracklets(m_pyramid);
+    t4 = omp_get_wtime();
+
+    // show some profiling info
+    cout << "Update: " << t1-t0 << endl;
+    cout << "Update descriptors: " << t2-t1 << endl;
+    cout << "Clean: " << t3-t2 << endl;
+    cout << "Add: " << t4-t3 << endl;
 
     // compute and display framerate
-    t1 = omp_get_wtime();
-    double fps = 1.0/(t1-t0);
+    double fps = 1.0/(t4-t0);
     ui->speedLcdNumber->display(fps);
+
 
     // draw trails
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    m_tracker->Draw(qimg,5);
+    m_tracker->Draw(qimg,3);
     show_image(qimg);
 
     // draw with new view and points

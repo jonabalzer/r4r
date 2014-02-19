@@ -21,43 +21,44 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef R4RFACTOR_H_
-#define R4RFACTOR_H_
+#include <gtest/gtest.h>
+#include "cam.h"
 
-#include "darray.h"
+using namespace R4R;
+using namespace std;
 
-namespace R4R {
+class CViewTests:public testing::Test {
 
-/*! \brief LAPACK wrapper
- *
- */
-template <class T>
-class CMatrixFactorization {
+protected:
 
-public:
+    CViewTests():
+        m_cam(640,480,500,500,319.5,239.5),
+        m_view(m_cam) {}
 
-	/*! \brief Singular value decomposition.
-	 *
-	 * \param[in] A matrix to decompose
-	 *
-	 * \details
-	 *
-	 */
-    static bool SVD(const CDenseArray<T>& A, CDenseArray<T>& U, CDenseArray<T>& S, CDenseArray<T>& Vt);
 
-	//! In-place Cholesky decomposition of a symmetric matrix.
-    static bool Cholesky(CDenseArray<T>& A);
 
-	//! In-place matrix inversion by Cholesky decomposition.
-    static bool InvertSymmetric(CDenseArray<T>& A);
+    virtual void SetUp() {
 
-	//! Rank of matrix.
-    static size_t Rank(const CDenseArray<T>& A, T tol);
+        CRigidMotion<float,3> F(1.2,0,0,0,0,0);
+        m_view.SetTransformation(F);
 
-private:
+
+    }
+
+    CPinholeCam<float> m_cam;               //! intrinsic parameters
+    CView<float> m_view;                    //! extrinsic parameters
 
 };
 
-}
+TEST_F(CViewTests, OpenGLMatrix) {
 
-#endif /* FACTOR_H_ */
+    matf PF = m_view.ModelViewProjectionMatrix(0.1,100.0);
+
+    float tolerance = 1e-3;
+
+    EXPECT_GE(tolerance,fabs(1.5625-PF.Get(0,0)));
+    EXPECT_GE(tolerance,fabs(PF.Get(0,1)));
+    EXPECT_GE(tolerance,fabs(-0.0015625-PF.Get(0,2)));
+    EXPECT_GE(tolerance,fabs(1.875-PF.Get(0,3)));
+
+}

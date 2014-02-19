@@ -22,9 +22,9 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include <math.h>
-#include <iostream>
 #include <fstream>
 #include <string>
+#include <typeinfo>
 
 #include "cam.h"
 #include "rutils.h"
@@ -294,6 +294,23 @@ CDenseArray<T> CPinholeCam<T>::GetProjectionMatrix() const {
 
 }
 
+template<typename T>
+CDenseArray<T> CPinholeCam<T>::GetOpenGLProjectionMatrix(T znear, T zfar) const {
+
+    CDenseArray<T> P(4,4);
+
+    P(0,0) = 2.0*m_f[0] / T(m_size[0]);
+    P(0,2) = 2.0*(m_c[0]/ T(m_size[0])) - 1.0;
+    P(1,1) = 2.0*m_f[1] /  T(m_size[1]);
+    P(1,2) = 2.0*(m_c[1]/  T(m_size[1])) - 1.0;
+    P(2,2) = (-zfar - znear)/(zfar - znear);
+    P(2,3) = -2*zfar*znear/(zfar - znear);
+    P(3,2) = -1.0;
+
+    return P;
+
+}
+
 template class CPinholeCam<float>;
 template class CPinholeCam<double>;
 
@@ -549,6 +566,31 @@ void CView<T>::Orbit(const CVector<T,3>& center, const CVector<T,3>& axis) {
     // also set inverse
     m_F = m_Finv;
     m_F.Invert();
+
+}
+
+template <typename T>
+CDenseArray<T> CView<T>::ModelViewProjectionMatrix(T znear, T zfar) const {
+
+    try {
+
+        const CPinholeCam<T>& cam = dynamic_cast<const CPinholeCam<T>&>(this->GetCam());
+
+        CDenseArray<T> P = cam.GetOpenGLProjectionMatrix(znear,zfar);
+        CDenseArray<T> F = this->GetTransformation();
+        return P*F;
+
+    }
+    catch (std::bad_cast) {
+
+        cerr << "RTTI: The camera type does not support OpenGL modelview-projection matrices." << endl;
+
+        CDenseArray<T> result (4,4);
+        result.Eye();
+        return result;
+
+
+    }
 
 }
 

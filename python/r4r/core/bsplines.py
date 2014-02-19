@@ -437,6 +437,16 @@ class surface:
         self.d = d
         self.cp = np.zeros((d,knots[0].ncp,knots[1].ncp),dtype='double')
 
+    def convert_graph_to_3d(self):
+        """
+        Converts the graph representation of a surface into a full 3-dimensional
+        spline using the Greville abscissae. 
+        """
+        if(self.d==1):
+            ug,vg = np.meshgrid(self.knots[0].greville_abscissae(),self.knots[1].greville_abscissae())
+            self.cp = np.vstack((np.reshape(ug,(1,ug.shape[0],ug.shape[1])),np.reshape(vg,(1,vg.shape[0],vg.shape[1])),self.cp))
+            self.d = 3
+        
     def set_function(self,f):
         """
         Interprets a 3d-surface as a scalar-valued functions over the plane,
@@ -497,7 +507,8 @@ class surface:
 
     def curvature(self,t):
         """
-        Second fundamental form, Gauss, and mean curvature. 
+        Second fundamental form, Gauss, and mean curvature. FIXME: This is 
+        only works for dimensions 2 and 3!!!
         """
         x,xu,xv,xuu,xuv,xvv = self.evaluate((t[0],t[1]))
         n = np.cross(xu,xv)
@@ -527,16 +538,20 @@ class surface:
         maxvalu = np.zeros(u.shape)
         maxvalv = np.zeros(u.shape)
         
-        for i in range(0,u.shape[0]):        
-            for j in range(0,u.shape[1]):
-                kappa, gamma, II = self.curvature((u[i,j],v[i,j]))
-                vals,vecs = np.linalg.eigh(II)
-                maxvalu[i,j] = vals[0]                
-                maxvalv[i,j] = vals[1]
-                maxu[i,j] = vecs[0,0]
-                maxv[i,j] = vecs[1,0]
-                minu[i,j] = vecs[0,1]
-                minv[i,j] = vecs[1,1]
+        if(self.d==3):        
+        
+            for i in range(0,u.shape[0]):        
+                for j in range(0,u.shape[1]):
+                    kappa, gamma, II = self.curvature((u[i,j],v[i,j]))
+                    vals,vecs = np.linalg.eigh(II)
+                    maxvalu[i,j] = vals[0]                
+                    maxvalv[i,j] = vals[1]
+                    maxu[i,j] = vecs[0,0]
+                    maxv[i,j] = vecs[1,0]
+                    minu[i,j] = vecs[0,1]
+                    minv[i,j] = vecs[1,1]
+        else:
+            print "This operator is only defined for surfaces embedded R^3..."
         
         return u, v, maxu, maxv, minu, minv, maxvalu, maxvalv
     

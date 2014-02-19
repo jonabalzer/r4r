@@ -142,7 +142,6 @@ void CDenseArray<T>::Concatenate(const CDenseArray& array, bool direction) {
 
 }
 
-
 template <typename T>
 CDenseArray<T>::CDenseArray(const CDenseArray& array):
 	m_nrows(array.m_nrows),

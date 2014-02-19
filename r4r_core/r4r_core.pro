@@ -23,14 +23,13 @@
 
 #QT -= core gui
 
-QMAKE_CXXFLAGS += -std=c++0x -O3 -msse4 -fopenmp
-
-#packagesExist(openmp) { QMAKE_CXXFLAGS  +=  }
+QMAKE_CXXFLAGS += -std=c++0x -O3 -msse4
 
 TARGET = r4r_core
 TEMPLATE = lib
 
-DEFINES += R4R_CORE_LIBRARY
+#DEFINES += R4R_CORE_LIBRARY
+CONFIG += warn_off create_prl no_install_prl create_pc
 
 SOURCES += \
     trafo.cpp \
@@ -73,31 +72,58 @@ HEADERS += \
     splinecurve.h \
     vecn.h \
     image.h \
-    rbuffer.h
+    rbuffer.h \
+    unionfind.h
 
 unix:!symbian|win32 {
 
+    # add this just to make surea
+    LIBS += -L/usr/local/lib
+
+    # find LAPACK and BLAS
+    LAPACK = $$system(find /usr -name liblapack* 2>/dev/null)
+    isEmpty(LAPACK) {
+        error("Could not resolve dependency on LAPACK.")
+    }
+    else {
+        LIBS += -llapack
+    }
+    BLAS = $$system(find /usr -name libblas* 2>/dev/null)
+    isEmpty(BLAS) {
+        warning("Could not resolve dependency on BLAS.")
+    }
+    else {
+
+        LIBS += -lblas
+        DEFINES += HAVE_BLAS
+
+    }
+
+    # OMP
+    OMP = $$system(find /usr -name libgomp* 2>/dev/null)
+    isEmpty(OMP) {
+        warning("Could not resolve dependency on OpenMP.")
+    }
+    else {
+
+        QMAKE_CXXFLAGS += -fopenmp
+        LIBS += -lgomp
+
+    }
+
+    packagesExist(opencv) {
+
+        CONFIG += link_pkgconfig
+        PKGCONFIG += opencv
+
+    }
+
+    # install target, FIXME: target for pc file?
     headers.files = $$HEADERS
     headers.path = /usr/include/r4r/
-
     target.path = /usr/lib/
 
     INSTALLS += target \
                 headers
-
-    # what about clean target?
-
-    LIBS += -L/usr/local/lib \
-            -lopencv_core \
-            -lopencv_highgui \
-            -lopencv_video \
-            -lopencv_imgproc \
-            -lopencv_features2d \
-            -lopencv_calib3d \
-            -llapack \
-            -lgomp
-
-    #packagesExist(openmp) { LIBS += -lgomp }
-
 
 }

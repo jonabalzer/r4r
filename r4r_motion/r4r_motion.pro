@@ -36,7 +36,9 @@ SOURCES += tracker.cpp \
     descriptor.cpp \
     tracklet.cpp \
     dagg.cpp \
-    descspecial.cpp
+    descspecial.cpp \
+    pcl.cpp \
+    bbox.cpp
 
 HEADERS += \
     tracker.h \
@@ -47,11 +49,16 @@ HEADERS += \
     descriptor.h \
     tracklet.h \
     dagg.h \
-    descspecial.h
+    descspecial.h \
+    pcl.h \
+    bbox.h
 
 # add last flag depending on whether FFTW is present
 packagesExist(fftw3) {
     DEFINES += HAVE_FFTW
+}
+else {
+    warning("Optional dependency on FFTW could not be resolved.")
 }
 
 # make sure that r4r_core is up to date

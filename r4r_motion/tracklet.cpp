@@ -229,7 +229,9 @@ void CTracklet<Container>::Draw(QImage& img, size_t length) const {
     }
 
 }
+
 #endif
+
 
 template class CTracklet<list>;
 template class CTracklet<vector>;

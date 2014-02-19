@@ -157,11 +157,11 @@ private:
 
 typedef CInterestPoint<float,2> imfeature;
 
-template<typename T>
-using C2dFeature = CInterestPoint<T,2>;
+//template<typename T>
+//using C2dFeature = CInterestPoint<T,2>;
 
-template<typename T>
-using C3dFeature = CInterestPoint<T,3>;
+//template<typename T>
+//using C3dFeature = CInterestPoint<T,3>;
 
 
 } // end of namespace

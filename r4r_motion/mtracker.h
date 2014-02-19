@@ -57,6 +57,8 @@ class CMotionTracker: public CSimpleTracker {
 
 public:
 
+    typedef CPointCloud<std::list,float,3> CSfMMap;
+
     //! Constructor.
     CMotionTracker(const CParameters* params, CPinholeCam<float>& cam);
 
@@ -71,7 +73,7 @@ public:
     void AddTracklets(const std::vector<cv::Mat>& pyramid);
 
     //! Returns a reference to the point cloud.
-    const CPointCloud<std::list,float,3>& GetMap() { return m_map; }
+    const CSfMMap& GetMap() { return m_map; }
 
     //! Access to the motion.
     const C3dTrajectory<std::list,float>& GetMotion() { return m_motion; }
@@ -81,9 +83,9 @@ public:
 
 private:
 
-    CPinholeCam<float> m_cam;                  //!< camera
-    C3dTrajectory<std::list,float> m_motion;   //!< motion
-    CPointCloud<std::list,float,3> m_map;      //!< map
+    CPinholeCam<float> m_cam;                    //!< camera
+    C3dTrajectory<std::list,float> m_motion;     //!< motion
+    CSfMMap m_map;                               //!< map
 
 };
 

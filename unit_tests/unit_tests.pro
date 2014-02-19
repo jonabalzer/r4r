@@ -28,7 +28,10 @@ TARGET = r4r_unit_tests
 QMAKE_CXXFLAGS += -std=c++0x
 
 SOURCES += main.cpp \
-    test_darray.cpp
+    test_darray.cpp \
+    test_unionfind.cpp \
+    test_rbuffer.cpp \
+    test_cam.cpp
 
 LIBS += -lgtest \
         -lpthread \

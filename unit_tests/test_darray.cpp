@@ -27,7 +27,7 @@
 
 using namespace R4R;
 
-class CDenseArrayTests : public ::testing::Test {
+class CDenseArrayTests:public testing::Test {
 
 protected:
 

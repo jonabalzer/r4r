@@ -1,3 +1,26 @@
+/*////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2013, Jonathan Balzer
+//
+// All rights reserved.
+//
+// This file is part of the R4R library.
+//
+// The R4R library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The R4R library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////*/
+
 #ifndef R4RRBUFFER_H
 #define R4RRBUFFER_H
 
@@ -131,10 +154,8 @@ public:
 
     };
 
-    //! Delete standard constructor to make sure the size of the ring buffer is specified.
-    CRingBuffer() = delete;
-    CRingBuffer(const CRingBuffer<T>& x) = delete;
-    CRingBuffer<T>& operator=(const CRingBuffer<T>& x) = delete;
+    //! Constructor.
+    CRingBuffer(): m_data(),m_cursor(0) {}
 
     //! Constructor.
     explicit CRingBuffer(size_t n): m_data(n), m_cursor(0) {}
@@ -145,11 +166,31 @@ public:
     //! Pushback.
     void push_back(const T& x) { m_data[m_cursor] = x; m_cursor = (++m_cursor)%m_data.size(); }
 
-    //! Back
+    /*! \brief Back.
+     *
+     * This is the last element pushed into the container.
+     *
+     */
     const T& back() const { return m_data[(m_cursor+m_data.size()-1)%m_data.size()]; }
 
-    //! Back
+    //! Back.
     T& back() { return m_data[(m_cursor+m_data.size()-1)%m_data.size()]; }
+
+    /*! \brief Front.
+     *
+     * Given a buffer length of \f$n\f$, the front is the element which was pushed \f$n-1\f$ times
+     * before the back.
+     *
+     */
+    const T& front() const { return m_data[m_cursor%m_data.size()]; }
+
+    /*! \brief Front.
+     *
+     * Given a buffer length of \f$n\f$, the front is the element which was pushed \f$n-1\f$ times
+     * before the back.
+     *
+     */
+     T& front() { return m_data[m_cursor%m_data.size()]; }
 
     /*! \brief Creates forward iterator pointing to the "beginning".
      *
