@@ -41,11 +41,18 @@ public:
     CMotionTrackerTracklet() = delete;
 
     //! Constructor.
-    CMotionTrackerTracklet(size_t t0, const imfeature& x0, std::list<CInterestPoint<float,3> >::const_iterator it, size_t maxlength = 200):CSimpleTrackerTracklet(t0,x0,maxlength),m_pmap_point(it){}
+    CMotionTrackerTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200):CSimpleTrackerTracklet(t0,x0,maxlength),m_pmap_point(),m_has_point(false){}
 
 private:
 
-    std::list<CInterestPoint<float,3> >::const_iterator m_pmap_point;    //!< iterator directed to point in the map
+    /*! FIXME: One has to make absolutely sure that the iterator does not get invalidated.
+     * For a list, this never happens, but for a vector it might, if insertion happens
+     * before the element to which the iterator points. Maybe we only store a pointer and
+     * create an iterator from it to inspect neighboring elements in the map?
+     *
+     */
+    std::vector<CInterestPoint<float,3> >::const_iterator m_pmap_point;    //!< iterator initially invalid, later to point to map point
+    bool m_has_point;                                                      //!< flag indicating whether the iterator is valid
 
 };
 
@@ -57,10 +64,17 @@ class CMotionTracker: public CSimpleTracker {
 
 public:
 
-    typedef CPointCloud<std::list,float,3> CSfMMap;
+    typedef CPointCloud<std::vector,float,3> CSfMMap;
+
+    /*! \brief Deleted constructor.
+     *
+     * Cannot construct motion tracker without reference to camera intrinsics.
+     *
+     */
+    CMotionTracker() = delete;
 
     //! Constructor.
-    CMotionTracker(const CParameters* params, CPinholeCam<float>& cam);
+    CMotionTracker(const CParameters* params, const CPinholeCam<float>& cam);
 
     /*! \copybrief CTracker::Update(cv::Mat&,cv::Mat&)
      *

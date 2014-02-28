@@ -61,7 +61,7 @@ public:
 
     /*! Insert a new point.
      *
-     * \returns pointer to the newly created element in the map
+     * \returns iterator to the newly created element in the map
      *
      */
     typename Container<CInterestPoint<T,n> >::const_iterator Insert(const CInterestPoint<T,n>& x) { m_data.push_back(x); return --m_data.end(); }
@@ -93,6 +93,41 @@ private:
 
 };
 
+template<typename T,u_int n>
+class CPointCloud<std::vector,T,n> {
+
+public:
+
+    //! Constructor.
+    CPointCloud(size_t s):m_data() { m_data.reserve(s); }
+
+    /*! Insert a new point.
+     *
+     * \returns iterator to the newly created element in the map
+     *
+     */
+    typename std::vector<CInterestPoint<T,n> >::const_iterator Insert(const CInterestPoint<T,n>& x) { m_data.push_back(x); return --m_data.end(); }
+
+    //! Read-only access to the data.
+    const std::vector<CInterestPoint<T,n> >& GetData() const { return m_data; }
+
+    //! Write to disk.
+    bool WriteToFile(const char* filename) const { return CInterestPoint<T,n>::template SaveToFile<std::vector>(filename,m_data); }
+
+    //! Computes the boundig box.
+    CBoundingBox<T> BoundingBox() const;
+
+    //! Number of points in the cloud.
+    size_t Size() const { return m_data.size(); }
+
+    //! Barycenter.
+    CVector<T,n> Barycenter() const;
+
+private:
+
+    std::vector<CInterestPoint<T,n> > m_data;         //!< container holding the data
+
+};
 
 
 } // end of namespace

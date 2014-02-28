@@ -24,13 +24,11 @@
 #include "rect.h"
 #include <iostream>
 #include <assert.h>
+#include <math.h>
 
 #define MARGIN 2
 
-
-using namespace cv;
 using namespace std;
-
 
 namespace R4R {
 

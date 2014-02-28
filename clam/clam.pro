@@ -29,10 +29,12 @@ TARGET = clam
 TEMPLATE = app
 
 QMAKE_CXXFLAGS += -std=c++0x -O3
+#QMAKE_CXXFLAGS_DEBUG += -pg
+#QMAKE_LFLAGS_DEBUG += -pg
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
-        preferences.cpp
+           mainwindow.cpp \
+           preferences.cpp
 
 HEADERS += mainwindow.h \
            preferences.h
@@ -53,7 +55,8 @@ INSTALLS += target
 
 RESOURCES += clamicon.qrc
 
-# find OpenMesh library
+# find OpenMesh library, we don't need this
+#
 OM = $$system(find /usr -name libOpenMeshCore* 2>/dev/null)
 isEmpty(OM) {
     error("Could not resolve dependency on OpenMesh.")

@@ -188,7 +188,7 @@ void MainWindow::on_stepButton_clicked()
 
     // draw trails
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    m_tracker->Draw(qimg,3);
+    m_tracker->Draw(qimg,2);
     show_image(qimg);
 
     // draw with new view and points
@@ -331,8 +331,8 @@ void MainWindow::on_actionSave_Map_triggered() {
 
 
 
-    const list<CInterestPoint<float,3> >& data = m_tracker->GetMap().GetData();
-    list<CInterestPoint<float,3> >::const_iterator it;
+    const vector<CInterestPoint<float,3> >& data = m_tracker->GetMap().GetData();
+    vector<CInterestPoint<float,3> >::const_iterator it;
 
     ofstream out(filename.toStdString().c_str());
 

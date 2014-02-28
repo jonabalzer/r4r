@@ -156,7 +156,7 @@ private:
 
 class CPointCloudViewer:public CViewer {
 
-    typedef CPointCloud<std::list,float,3> C3dPointCloud;
+    typedef CPointCloud<std::vector,float,3> C3dPointCloud;
 
     Q_OBJECT
 

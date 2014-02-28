@@ -679,8 +679,8 @@ void CPointCloudViewer::paintGL() {
     // set projection and modelview matrices from m_view
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    const list<CInterestPoint<float,3> >& data = m_pcl->GetData();
-    list<CInterestPoint<float,3> >::const_iterator it;
+    const vector<CInterestPoint<float,3> >& data = m_pcl->GetData();
+    vector<CInterestPoint<float,3> >::const_iterator it;
 
     glPointSize(5.0f);
     glBegin(GL_POINTS);

@@ -28,7 +28,6 @@ QMAKE_CXXFLAGS += -std=c++0x -O3 -msse4
 TARGET = r4r_core
 TEMPLATE = lib
 
-#DEFINES += R4R_CORE_LIBRARY
 CONFIG += warn_off create_prl no_install_prl create_pc
 
 SOURCES += \
@@ -100,16 +99,16 @@ unix:!symbian|win32 {
     }
 
     # OMP
-    OMP = $$system(find /usr -name libgomp* 2>/dev/null)
-    isEmpty(OMP) {
-        warning("Could not resolve dependency on OpenMP.")
-    }
-    else {
+    #OMP = $$system(find /usr -name libgomp* 2>/dev/null)
+    #isEmpty(OMP) {
+    #    warning("Could not resolve dependency on OpenMP.")
+    #}
+    #else {
 
-        QMAKE_CXXFLAGS += -fopenmp
-        LIBS += -lgomp
+    #    QMAKE_CXXFLAGS += -fopenmp
+    #    LIBS += -lgomp
 
-    }
+    #}
 
     packagesExist(opencv) {
 

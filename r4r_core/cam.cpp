@@ -38,7 +38,6 @@ vector<CVector<T,2> > CAbstractCam<T>::Project(const vector<CVector<T,3> >& x) c
 
     vector<CVector<T,2> > result(x.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Project(x[i]);
 
@@ -51,7 +50,6 @@ vector<CVector<T,3> > CAbstractCam<T>::Normalize(const vector<CVector<T,2> >& u)
 
     vector<CVector<T,3> > result(u.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<u.size(); i++)
         result[i] = Normalize(u[i]);
 
@@ -64,7 +62,6 @@ vector<CVector<T,2> > CAbstractCam<T>::Flow(const std::vector<CVector<T,3> >& x,
 
     vector<CVector<T,2> > result(x.size());
 
-#pragma omp parallel for
     for(size_t i=0; i<x.size(); i++)
         result[i] = Flow(x[i],dx[i]);
 

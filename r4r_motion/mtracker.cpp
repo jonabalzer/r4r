@@ -34,11 +34,11 @@ using namespace cv;
 
 namespace R4R {
 
-CMotionTracker::CMotionTracker(const CParameters* params, CPinholeCam<float> &cam):
+CMotionTracker::CMotionTracker(const CParameters* params, const CPinholeCam<float>& cam):
         CSimpleTracker(params),
         m_cam(cam),
         m_motion(),
-        m_map() {
+        m_map(1000) {
 
     // set initial frame to the identity
     m_motion.Update(0,0,0,0,0,0);
@@ -59,7 +59,7 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
 
     size_t kfr = (size_t)m_params->GetIntParameter("KEYFRAME_RATE");
 
-    if(m_global_t>0 && (m_global_t)%kfr==0) {
+    if(m_global_t>0 && m_global_t%kfr==0) {
 
         CRigidMotion<float,3> F0inv = m_motion.GetLatestState();
         F0inv.Invert();
@@ -78,14 +78,14 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
             // cast to special tracklet type
             shared_ptr<CMotionTrackerTracklet> tracklet = static_pointer_cast<CMotionTrackerTracklet>(*it);
 
-            if((*it)->GetStatus()&& tracklet->m_pmap_point!=m_map.GetData().end()) {
+            if((*it)->GetStatus() && tracklet->m_has_point) {
 
                 // extract scene point
                 xs.push_back(tracklet->m_pmap_point->GetLocation());
                 p1ss.push_back(p1);
                 trackletss2i.push_back((*it).get());
 
-            }
+            } // only add more im2im correspondences at key frames
             else if((*it)->GetStatus() && (*it)->GetLifetime()>(size_t)kfr) {
 
                 // check for the ringbuffer wether this is ok!!!
@@ -99,10 +99,15 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
 
         }
 
+        cout << "No of correspondences (2d-2d/3d-2d): " << p0s.size() << " " << xs.size() << endl;
+
+        // nothing to do?
+        if(p0s.size()==0 && xs.size()==0)
+            return;
+
+        // group into pair
         pair<vector<vec2f>,vector<vec2f> > corri2i(p0s,p1s);
         pair<vector<vec3f>,vector<vec2f> > corrs2i(xs,p1ss);
-
-        cout << "No of correspondences (2d-2d/3d-2d): " << p0s.size() << " " << xs.size() << endl;
 
         // init linear solver
         CPreconditioner<CCSRMatrix<float>,float> M;
@@ -159,6 +164,7 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
                                                 tracklet->GetLatestState().GetScale(),
                                                 tracklet->GetLatestState().GetQuality());
                 tracklet->m_pmap_point = m_map.Insert(feature);
+                tracklet->m_has_point = true;
 
             }
             else
@@ -246,7 +252,7 @@ void CMotionTracker::AddTracklets(const std::vector<Mat>& pyramid) {
                             imfeature x(loc,s,0);
 
                             // create new tracklet with feature, set the iterator to the end of the map
-                            CMotionTrackerTracklet* tracklet = new CMotionTrackerTracklet(m_global_t,x,m_map.GetData().end(),m_params->GetIntParameter("BUFFER_LENGTH"));
+                            CMotionTrackerTracklet* tracklet = new CMotionTrackerTracklet(m_global_t,x,m_params->GetIntParameter("BUFFER_LENGTH"));
                             this->AddTracklet(tracklet);
 
                             // also set the reference feature
