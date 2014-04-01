@@ -21,44 +21,46 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include <gtest/gtest.h>
-#include "cam.h"
+#ifndef KERNELSTEST_H
+#define KERNELSTEST_H
 
-using namespace R4R;
-using namespace std;
+#include <QtTest/QtTest>
 
-class CViewTests:public testing::Test {
+#include "kernels.h"
 
-protected:
+class CKernelsTest:public QObject {
 
-    CViewTests():
-        m_cam(640,480,500,500,319.5,239.5),
-        m_view(m_cam) {}
+  Q_OBJECT
 
+public:
 
+  explicit CKernelsTest(QObject* parent = nullptr);
 
-    virtual void SetUp() {
+private:
 
-        CRigidMotion<float,3> F(1.2,0,0,0,0,0);
-        m_view.SetTransformation(F);
+    R4R::CMercerKernel<float>* m_kernel;
+    R4R::CChiSquaredKernel<float>* m_chi_squared_kernel;
+    R4R::CIntersectionKernel<float>* m_intersection_kernel;
+    R4R::CHellingerKernel<float>* m_hellinger_kernel;
+    float* m_x;
+    float* m_y;
+    int m_n;
 
+private slots:
 
-    }
+  void init();
 
-    CPinholeCam<float> m_cam;               //! intrinsic parameters
-    CView<float> m_view;                    //! extrinsic parameters
+  void testIdendityKernel();
+
+  void testChiSquaredKernel();
+
+  void testIntersectionKernel();
+
+  void testHellingerKernel();
+
+  void cleanup();
 
 };
 
-TEST_F(CViewTests, OpenGLMatrix) {
 
-    matf PF = m_view.ModelViewProjectionMatrix(0.1,100.0);
-
-    float tolerance = 1e-3;
-
-    EXPECT_GE(tolerance,fabs(1.5625-PF.Get(0,0)));
-    EXPECT_GE(tolerance,fabs(PF.Get(0,1)));
-    EXPECT_GE(tolerance,fabs(-0.0015625-PF.Get(0,2)));
-    EXPECT_GE(tolerance,fabs(1.875-PF.Get(0,3)));
-
-}
+#endif // KERNELSTEST_H

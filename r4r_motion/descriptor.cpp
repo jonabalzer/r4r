@@ -352,11 +352,7 @@ void CBRIEF::GenerateSamplePoints() {
 
 }
 
-bool CBRIEF::Compute(cv::Mat& img) {
-
-    // smoothing
-    //Mat img_smooth;
-    //cv::GaussianBlur(img,img_smooth,cv::Size(7,7),2);
+bool CBRIEF::Compute(const Mat &img) {
 
     for(size_t i=0; i<m_container.NElems(); i++) {
 

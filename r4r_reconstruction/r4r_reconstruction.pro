@@ -31,10 +31,10 @@ TEMPLATE = lib
 DEFINES += R4R_RECONSTRUCTION_LIBRARY
 
 SOURCES += viewer.cpp \
-    trimesh.cpp
+           trimesh.cpp
 
 HEADERS += viewer.h \
-    trimesh.h
+           trimesh.h
 
 # local inlude path
 INCLUDEPATH += $$PWD/../r4r_core \
@@ -44,9 +44,10 @@ INCLUDEPATH += $$PWD/../r4r_core \
 DEPENDPATH += $$PWD/../r4r_core \
               $$PWD/../r4r_motion
 
-CONFIG += create_prl no_install_prl create_pc
-
 unix:!symbian|win32 {
+
+    # create pkg file
+    CONFIG += create_prl no_install_prl create_pc
 
     # find OpenMesh library
     OM = $$system(find /usr -name libOpenMeshCore* 2>/dev/null)
@@ -62,8 +63,12 @@ unix:!symbian|win32 {
                 -lOpenMeshCore \
                 -lOpenMeshTools
 
+        # add this so the binary knows the location of OM in non-standard path
+        QMAKE_LFLAGS += -Wl,-rpath=$$OMLIBPATH
+
     }
 
+    # create install target
     headers.files = $$HEADERS
     headers.path = /usr/include/r4r/
 

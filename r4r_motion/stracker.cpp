@@ -138,7 +138,7 @@ void CSimpleTracker::Clean(const vector<Mat>& pyramid0, const vector<Mat>& pyram
         const imfeature& f = (*it)->GetLatestState();
 
         // if feature is still alive  but its quality is too low in terms of the
-        //   distance between its descriptor and the reference, then kill it
+        // distance between its descriptor and the reference, then kill it
         if((*it)->GetStatus() && f.GetQuality()>m_params->GetIntParameter("MAX_HAMMING_DISTANCE"))
             (*it)->SetStatus(false);
 
@@ -202,8 +202,9 @@ void CSimpleTracker::AddTracklets(const vector<Mat>& pyramid) {
                             CSimpleTrackerTracklet* tracklet = new CSimpleTrackerTracklet(m_global_t,x,m_params->GetIntParameter("BUFFER_LENGTH"));
                             this->AddTracklet(tracklet);
 
-                            // also set the reference feature
-                            tracklet->m_reference_feature = x;
+
+                            // compute reference feature descriptor
+
 
                         }
 
@@ -283,29 +284,31 @@ void CSimpleTracker::UpdateDescriptors(const std::vector<cv::Mat>& pyramid) {
 
             // compute brief descriptor
             CBRIEF* briefdesc1 = new CBRIEF(droi);
+            briefdesc1->Compute(pyramid[s]);
+
+            // cast and attach it to the feature
             shared_ptr<CAbstractDescriptor> brief(briefdesc1);
-            //brief->Compute(pyrsmooth[s]);
-            brief->Compute(pyramid[s]);
             x.AttachDescriptor("BRIEF",brief);
 
             // interpret tracklet as simple tracker tracklet
             shared_ptr<CSimpleTrackerTracklet> tracklet = static_pointer_cast<CSimpleTrackerTracklet>(*it);
-            float quality = 0;
 
+            float quality;
             // check whether this has just been added or not
-            if((*it)->GetCreationTime()==m_global_t)
+            if(tracklet->m_reference_feature.HasDescriptor("BRIEF")) {
+
+                shared_ptr<CAbstractDescriptor> desc0 = tracklet->m_reference_feature.GetDescriptor("BRIEF");
+                shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
+                quality = briefdesc0->Distance(*briefdesc1);
+
+            } else {
+
                 tracklet->m_reference_feature.AttachDescriptor("BRIEF",brief);
-            else {
-
-                if(tracklet->m_reference_feature.HasDescriptor("BRIEF")) {
-
-                    shared_ptr<CAbstractDescriptor> desc0 = tracklet->m_reference_feature.GetDescriptor("BRIEF");
-                    shared_ptr<CBRIEF> briefdesc0 = static_pointer_cast<CBRIEF>(desc0);
-                    quality = briefdesc0->Distance(*briefdesc1);
-
-                }
+                quality = 0;
 
             }
+
+            // set quality
             x.SetQuality(quality);
 
             if(m_params->GetIntParameter("COMPUTE_ID")) {
@@ -317,6 +320,7 @@ void CSimpleTracker::UpdateDescriptors(const std::vector<cv::Mat>& pyramid) {
 
                 tempid->Compute(pyramid[s]);
 
+                // cast and attach
                 shared_ptr<CAbstractDescriptor> id(tempid);
                 x.AttachDescriptor("ID",id);
 
@@ -329,9 +333,9 @@ void CSimpleTracker::UpdateDescriptors(const std::vector<cv::Mat>& pyramid) {
                                                                                     m_params->GetDoubleParameter("ALPHA_GRAD_NORM"),
                                                                                     (size_t)m_params->GetIntParameter("NORMALIZE_GRAD"),
                                                                                     (size_t)m_params->GetIntParameter("DESCRIPTOR_HSIZE"));
-                //temp->Compute(pyrsmooth[s]);
                 temp->Compute(pyramid[s]);
 
+                // cast and attach
                 shared_ptr<CAbstractDescriptor> idg(temp);
                 x.AttachDescriptor("GRAD",idg);
 
@@ -341,11 +345,9 @@ void CSimpleTracker::UpdateDescriptors(const std::vector<cv::Mat>& pyramid) {
 
                 // compute HoG
                 CHistogramOfGradients* temp = new CHistogramOfGradients(droi);
-
-                //temp->Compute(imsmooth);
                 temp->Compute(pyramid[s]);
-                //temp->Normalize(2,1e-3);
 
+                // cast and attach
                 shared_ptr<CAbstractDescriptor> pdesc(temp);
                 x.AttachDescriptor("HOG",pdesc);
 

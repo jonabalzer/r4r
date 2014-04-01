@@ -40,6 +40,9 @@ class CAbstractCam {
 
 public:
 
+    //! Virtual destructor stump.
+    virtual ~CAbstractCam() {}
+
     /*! \brief Projects a point into the image plane.
      *
      * \param[in] x point in camera coordinates

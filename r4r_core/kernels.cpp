@@ -22,24 +22,16 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include <math.h>
-#include <algorithm>
 
 #ifdef __SSE4_1__
 #include <xmmintrin.h>
 #include <smmintrin.h>
 #endif
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include "kernels.h"
 #include "darray.h"
 
-
 using namespace std;
-
-
 
 namespace R4R {
 
@@ -159,142 +151,6 @@ CMercerKernel<T>* CMercerKernel<T>::Create(KERNEL no, int n) {
     }
 
     return kernel;
-
-}
-
-template <>
-void CMercerKernel<float>::TestKernel(KERNEL no, int n, size_t notests) {
-
-    srand(time(NULL));
-
-    cout << "Size (mxn): " << notests << " " << n << endl;
-
-#ifndef __SSE4_1__
-    float* x = new float[n];
-    float* y = new float[n];
-#else
-    float* x = (float*)_mm_malloc(n*sizeof(float),16);
-    float* y = (float*)_mm_malloc(n*sizeof(float),16);
-#endif
-
-    for(size_t i=0; i<n; i++) {
-
-        x[i]=(float)rand()/(float)RAND_MAX+1;
-        y[i]=(float)rand()/(float)RAND_MAX+1;
-
-    }
-
-    CMercerKernel<float>* kernel = CMercerKernel<float>::Create(no,n);
-
-#ifdef _OPENMP
-    double t0, t1;
-    t0 = omp_get_wtime();
-#endif
-
-    float result;
-
-    for(size_t k=0; k<notests; k++)
-        result = kernel->Evaluate(x,y);
-
-#ifdef _OPENMP
-    t1 = omp_get_wtime();
-    cout << "Parallel evaluation time: " << t1-t0 << " s" << endl;
-#endif
-
-    cout << result << endl;
-
-    float comparison = 0;
-
-#ifdef _OPENMP
-    t0 = omp_get_wtime();
-#endif
-
-    switch(no) {
-    {
-    case KERNEL::IDENTITY:
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<n;i++)
-                comparison += x[i]*y[i];
-
-        }
-
-        break;
-    }
-    case KERNEL::CHISQUARED:
-    {
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<n;i++) {
-
-                float num = x[i]*y[i];
-
-                if(num>0)
-                    comparison += num/(x[i]+y[i]);
-
-
-            }
-        }
-
-        break;
-
-    }
-    case KERNEL::INTERSECTION:
-    {
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<n;i++)
-                comparison += min(x[i],y[i]);
-
-        }
-
-        break;
-
-    }
-    case KERNEL::HELLINGER:
-    {
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<n;i++)
-                comparison += sqrt(x[i]*y[i]);
-
-        }
-
-        break;
-
-    }
-
-    }
-
-
-#ifdef _OPENMP
-    t1 = omp_get_wtime();
-    cout << "Sequential evaluation time: " << t1-t0 << " s" << endl;
-#endif
-
-    cout << comparison << endl;
-
-#ifndef __SSE4_1__
-    delete [] x;
-    delete [] y;
-#else
-    _mm_free(y);
-    _mm_free(x);
-#endif
-
-    delete kernel;
 
 }
 

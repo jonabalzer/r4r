@@ -21,39 +21,35 @@
 #
 ######################################################################################
 
-QT       += core gui
+QT += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = tvdenoising
 TEMPLATE = app
 
-QMAKE_CXXFLAGS += -std=c++0x -O2 -fopenmp
+QMAKE_CXXFLAGS += -std=c++0x -O3
 
-SOURCES += main.cpp\
+SOURCES += main.cpp \
            mainwindow.cpp \
            nabla.cpp
 
 HEADERS  += mainwindow.h \
             nabla.h
 
+RESOURCES += icon.qrc
+
 FORMS    += mainwindow.ui
 
 INCLUDEPATH += $$PWD/../r4r_core
-
 DEPENDPATH += $$PWD/../r4r_core
-
-target.path = $$OUT_PWD/../bin
-INSTALLS += target
 
 unix:!symbian|win32: {
 
     LIBS += -L$$OUT_PWD/../r4r_core/ \
             -lr4r_core
 
-    INCLUDEPATH += /usr/include/r4r/
+    target.path = $$OUT_PWD/../bin
+    INSTALLS += target
 
 }
-
-RESOURCES += \
-    icon.qrc

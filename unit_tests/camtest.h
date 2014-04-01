@@ -21,42 +21,33 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include <gtest/gtest.h>
-#include "rbuffer.h"
+#ifndef CAMTEST_H
+#define CAMTEST_H
 
-using namespace R4R;
+#include <QtTest/QtTest>
+#include "cam.h"
 
-class CRingBufferTests:public testing::Test {
+class CCamTest:public QObject {
 
-protected:
+  Q_OBJECT
 
-    CRingBufferTests():
-        m_float_buffer(5){}
+public:
 
-    virtual void SetUp() {
+  explicit CCamTest(QObject* parent = nullptr);
 
-        // [ 3, 5, 1, 0, 0 ]
-        m_float_buffer.push_back(3);
-        m_float_buffer.push_back(5);
-        m_float_buffer.push_back(1);
+private:
 
-    }
+  R4R::CPinholeCam<float>* m_cam;
+  R4R::CView<float>* m_view;
 
-    CRingBuffer<float> m_float_buffer;              //!< ring buffer of floats
+private slots:
+
+  void init();
+
+  void testModelViewProjectionMatrix();
+
+  void cleanup();
 
 };
 
-
-TEST_F(CRingBufferTests, BasicFunctionality) {
-
-    EXPECT_EQ(1,m_float_buffer.back());
-    EXPECT_EQ(0,m_float_buffer.front());
-
-    // [ 3, 5, 1, 2, 4 ]
-    m_float_buffer.push_back(2);
-    m_float_buffer.push_back(4);
-    EXPECT_EQ(4,m_float_buffer.back());
-    EXPECT_EQ(3,m_float_buffer.front());
-
-
-}
+#endif // CAMTEST_H

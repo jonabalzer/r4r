@@ -26,10 +26,8 @@
 #include <QProgressDialog>
 #include <QMessageBox>
 
-#include <sys/time.h>
 #include <sys/resource.h>
-
-#include <omp.h>
+#include <chrono>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -198,9 +196,9 @@ void MainWindow::on_stepButton_clicked()
     cvtColor(img, img_gray, COLOR_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
-    // start measuring time
-    double t0, t1;
-    t0 = omp_get_wtime();
+    // start measuring wall time
+    chrono::time_point<chrono::system_clock> start, end;
+    start = chrono::system_clock::now();
 
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
@@ -215,9 +213,10 @@ void MainWindow::on_stepButton_clicked()
     // add new tracklets and mark those getting too close to each other as invalid
     m_tracker->AddTracklets(m_pyramid);
 
-    // compute and display framerate
-    t1 = omp_get_wtime();
-    double fps = 1.0/(t1-t0);
+    // calculate fps
+    end = chrono::system_clock::now();
+    chrono::duration<double> dt = end - start;
+    double fps = 1.0/dt.count();
     ui->speedLcdNumber->display(fps);
 
     // draw trails
@@ -260,6 +259,9 @@ void MainWindow::on_actionSave_Tracks_triggered()
     m_timer.stop();
 
     QString dirname = QFileDialog::getExistingDirectory(this,tr("Choose folder..."), ".");
+
+    if(dirname.isEmpty())
+        return;
 
     string dir = dirname.toStdString() + string("/");
     string prefix = string("track");

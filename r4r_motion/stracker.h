@@ -54,7 +54,7 @@ public:
     CSimpleTrackerTracklet() = delete;
 
     //! Constructor.
-    CSimpleTrackerTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200):CTracklet(t0,x0,maxlength), m_reference_feature() {}
+    CSimpleTrackerTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200):CTracklet(t0,x0,maxlength), m_reference_feature(x0) {}
 
 private:
 

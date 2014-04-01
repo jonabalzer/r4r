@@ -332,7 +332,7 @@
      <item>
       <widget class="QLineEdit" name="minInitDistEdit">
        <property name="text">
-        <string>8</string>
+        <string>4</string>
        </property>
       </widget>
      </item>
@@ -567,7 +567,7 @@
      <rect>
       <x>20</x>
       <y>240</y>
-      <width>181</width>
+      <width>221</width>
       <height>31</height>
      </rect>
     </property>

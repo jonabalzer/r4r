@@ -35,7 +35,7 @@
 #include <chrono>
 #include <random>
 
-#ifdef _OPENMP
+#ifdef HAVE_TBB
 #include <parallel/algorithm>
 #endif
 
@@ -1504,7 +1504,6 @@ template<class Array> Array CDenseArray<T>::operator*(const Array& array) const 
 
     Array result(m_nrows,array.m_ncols);
 
-#pragma omp parallel for
     for(size_t i=0; i<m_nrows; i++) {
 
         for(size_t j=0; j<array.m_ncols; j++) {
@@ -1611,7 +1610,7 @@ T CDenseArray<T>::Median() const {
 
     CDenseArray<T> temp = this->Clone();
 
-#ifdef _OPENMP
+#ifdef HAVE_TBB
     __gnu_parallel::sort(temp.m_data.get(),temp.m_data.get()+temp.NElems());
 #else
     sort(temp.m_data.get(),temp.m_data.get()+temp.NElems());
