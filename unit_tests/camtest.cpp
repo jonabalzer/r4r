@@ -44,7 +44,7 @@ void CCamTest::testModelViewProjectionMatrix() {
 
   matf PF = m_view->ModelViewProjectionMatrix(0.1,100.0);
 
-  float tolerance = 1e-3;
+  float tolerance = 1e-6;
 
   QVERIFY(tolerance>fabs(1.5625-PF.Get(0,0)));
   QVERIFY(tolerance>fabs(PF.Get(0,1)));

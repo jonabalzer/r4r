@@ -24,7 +24,7 @@
 QT += testlib
 QT -= gui
 
-QMAKE_CXXFLAGS += -std=c++0x -O3
+QMAKE_CXXFLAGS += -std=c++0x -O3 -msse4
 
 CONFIG   += console
 CONFIG   -= app_bundle
