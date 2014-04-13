@@ -140,9 +140,9 @@ class knot_vector:
         Computes all basis functions over a given range of parameters and
         stores them on top of each other in an array.
         """
-        result = np.zeros((self.ncp,t.shape[0]))
+        result = np.zeros((self.ncp,t.size))
         
-        for i in range(0,t.shape[0]):
+        for i in range(0,t.size):
       
             N,span = bs.cox_de_boor(self.data,self.p,t[i])
 
@@ -152,6 +152,26 @@ class knot_vector:
                 result[index,i] = N[0,j]
    
         return result
+        
+    def batch_evaluate(self,t):
+        """
+        Evaluates the Cox-de-Boor formula at a given set of parameters.
+        """
+        phi = np.zeros((self.p+1,t.size))
+        phit = np.zeros((self.p+1,t.size))
+        spans = np.zeros(t.size,dtype='int')
+        
+        for i in range(0,t.size):
+      
+            N,span = bs.cox_de_boor(self.data,self.p,t[i])
+
+            for j in range(0,self.p+1):
+                phi[j,i] = N[0,j]
+                phit[j,i] = N[1,j]
+                spans[i] = span
+   
+        return phi, phit, spans
+
 
     def plot_basis(self,n):
         """
@@ -621,7 +641,7 @@ class surface:
             cb.set_label(cblabel, labelpad=10)
             
             if controlpoints is True:
-                print 'fick'
+                
                 ax.plot_wireframe(self.cp[0,:,:],self.cp[1,:,:],self.cp[2,:,:],color='red')
                 ax.scatter(self.cp[0,:,:],self.cp[1,:,:],self.cp[2,:,:],c='red',edgecolor='none')
                 
