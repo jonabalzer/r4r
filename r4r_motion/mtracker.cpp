@@ -38,7 +38,7 @@ CMotionTracker::CMotionTracker(const CParameters* params, const CPinholeCam<floa
         CSimpleTracker(params),
         m_cam(cam),
         m_motion(),
-        m_map(1000) {
+        m_map(1000000) {
 
     // set initial frame to the identity
     m_motion.Update(0,0,0,0,0,0);
@@ -65,7 +65,7 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
         F0inv.Invert();
 
         vector<vec3f> xs;                                   // map points of view 0
-        vector<vec2f> p0s, p1s, p1ss;                       //
+        vector<vec2f> p0s, p1s, p1ss;
         vector<mytracklet*> trackletss2i, trackletsi2i;
 
         list<shared_ptr<mytracklet> >::iterator it;
@@ -135,6 +135,7 @@ void CMotionTracker::Update(const vector<Mat>& pyramid0, const vector<Mat>& pyra
 
         // iterate
         CBiSquareWeightFunction<float> weight;
+        //CHuberWeightFunction<float> weight;
         vecf r = lms.Iterate(m_params->GetIntParameter("LM_NITER_OUTER"),
                              weight,
                              m_params->GetIntParameter("LM_NITER_INNER"),
@@ -255,9 +256,6 @@ void CMotionTracker::AddTracklets(const std::vector<Mat>& pyramid) {
                             CMotionTrackerTracklet* tracklet = new CMotionTrackerTracklet(m_global_t,x,m_params->GetIntParameter("BUFFER_LENGTH"));
                             this->AddTracklet(tracklet);
 
-                            // also set the reference feature
-                            tracklet->m_reference_feature = x;
-
                         }
 
                     }
@@ -294,8 +292,6 @@ void CMotionTracker::AddTracklets(const std::vector<Mat>& pyramid) {
         // it violates the distance assumption, kill it
         if((*it)->GetStatus() && s<imgs.size() && imgs[s].EvaluateApproximately<float>(x,hsize2)>1)
             (*it)->SetStatus(false);
-
-
 
     }
 }

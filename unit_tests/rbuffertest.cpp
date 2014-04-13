@@ -21,23 +21,55 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "camtest.h"
 #include "rbuffertest.h"
-#include "darraytest.h"
-#include "kernelstest.h"
 
-int main() {
 
-    CCamTest ct;
-    QTest::qExec(&ct);
+using namespace R4R;
 
-    CRingBufferTest rbt;
-    QTest::qExec(&rbt);
+CRingBufferTest::CRingBufferTest(QObject* parent):
+  QObject(parent){
 
-    CDenseArrayTest dat;
-    QTest::qExec(&dat);
+}
 
-    CKernelsTest kt;
-    QTest::qExec(&kt);
+void CRingBufferTest::init() {
+
+    // [ 0, 0, 0, 0, 0 ]
+    m_buffer = new CRingBuffer<float>(5);
+
+    // [ 3, 5, 1, 0, 0 ]
+    m_buffer->push_back(3);
+    m_buffer->push_back(5);
+    m_buffer->push_back(1);
+
+}
+
+void CRingBufferTest::testPushBack() {
+
+    QCOMPARE(m_buffer->back(),1.0);
+    QCOMPARE(m_buffer->front(),0.0);
+
+    // does this affect the member variable?
+    m_buffer->push_back(2);
+    m_buffer->push_back(4);
+    QCOMPARE(m_buffer->back(),4.0);
+    QCOMPARE(m_buffer->front(),3.0);
+
+}
+
+void CRingBufferTest::testIterators() {
+
+    // the tests seem to be independent from each other, nice QT
+    CRingBuffer<float>::iterator it = m_buffer->begin();
+    QCOMPARE(*it,0.0);
+    ++it;
+    QCOMPARE(*it,0.0);
+    ++it;
+    QCOMPARE(*it,3.0);
+
+}
+
+void CRingBufferTest::cleanup(){
+
+  delete m_buffer;
 
 }

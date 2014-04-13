@@ -21,23 +21,35 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "camtest.h"
-#include "rbuffertest.h"
-#include "darraytest.h"
-#include "kernelstest.h"
+#ifndef RBUFFERTEST_H
+#define RBUFFERTEST_H
 
-int main() {
+#include <QtTest/QtTest>
 
-    CCamTest ct;
-    QTest::qExec(&ct);
+#include "rbuffer.h"
 
-    CRingBufferTest rbt;
-    QTest::qExec(&rbt);
+class CRingBufferTest:public QObject {
 
-    CDenseArrayTest dat;
-    QTest::qExec(&dat);
+  Q_OBJECT
 
-    CKernelsTest kt;
-    QTest::qExec(&kt);
+public:
 
-}
+  explicit CRingBufferTest(QObject* parent = nullptr);
+
+private:
+
+  R4R::CRingBuffer<float>* m_buffer;
+
+private slots:
+
+  void init();
+
+  void testPushBack();
+
+  void testIterators();
+
+  void cleanup();
+
+};
+
+#endif // RBUFFERTEST_H

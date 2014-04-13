@@ -26,14 +26,11 @@
 #include <QProgressDialog>
 #include <QMessageBox>
 
-#include <sys/time.h>
 #include <sys/resource.h>
-
-#include <omp.h>
+#include <chrono>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
 #include "viewer.h"
 
 using namespace cv;
@@ -154,37 +151,28 @@ void MainWindow::on_stepButton_clicked()
     cvtColor(img, img_gray, COLOR_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
-    // start measuring time
-    double t0, t1, t2, t3, t4;
-    t0 = omp_get_wtime();
+    // start measuring wall time
+    chrono::time_point<chrono::system_clock> start, end;
+    start = chrono::system_clock::now();
 
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
-    t1 = omp_get_wtime();
 
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
-    t2 = omp_get_wtime();
 
     // check validity of tracks
     m_tracker->Clean(pyramid,m_pyramid);
     //trackers[i]->DeleteInvalidTracks();
-    t3 = omp_get_wtime();
 
     // add new tracks
     m_tracker->AddTracklets(m_pyramid);
-    t4 = omp_get_wtime();
 
-    // show some profiling info
-    cout << "Update: " << t1-t0 << endl;
-    cout << "Update descriptors: " << t2-t1 << endl;
-    cout << "Clean: " << t3-t2 << endl;
-    cout << "Add: " << t4-t3 << endl;
-
-    // compute and display framerate
-    double fps = 1.0/(t4-t0);
+    // calculate fps
+    end = chrono::system_clock::now();
+    chrono::duration<double> dt = end - start;
+    double fps = 1.0/dt.count();
     ui->speedLcdNumber->display(fps);
-
 
     // draw trails
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
@@ -199,7 +187,6 @@ void MainWindow::on_stepButton_clicked()
     // display frame no and mem usage
     ui->frameLcdNumber->display((int)m_tracker->GetTime());
     emit show_memoryUsage();
-
 
 }
 

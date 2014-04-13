@@ -40,6 +40,7 @@ template<> ETYPE GetEType<long>() { return ETYPE::L8S; }
 template<> ETYPE GetEType<unsigned long>() { return ETYPE::L8U; }
 template<> ETYPE GetEType<double>() { return ETYPE::D8S; }
 template<> ETYPE GetEType<vec3>() { return ETYPE::D8S3; }
+template<> ETYPE GetEType<vec3f>() { return ETYPE::F4S3; }
 template<> ETYPE GetEType<std::string>() { return ETYPE::STRING; }
 
 // instantiations
@@ -56,6 +57,7 @@ template ETYPE GetEType<long>();
 template ETYPE GetEType<unsigned long>();
 template ETYPE GetEType<double>();
 template ETYPE GetEType<vec3>();
+template ETYPE GetEType<vec3f>();
 template ETYPE GetEType<std::string>();
 
 

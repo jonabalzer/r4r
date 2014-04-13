@@ -29,22 +29,15 @@ SOURCES += main.cpp
 
 HEADERS += main.h
 
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++0x -O3
 
 DEPENDPATH += $$PWD/../r4r_core
-
 INCLUDEPATH += $$PWD/../r4r_core
 
 unix:!symbian|win32 {
 
-    # include paths
-    INCLUDEPATH += /usr/include/r4r/
-
     LIBS += -L$$OUT_PWD/../r4r_core/ \
-            -lr4r_core \
-            #-lgomp
-
-    #packagesExist(openmp) { LIBS += -lgomp }
+            -lr4r_core
 
     target.path = $$OUT_PWD/../bin
     INSTALLS += target \

@@ -22,24 +22,16 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include <math.h>
-#include <algorithm>
 
 #ifdef __SSE4_1__
 #include <xmmintrin.h>
 #include <smmintrin.h>
 #endif
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include "kernels.h"
 #include "darray.h"
 
-
 using namespace std;
-
-
 
 namespace R4R {
 
@@ -79,6 +71,18 @@ double CMercerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
 
 }
 
+template <>
+double CMercerKernel<vec3f>::Evaluate(vec3f* x, vec3f* y) {
+
+    float result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += InnerProduct(x[i],y[i]);
+
+    return static_cast<double>(result);
+
+}
+
 
 template<>
 double CMercerKernel<float>::Evaluate(float* x, float* y) {
@@ -90,13 +94,13 @@ double CMercerKernel<float>::Evaluate(float* x, float* y) {
     for(size_t i=0; i<m_n; i++)
         result += x[i]*y[i];
 
-    return (double)result;
+    return static_cast<double>(result);
 
 #else
-    __m128* px = (__m128*)x;
-    __m128* py = (__m128*)y;
+    __m128* px = reinterpret_cast<__m128*>(x);
+    __m128* py = reinterpret_cast<__m128*>(y);
 
-    float zero = 0;
+    float zero = 0.0;
     __m128 sum = _mm_load1_ps(&zero);
 
     const int mask = 241;       // 4 MSB mask input, 4 LSB mask output
@@ -108,14 +112,14 @@ double CMercerKernel<float>::Evaluate(float* x, float* y) {
 
     }
 
-    float result[4] = {0,0,0,0};
+    float result[4] = {0.0,0.0,0.0,0.0};
     _mm_storeu_ps(result,sum);
 
     // add offset
     for(size_t i=m_offset; i<m_n; i++)
         result[0] += x[i]*y[i];
 
-    return (double)result[0];
+    return static_cast<double>(result[0]);
 #endif
 
 }
@@ -162,142 +166,6 @@ CMercerKernel<T>* CMercerKernel<T>::Create(KERNEL no, int n) {
 
 }
 
-template <>
-void CMercerKernel<float>::TestKernel(KERNEL no, int n, size_t notests) {
-
-    srand(time(NULL));
-
-    cout << "Size (mxn): " << notests << " " << n << endl;
-
-#ifndef __SSE4_1__
-    float* x = new float[n];
-    float* y = new float[n];
-#else
-    float* x = (float*)_mm_malloc(n*sizeof(float),16);
-    float* y = (float*)_mm_malloc(n*sizeof(float),16);
-#endif
-
-    for(size_t i=0; i<n; i++) {
-
-        x[i]=(float)rand()/(float)RAND_MAX+1;
-        y[i]=(float)rand()/(float)RAND_MAX+1;
-
-    }
-
-    CMercerKernel<float>* kernel = CMercerKernel<float>::Create(no,n);
-
-#ifdef _OPENMP
-    double t0, t1;
-    t0 = omp_get_wtime();
-#endif
-
-    float result;
-
-    for(size_t k=0; k<notests; k++)
-        result = kernel->Evaluate(x,y);
-
-#ifdef _OPENMP
-    t1 = omp_get_wtime();
-    cout << "Parallel evaluation time: " << t1-t0 << " s" << endl;
-#endif
-
-    cout << result << endl;
-
-    float comparison = 0;
-
-#ifdef _OPENMP
-    t0 = omp_get_wtime();
-#endif
-
-    switch(no) {
-    {
-    case KERNEL::IDENTITY:
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<n;i++)
-                comparison += x[i]*y[i];
-
-        }
-
-        break;
-    }
-    case KERNEL::CHISQUARED:
-    {
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<n;i++) {
-
-                float num = x[i]*y[i];
-
-                if(num>0)
-                    comparison += num/(x[i]+y[i]);
-
-
-            }
-        }
-
-        break;
-
-    }
-    case KERNEL::INTERSECTION:
-    {
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<n;i++)
-                comparison += min(x[i],y[i]);
-
-        }
-
-        break;
-
-    }
-    case KERNEL::HELLINGER:
-    {
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<n;i++)
-                comparison += sqrt(x[i]*y[i]);
-
-        }
-
-        break;
-
-    }
-
-    }
-
-
-#ifdef _OPENMP
-    t1 = omp_get_wtime();
-    cout << "Sequential evaluation time: " << t1-t0 << " s" << endl;
-#endif
-
-    cout << comparison << endl;
-
-#ifndef __SSE4_1__
-    delete [] x;
-    delete [] y;
-#else
-    _mm_free(y);
-    _mm_free(x);
-#endif
-
-    delete kernel;
-
-}
-
 template class CMercerKernel<float>;
 template class CMercerKernel<double>;
 template class CMercerKernel<bool>;
@@ -308,13 +176,17 @@ template class CMercerKernel<unsigned char>;
 template<class T>
 double CChiSquaredKernel<T>::Evaluate(T* x, T* y) {
 
+    /* if the input type is not floating point precision, cast to double to support
+     * nonlinear operations in the range of the kernel
+     */
     double result, num;
     double xi, yi;
+    result = 0;
 
     for(size_t i=0; i<m_n; i++) {
 
-        xi = (double)x[i];
-        yi = (double)y[i];
+        xi = static_cast<double>(x[i]);
+        yi = static_cast<double>(y[i]);
 
         num = xi*yi;
 
@@ -332,22 +204,22 @@ double CChiSquaredKernel<float>::Evaluate(float* x, float* y) {
 
 #ifndef __SSE4_1__
 
-    double result, num;
-    double xi, yi;
+    /* only cast at the end to guarantee that we get the same
+     * result as when using SSE4 registers
+     */
+    float result, num;
+    result = 0;
 
     for(size_t i=0; i<m_n; i++) {
 
-        xi = (double)x[i];
-        yi = (double)y[i];
-
-        num = xi*yi;
+        num = x[i]*y[i];
 
         if(num>0)               // this implies that x+y!=0 if x,y>0
-            result += num/(xi+yi);
+            result += num/(x[i]+y[i]);
 
     }
 
-    return result;
+    return static_cast<double>(result);
 
 #else
 
@@ -393,7 +265,7 @@ double CChiSquaredKernel<float>::Evaluate(float* x, float* y) {
 
     }
 
-    return (double)fresult;
+    return static_cast<double>(fresult);
 
 #endif
 
@@ -409,12 +281,12 @@ template class CChiSquaredKernel<unsigned char>;
 template <class T>
 double CIntersectionKernel<T>::Evaluate(T* x, T* y) {
 
-    double result = 0;
+    T result = 0;
 
     for(size_t i=0; i<m_n; i++)
-        result += (double)min<T>(x[i],y[i]);
+        result += min<T>(x[i],y[i]);
 
-    return result;
+    return static_cast<double>(result);
 
 }
 
@@ -423,12 +295,12 @@ double CIntersectionKernel<float>::Evaluate(float* x, float* y) {
 
 #ifndef __SSE4_1__
 
-    double result = 0;
+    float result = 0;
 
     for(size_t i=0; i<m_n; i++)
-        result += (double)min<float>(x[i],y[i]);
+        result += min<float>(x[i],y[i]);
 
-    return result;
+    return static_cast<double>(result);
 
 #else
 
@@ -456,7 +328,7 @@ double CIntersectionKernel<float>::Evaluate(float* x, float* y) {
     for(size_t i=m_offset; i<m_n; i++)
         fresult += min<float>(x[i],y[i]);
 
-    return (double)fresult;
+    return static_cast<double>(fresult);
 
 #endif
 
@@ -472,13 +344,14 @@ template class CIntersectionKernel<unsigned char>;
 template <class T>
 double CHellingerKernel<T>::Evaluate(T* x, T* y) {
 
+    // cast to support nonlinear operations in range of kernel (see above)
     double result = 0;
     double xi, yi;
 
     for(size_t i=0; i<m_n; i++) {
 
-        xi = (double)x[i];
-        yi = (double)y[i];
+        xi = static_cast<double>(x[i]);
+        yi = static_cast<double>(y[i]);
 
         result += sqrt(xi*yi);
 
@@ -511,7 +384,6 @@ template <>
 double CHellingerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
 
     double result = 0;
-    double xi, yi;
 
     for(size_t i=0; i<m_n; i++) {
 
@@ -525,25 +397,38 @@ double CHellingerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
     return result;
 
 }
+
+template <>
+double CHellingerKernel<vec3f>::Evaluate(vec3f* x, vec3f* y) {
+
+    float result = 0;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        vec3f xy = x[i]*y[i];
+
+        for(size_t j=0; j<3; j++)
+            result += sqrt(xy.Get(j));
+
+    }
+
+    return static_cast<double>(result);
+
+}
+
+
 template <>
 double CHellingerKernel<float>::Evaluate(float* x, float* y) {
 
 
 #ifndef __SSE4_1__
 
-    double result = 0;
-    double xi, yi;
+    float result = 0;
 
-    for(size_t i=0; i<m_n; i++) {
+    for(size_t i=0; i<m_n; i++)
+        result += sqrt(x[i]*y[i]);
 
-        xi = (double)x[i];
-        yi = (double)y[i];
-
-        result += sqrt(xi*yi);
-
-    }
-
-    return result;
+    return static_cast<double>(result);
 
 #else
 
@@ -570,7 +455,7 @@ double CHellingerKernel<float>::Evaluate(float* x, float* y) {
     for(size_t i=m_offset; i<m_n; i++)
         fresult += sqrt(x[i]*y[i]);
 
-    return (double)fresult;
+    return static_cast<double>(fresult);
 
 #endif
 

@@ -29,8 +29,6 @@ TARGET = clam
 TEMPLATE = app
 
 QMAKE_CXXFLAGS += -std=c++0x -O3
-#QMAKE_CXXFLAGS_DEBUG += -pg
-#QMAKE_LFLAGS_DEBUG += -pg
 
 SOURCES += main.cpp\
            mainwindow.cpp \
@@ -50,19 +48,7 @@ DEPENDPATH += $$PWD/../r4r_core \
               $$PWD/../r4r_motion \
               $$PWD/../r4r_reconstruction
 
-target.path = $$OUT_PWD/../bin
-INSTALLS += target
-
 RESOURCES += clamicon.qrc
-
-# find OpenMesh library, we don't need this
-#
-OM = $$system(find /usr -name libOpenMeshCore* 2>/dev/null)
-isEmpty(OM) {
-    error("Could not resolve dependency on OpenMesh.")
-}
-OM = $$first(OM)
-OMLIBPATH = $$dirname(OM)
 
 unix:!symbian|win32: {
 
@@ -72,20 +58,22 @@ unix:!symbian|win32: {
             -lr4r_core \
             -lr4r_motion \
             -lr4r_reconstruction \
-            -L/usr/local/lib/\
-            -lopencv_core\
-            -lopencv_highgui\
-            -lopencv_video\
-            -lopencv_imgproc\
-            -lopencv_features2d\
-            -lopencv_calib3d \
-            -llapack \
-            -L$$OMLIBPATH \
-            -lOpenMeshCore \
-            -lOpenMeshTools \
-            -lgomp
 
-    INCLUDEPATH += /usr/include/r4r/
+    # find OpenCV
+    packagesExist(opencv) {
+
+        LIBS += -lopencv_core \
+            -lopencv_highgui \
+            -lopencv_imgproc
+
+    }
+    else {
+        error("Could not resolve mandatory dependency on OpenCV...")
+    }
+
+    # install target
+    target.path = $$OUT_PWD/../bin
+    INSTALLS += target \
 
 }
 

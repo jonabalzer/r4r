@@ -21,22 +21,34 @@
 #
 ######################################################################################
 
-TEMPLATE = app
-CONFIG += console
+QT += testlib
+QT -= gui
+
+QMAKE_CXXFLAGS += -std=c++0x -O3 -msse4
+
+CONFIG   += console
+CONFIG   -= app_bundle
+
 TARGET = r4r_unit_tests
+TEMPLATE = app
 
-QMAKE_CXXFLAGS += -std=c++0x
+HEADERS += camtest.h \
+    rbuffertest.h \
+    darraytest.h \
+    kernelstest.h
 
-SOURCES += main.cpp \
-    test_darray.cpp \
-    test_unionfind.cpp \
-    test_rbuffer.cpp \
-    test_cam.cpp
-
-LIBS += -lgtest \
-        -lpthread \
-        -L$$OUT_PWD/../r4r_core/ \
-        -lr4r_core
+SOURCES = main.cpp \
+    camtest.cpp \
+    rbuffertest.cpp \
+    darraytest.cpp \
+    kernelstest.cpp
 
 INCLUDEPATH += $$PWD/../r4r_core
 DEPENDPATH += $$PWD/../r4r_core
+
+unix:!symbian|win32 {
+
+    LIBS += -L$$OUT_PWD/../r4r_core/ \
+            -lr4r_core
+
+}

@@ -121,7 +121,7 @@ void CTracker<TrackerContainer,TrackletContainer>::Draw(QImage& img, size_t leng
 
     for(it=m_data.begin(); it!=m_data.end(); it++) {
 
-        if((*it)->GetStatus() ) {
+        if((*it)->GetStatus()) {
 
             if(m_global_t-(*it)->GetCreationTime()>=length)
                 (*it)->Draw(img, length);

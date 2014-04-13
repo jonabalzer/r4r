@@ -21,14 +21,12 @@
 #
 ######################################################################################
 
-#QT -= core gui
-
 QMAKE_CXXFLAGS += -std=c++0x -O3 -msse4
 
 TARGET = r4r_core
 TEMPLATE = lib
 
-CONFIG += warn_off create_prl no_install_prl create_pc
+DEFINES += R4R_CORE_LIBRARY
 
 SOURCES += \
     trafo.cpp \
@@ -76,8 +74,8 @@ HEADERS += \
 
 unix:!symbian|win32 {
 
-    # add this just to make surea
-    LIBS += -L/usr/local/lib
+    # create pkg config files
+    CONFIG += warn_off create_prl no_install_prl create_pc
 
     # find LAPACK and BLAS
     LAPACK = $$system(find /usr -name liblapack* 2>/dev/null)
@@ -86,6 +84,7 @@ unix:!symbian|win32 {
     }
     else {
         LIBS += -llapack
+        DEFINES += HAVE_LAPACK
     }
     BLAS = $$system(find /usr -name libblas* 2>/dev/null)
     isEmpty(BLAS) {
@@ -98,26 +97,36 @@ unix:!symbian|win32 {
 
     }
 
-    # OMP
-    #OMP = $$system(find /usr -name libgomp* 2>/dev/null)
-    #isEmpty(OMP) {
-    #    warning("Could not resolve dependency on OpenMP.")
-    #}
-    #else {
-
-    #    QMAKE_CXXFLAGS += -fopenmp
-    #    LIBS += -lgomp
-
-    #}
-
+    # find OpenCV
     packagesExist(opencv) {
 
-        CONFIG += link_pkgconfig
-        PKGCONFIG += opencv
+        LIBS += -lopencv_core \
+                -lopencv_imgproc
+
+        # this is not good, because it will spawn too many dependencies
+        #CONFIG += link_pkgconfig
+        #PKGCONFIG += opencv
+
+    } else {
+       error("Could not resolve mandatory dependence on OpenCV...")
 
     }
 
-    # install target, FIXME: target for pc file?
+    # find TBB
+    #packagesExist(tbb) { DEFINES += HAVE_TBB }
+
+    # find OpenEXR
+#    packagesExist(OpenEXR) {
+
+#        CONFIG += link_pkgconfig
+#        PKGCONFIG += OpenEXR
+#        DEFINES += HAVE_EXR
+
+#    } else {
+#        warning("Could not resolve dependence on OpenEXR...")
+#    }
+
+    # install target, FIXME: add target for pkg file
     headers.files = $$HEADERS
     headers.path = /usr/include/r4r/
     target.path = /usr/lib/

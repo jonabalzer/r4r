@@ -21,23 +21,42 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "camtest.h"
-#include "rbuffertest.h"
-#include "darraytest.h"
-#include "kernelstest.h"
+#ifndef DARRAYTEST_H
+#define DARRAYTEST_H
 
-int main() {
 
-    CCamTest ct;
-    QTest::qExec(&ct);
+#include <QtTest/QtTest>
 
-    CRingBufferTest rbt;
-    QTest::qExec(&rbt);
+#include "darray.h"
 
-    CDenseArrayTest dat;
-    QTest::qExec(&dat);
+class CDenseArrayTest:public QObject {
 
-    CKernelsTest kt;
-    QTest::qExec(&kt);
+  Q_OBJECT
 
-}
+public:
+
+  explicit CDenseArrayTest(QObject* parent = nullptr);
+
+private:
+
+    R4R::CDenseArray<float> m_float_reqc;                //!< array with the same number of rows and columns
+    R4R::CDenseArray<float> m_float_rgtc;                //!< more rows than columns
+    R4R::CDenseArray<float> m_float_rltc;                //!< more columns than rows
+    R4R::CDenseVector<float> m_float_lv;                 //!< larger column vector
+    R4R::CDenseVector<float> m_float_sv;                 //!< smaller column vector
+
+private slots:
+
+  void init();
+
+  //! Tests size query.
+  void testSize();
+
+  //! Tests matrix-vector multiplication.
+  void testMultiplication();
+
+  void cleanup();
+
+};
+
+#endif // DARRAYTEST_H

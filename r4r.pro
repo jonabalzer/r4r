@@ -30,22 +30,20 @@ SUBDIRS += r4r_core \
            r4r_hardware \
            r4r_reconstruction
 
-GT = $$system(find /usr -name gtest.h 2>/dev/null)
-exists($$GT) {
-    GT = $$first($$GT)
-    GT = $$dirname($$GT)
+# optionally build unit tests
+equals( HAVE_UNITTESTS, 1 ) {
+
     SUBDIRS += unit_tests
-}
-else {
-    message("Could not locate GoogleTest framework.")
+
 }
 
+# optionally include examples in the build
 equals( HAVE_EXAMPLES, 1 ) {
 
     SUBDIRS += robust_regression \
                tvdenoising \
                mv_descriptor_learning \
-               clam \
+               clam
 
 }
 

@@ -12,7 +12,7 @@ static PyMethodDef _bsplinesmethods[] = {
     { "cox_de_boor", cox_de_boor, METH_VARARGS, "Evaluates basis functions and their derivatives."},
     { "find_knot_span", find_knot_span, METH_VARARGS, "Finds the knot span of a parameter."},
     { "evaluate_curve", evaluate_curve, METH_VARARGS, "Evaluates a spline curve and its tangent and curvature vector."},
-    { "evaluate_curve", evaluate_surface, METH_VARARGS, "Evaluates a spline surface and its tangent and curvature vectors."},
+    { "evaluate_surface", evaluate_surface, METH_VARARGS, "Evaluates a spline surface and its tangent and curvature vectors."},
     { "unwrap_phase", unwrap_phase, METH_VARARGS, "Phase unwrapping of 1-d signal."},
     { "characteristic_function", characteristic_function, METH_VARARGS, "Tests whether a point is inside or outside of curve."},
     { NULL, NULL, 0, NULL}

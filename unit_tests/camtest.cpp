@@ -22,22 +22,40 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "camtest.h"
-#include "rbuffertest.h"
-#include "darraytest.h"
-#include "kernelstest.h"
 
-int main() {
+using namespace R4R;
 
-    CCamTest ct;
-    QTest::qExec(&ct);
+CCamTest::CCamTest(QObject* parent):
+  QObject(parent){
 
-    CRingBufferTest rbt;
-    QTest::qExec(&rbt);
+}
 
-    CDenseArrayTest dat;
-    QTest::qExec(&dat);
+void CCamTest::init() {
 
-    CKernelsTest kt;
-    QTest::qExec(&kt);
+    m_cam = new CPinholeCam<float>(640,480,500,500,319.5,239.5);
+    m_view = new CView<float>(*m_cam);
+
+    CRigidMotion<float,3> F(1.2,0,0,0,0,0);
+    m_view->SetTransformation(F);
+
+}
+
+void CCamTest::testModelViewProjectionMatrix() {
+
+  matf PF = m_view->ModelViewProjectionMatrix(0.1,100.0);
+
+  float tolerance = 1e-6;
+
+  QVERIFY(tolerance>fabs(1.5625-PF.Get(0,0)));
+  QVERIFY(tolerance>fabs(PF.Get(0,1)));
+  QVERIFY(tolerance>fabs(-0.0015625-PF.Get(0,2)));
+  QVERIFY(tolerance>fabs(1.875-PF.Get(0,3)));
+
+}
+
+void CCamTest::cleanup(){
+
+  delete m_view;
+  delete m_cam;
 
 }

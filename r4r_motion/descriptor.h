@@ -279,7 +279,7 @@ public:
     CBRIEF(CRectangle<double> roi);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
-    bool Compute(cv::Mat& img);
+    bool Compute(const cv::Mat& img);
 
     //! Generates sampling points.
     static void GenerateSamplePoints();

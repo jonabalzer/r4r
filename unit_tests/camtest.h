@@ -21,44 +21,33 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include <gtest/gtest.h>
+#ifndef CAMTEST_H
+#define CAMTEST_H
+
+#include <QtTest/QtTest>
 #include "cam.h"
 
-using namespace R4R;
-using namespace std;
+class CCamTest:public QObject {
 
-class CViewTests:public testing::Test {
+  Q_OBJECT
 
-protected:
+public:
 
-    CViewTests():
-        m_cam(640,480,500,500,319.5,239.5),
-        m_view(m_cam) {}
+  explicit CCamTest(QObject* parent = nullptr);
 
+private:
 
+  R4R::CPinholeCam<float>* m_cam;
+  R4R::CView<float>* m_view;
 
-    virtual void SetUp() {
+private slots:
 
-        CRigidMotion<float,3> F(1.2,0,0,0,0,0);
-        m_view.SetTransformation(F);
+  void init();
 
+  void testModelViewProjectionMatrix();
 
-    }
-
-    CPinholeCam<float> m_cam;               //! intrinsic parameters
-    CView<float> m_view;                    //! extrinsic parameters
+  void cleanup();
 
 };
 
-TEST_F(CViewTests, OpenGLMatrix) {
-
-    matf PF = m_view.ModelViewProjectionMatrix(0.1,100.0);
-
-    float tolerance = 1e-3;
-
-    EXPECT_GE(tolerance,fabs(1.5625-PF.Get(0,0)));
-    EXPECT_GE(tolerance,fabs(PF.Get(0,1)));
-    EXPECT_GE(tolerance,fabs(-0.0015625-PF.Get(0,2)));
-    EXPECT_GE(tolerance,fabs(1.875-PF.Get(0,3)));
-
-}
+#endif // CAMTEST_H

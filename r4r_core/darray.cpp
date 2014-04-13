@@ -35,8 +35,12 @@
 #include <chrono>
 #include <random>
 
-#ifdef _OPENMP
+#ifdef HAVE_TBB
 #include <parallel/algorithm>
+#endif
+
+#ifdef HAVE_EXR
+#include <half.h>
 #endif
 
 using namespace std;
@@ -949,6 +953,25 @@ double CDenseArray<vec3>::Norm(double p) const {
 
 }
 
+template <>
+double CDenseArray<vec3f>::Norm(double p) const {
+
+    assert(p>0);
+
+    double sum = 0;
+
+    vec3f* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            sum += pow(fabs(pdata[i].Get(j)),p);
+
+    }
+
+    return pow(sum,1/p);
+
+}
 
 template <>
 double CDenseArray<rgb>::Norm(double p) const {
@@ -1005,6 +1028,16 @@ void CDenseArray<vec3>::Abs() {
 
 }
 
+
+template <>
+void CDenseArray<vec3f>::Abs() {
+
+    vec3f* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pdata[i] = pdata[i].Abs();
+
+}
 template <>
 void CDenseArray<rgb>::Abs() {
 
@@ -1064,6 +1097,7 @@ U CDenseArray<T>::Get(const CVector<double,2> &p) const {
 
 template double CDenseArray<double>::Get<double>(const CVector<double,2>& p) const;
 template double CDenseArray<float>::Get<double>(const CVector<double,2>& p) const;
+template float CDenseArray<float>::Get<float>(const CVector<double,2>& p) const;
 template double CDenseArray<unsigned char>::Get<double>(const CVector<double,2>& p) const;
 template vec3 CDenseArray<rgb>::Get<vec3>(const CVector<double,2>& p) const;
 template vec3 CDenseArray<vec3>::Get<vec3>(const CVector<double,2>& p) const;
@@ -1293,7 +1327,6 @@ CDenseArray<T> CDenseArray<T>::operator+(const CDenseArray& array) const {
 
 }
 
-
 template <typename T>
 CDenseArray<T> CDenseArray<T>::operator^(const CDenseArray& array) const {
 
@@ -1504,7 +1537,6 @@ template<class Array> Array CDenseArray<T>::operator*(const Array& array) const 
 
     Array result(m_nrows,array.m_ncols);
 
-#pragma omp parallel for
     for(size_t i=0; i<m_nrows; i++) {
 
         for(size_t j=0; j<array.m_ncols; j++) {
@@ -1611,7 +1643,7 @@ T CDenseArray<T>::Median() const {
 
     CDenseArray<T> temp = this->Clone();
 
-#ifdef _OPENMP
+#ifdef HAVE_TBB
     __gnu_parallel::sort(temp.m_data.get(),temp.m_data.get()+temp.NElems());
 #else
     sort(temp.m_data.get(),temp.m_data.get()+temp.NElems());
@@ -1689,6 +1721,28 @@ vec3 CDenseArray<vec3>::MAD() const {
 
     vec3* pdata = temp.m_data.get();
     const vec3* pthisdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            pdata[i](j) = fabs(pthisdata[i].Get(j)-median.Get(j));
+
+    }
+
+    return temp.Median();
+
+}
+
+template <>
+vec3f CDenseArray<vec3f>::MAD() const {
+
+    //! FIXME: This is not per channel but w.r.t. to order-relation of vec3.
+    vec3f median = Median();
+
+    CDenseArray<vec3f> temp = this->Clone();
+
+    vec3f* pdata = temp.m_data.get();
+    const vec3f* pthisdata = m_data.get();
 
     for(size_t i=0; i<m_nrows*m_ncols; i++) {
 
@@ -1788,7 +1842,13 @@ template class CDenseArray<size_t>;
 template class CDenseArray<bool>;
 template class CDenseArray<rgb>;
 template class CDenseArray<vec3>;
+template class CDenseArray<vec3f>;
 template class CDenseArray<unsigned char>;
+
+#ifdef HAVE_EXR
+template class CDenseArray<half>;
+//template class CDenseArray<vec3h>;
+#endif
 
 template <typename T>
 CDenseVector<T>::CDenseVector():
