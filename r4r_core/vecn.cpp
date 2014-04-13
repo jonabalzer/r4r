@@ -27,7 +27,6 @@
 #include <string.h>
 #include <limits>
 
-
 #include "vecn.h"
 #include "darray.h"
 
@@ -229,6 +228,10 @@ template class CVector<int,2>;
 template class CVector<short,2>;
 template class CVector<float,6>;
 template class CVector<double,6>;
+
+#ifdef HAVE_EXR
+template class CVector<half,3>;
+#endif
 
 template ostream& operator << (ostream& os, const CVector<float,3>& x);
 template ostream& operator << (ostream& os, const CVector<double,3>& x);

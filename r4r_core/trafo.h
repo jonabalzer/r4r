@@ -43,11 +43,14 @@ public:
 	//! Constructor.
 	CTransformation();
 
-    //! Concatenates two transformations.
+    //! Constructor which concatenates two transformations.
     CTransformation<T,n> operator*(const CTransformation<T,n>& x) const;
 
     //! Constructor.
     CTransformation(const CDenseArray<T>& F);
+
+    //! Constructor using pointer to raw data.
+    CTransformation(T* data);
 
     //! Non-destructive access.
     T Get(u_int i, u_int j) const;

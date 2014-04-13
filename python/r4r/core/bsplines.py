@@ -1,19 +1,41 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 13 17:57:20 2013
-
-@author: jbalzer
-"""
+######################################################################################
+#
+# Copyright (c) 2013, Jonathan Balzer
+#
+# All rights reserved.
+#
+# This file is part of the R4R library.
+#
+# The R4R library is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# The R4R library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
+#
+######################################################################################
 
 import numpy as np
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.cm as cm
 from scipy.sparse.linalg import lsqr
 
-
 import r4r.core._bsplines as bs
+
+can_gauss_pts = {0:([0.0],[2.0]),
+                 1:([-1/np.sqrt(3.0),1/np.sqrt(3.0)],[1.0,1.0]),
+                 2:([-np.sqrt(3.0/5.0),0,np.sqrt(3.0/5.0)],[5.0/9.0,8.0/9.0,5.0/9.0]),
+                 3:([-np.sqrt(3.0+2.0*np.sqrt(6.0/5.0))/7.0,-np.sqrt(3.0-2.0*np.sqrt(6.0/5.0))/7.0,
+                     np.sqrt(3.0-2.0*np.sqrt(6.0/5.0))/7.0,np.sqrt(3.0+2.0*np.sqrt(6.0/5.0))/7.0],
+                    [(18.0-np.sqrt(30.0))/36.0,(18.0+np.sqrt(30.0))/36.0,
+                     (18.0+np.sqrt(30.0))/36.0,(18.0-np.sqrt(30.0))/36.0])}
 
 def unwrap_phase(xw):
     """
@@ -179,7 +201,27 @@ class knot_vector:
             result[i] = np.sum(self.data[i:i+self.p])/float(self.p)
             
         return result
+        
+    def gauss_quadrature_points(self,degree):
+        
+        # get element vector
+        elements = np.unique(self.data)
+
+        gp = []
+        
+        for i in range(0,elements.size-1):
+                        
+            bpa = elements[i] + elements[i+1]
+            bma = elements[i+1] - elements[i]    
+            
+            el = []
+            for p in can_gauss_pts[degree][0]:
+                el.append(0.5*(bpa+p*bma))
                 
+            gp.append(el)
+            
+        return gp                                        
+    
 class curve:
  
     def __init__(self,knots,d):
@@ -191,7 +233,6 @@ class curve:
         """
         Initialize control points by interpolation.
         """
-        
         A = self.knots.assemble_interpolation_matrix(t) 
         
         for i in range(0,self.d):
@@ -203,7 +244,6 @@ class curve:
         """
         Evaluate the spline at a given parameter location.
         """
-        
         if self.knots.p>=2:        
             return bs.evaluate_curve(self.knots.data,self.cp,self.knots.p,t)
         else:
@@ -250,7 +290,6 @@ class curve:
         """
         Sample curve locations at given density.
         """
-
         domain = self.knots.get_domain();
         t = np.linspace(domain[0],domain[-1],n)
         
@@ -288,7 +327,6 @@ class curve:
         TODO: Sample different starting values depending on spectral characteristics
         of unwrapped hodograph phase. 
         """        
-        
         tk = t0
         xk,xtk,xttk = self.evaluate(tk)
         r = x0 - xk            
@@ -329,7 +367,6 @@ class curve:
         """
         Characteristic function of domain bounded by the curve. 
         """
-        
         result = np.zeros(x.shape)
 
         if self.d != 2:
@@ -345,10 +382,85 @@ class curve:
         Interprets a 2d-curve as a scalar-valued functions, and sets it to the
         identity with the help of the Greville abscissae. 
         """
-        
         if(self.d==1):   
             self.cp = np.reshape(self.knots.greville_abscissae(),(1,self.knots.ncp))
     
+    def integrate(self,function,degree):
+        """
+        Integrates a function w.r.t. the curve measure (not the parametric domain!).
+        """
+        gp = self.knots.gauss_quadrature_points(degree)
+        elements = np.unique(self.knots.data)
+        weights = can_gauss_pts[degree][1]
+    
+        res = 0
+        
+        for i in range(0,len(elements)-1):
+            
+            elsize = 0.5*(elements[i+1]-elements[i])            
+            
+            for j in range(0,len(gp[i])):
+                x,xt,xtt = self.evaluate(gp[i][j])
+                res += function(gp[i][j])*weights[j]*np.linalg.norm(xt)*elsize
+                
+        return res
+    
+    def area(self,degree):
+        
+        if self.knots.periodic is False:
+            raise Exception('Closed curve required.')
+        elif self.d != 2:
+            raise Exception('Planar curve required')        
+            
+        gp = self.knots.gauss_quadrature_points(degree)
+        elements = np.unique(self.knots.data)
+        weights = can_gauss_pts[degree][1]
+
+        A = 0
+        
+        for i in range(0,len(elements)-1):
+            
+            elsize = 0.5*(elements[i+1]-elements[i])            
+            
+            for j in range(0,len(gp[i])):
+                x,xt,xtt = self.evaluate(gp[i][j])
+                
+                # the normalization of the normal cancels with the curve measure
+                A += (x[0]*xt[1]-x[1]*xt[0])*weights[j]*elsize
+        
+        # the factor 0.5 has to eliminate div([x,y])=2        
+        return 0.5*A
+
+    def barycenter(self,degree):
+        
+        if self.knots.periodic is False:
+            raise Exception('Closed curve required.')
+        elif self.d != 2:
+            raise Exception('Planar curve required')
+            
+        gp = self.knots.gauss_quadrature_points(degree)
+        elements = np.unique(self.knots.data)
+        weights = can_gauss_pts[degree][1]
+
+        xm,ym = 0,0
+        A = 0
+        
+        for i in range(0,len(elements)-1):
+            
+            elsize = 0.5*(elements[i+1]-elements[i])            
+            
+            for j in range(0,len(gp[i])):
+                x,xt,xtt = self.evaluate(gp[i][j])
+                xm += (x[0]**2*xt[1])*weights[j]*elsize
+                ym += (x[1]**2*xt[0])*weights[j]*elsize
+                A += (x[0]*xt[1]-x[1]*xt[0])*weights[j]*elsize
+        
+        A = 0.5*A
+
+        xm = 0.5*xm/A
+        ym = -0.5*ym/A
+        return xm,ym,A
+                       
     def insert_knot(self,t):
         """
         Insert a new knot without changing the geometry of the curve.
@@ -375,7 +487,7 @@ class curve:
         
         # insert t in to knot vector
         self.knots.data = np.insert(self.knots.data,span+1,t)
-               
+                      
 # FIXME: make this a member, derive the graph and override           
 def plot_curve(s,n,controlpoints=False,knotpoints=False,normals=False,annotatespan=-1):
     """
@@ -566,7 +678,6 @@ class surface:
         """
         Plot surface, its control points, and curvature.
         """
-        
         if(self.d==3 or self.d==1):
 
             # substitute controlpoints
@@ -687,4 +798,4 @@ class surface:
             result = lsqr(A,pts[i])
             
             self.cp[i,:,:] = np.reshape(result[0],(self.cp.shape[1],self.cp.shape[2]))                
-                
+      

@@ -243,7 +243,6 @@ public:
      */
     CVector<T,3> Normalize(const CVector<T,2>& u) const;
 
-
     /*! \brief Converts matrix indices into a viewing direction.
      *
      * \param[in] i image row
@@ -252,7 +251,7 @@ public:
      * to world coordinates
      *
      */
-    CVector<T,3> Normalize(size_t i, size_t j) const;
+    CVector<T,3> Normalize(size_t i, size_t j, T depth = 1.0) const;
 
     /*! \brief Converts a set of pixels into viewing directions.
      *

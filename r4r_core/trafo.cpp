@@ -80,6 +80,14 @@ CTransformation<T,n> CTransformation<T,n>::operator*(const CTransformation<T,n>&
 }
 
 template <typename T,u_int n>
+CTransformation<T,n>::CTransformation(T* data) {
+
+    memcpy(&m_F[0],data,n*(n+1)*sizeof(T));
+
+}
+
+
+template <typename T,u_int n>
 T CTransformation<T,n>::Get(u_int i, u_int j) const {
 
     // col major

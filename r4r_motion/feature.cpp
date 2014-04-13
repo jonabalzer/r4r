@@ -90,9 +90,6 @@ CInterestPoint<T,n>::CInterestPoint(const CInterestPoint<T,n>& x, string name):
 
 }
 
-
-
-
 template<typename T,u_int n>
 CInterestPoint<T,n>::~CInterestPoint() {
 

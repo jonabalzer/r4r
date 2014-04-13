@@ -115,6 +115,17 @@ unix:!symbian|win32 {
     # find TBB
     #packagesExist(tbb) { DEFINES += HAVE_TBB }
 
+    # find OpenEXR
+#    packagesExist(OpenEXR) {
+
+#        CONFIG += link_pkgconfig
+#        PKGCONFIG += OpenEXR
+#        DEFINES += HAVE_EXR
+
+#    } else {
+#        warning("Could not resolve dependence on OpenEXR...")
+#    }
+
     # install target, FIXME: add target for pkg file
     headers.files = $$HEADERS
     headers.path = /usr/include/r4r/

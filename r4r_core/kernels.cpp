@@ -71,6 +71,18 @@ double CMercerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
 
 }
 
+template <>
+double CMercerKernel<vec3f>::Evaluate(vec3f* x, vec3f* y) {
+
+    float result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += InnerProduct(x[i],y[i]);
+
+    return static_cast<double>(result);
+
+}
+
 
 template<>
 double CMercerKernel<float>::Evaluate(float* x, float* y) {
@@ -372,7 +384,6 @@ template <>
 double CHellingerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
 
     double result = 0;
-    double xi, yi;
 
     for(size_t i=0; i<m_n; i++) {
 
@@ -386,6 +397,26 @@ double CHellingerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
     return result;
 
 }
+
+template <>
+double CHellingerKernel<vec3f>::Evaluate(vec3f* x, vec3f* y) {
+
+    float result = 0;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        vec3f xy = x[i]*y[i];
+
+        for(size_t j=0; j<3; j++)
+            result += sqrt(xy.Get(j));
+
+    }
+
+    return static_cast<double>(result);
+
+}
+
+
 template <>
 double CHellingerKernel<float>::Evaluate(float* x, float* y) {
 

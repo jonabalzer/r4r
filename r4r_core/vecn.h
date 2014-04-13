@@ -27,6 +27,11 @@
 #include <stdlib.h>
 #include <iostream>
 
+#ifdef HAVE_EXR
+#include <half.h>
+#endif
+
+
 namespace R4R {
 
 template<typename T> class CDenseVector;
@@ -416,6 +421,10 @@ typedef CVector<float,3> vec3f;
 typedef CVector<double,2> vec2;
 typedef CVector<float,2> vec2f;
 typedef CVector<unsigned char,3> rgb;
+
+#ifdef HAVE_EXR
+typedef CVector<half,3> vec3h;
+#endif
 
 }
 
