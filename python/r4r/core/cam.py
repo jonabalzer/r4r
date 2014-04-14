@@ -28,15 +28,15 @@ class PinholeCamera:
     """
     Pinhole camera model.
     """
-    def __init__(self):
-        self.s = [0,0]
-        self.f = [0,0]
-        self.c = [0,0]
-        self.k = [0,0,0,0,0]
-        self.alpha = 0
-        self.F = np.eye(4,dtype='float64')
-        self.Finv = np.eye(4,dtype='float64')
-        
+    def __init__(self, s=(0,0), f=(0,0), c=(0,0), k=(0,0,0,0,0), alpha=0, F=np.eye(4,dtype='float64')):
+        self.s = s
+        self.f = f
+        self.c = c
+        self.k = k
+        self.alpha = alpha
+        self.F = F
+        self.Finv = np.linalg.inv(self.F)
+
     def __str__(self):
         return (str(self.s)+"\n"+str(self.f)+"\n"+str(self.c)+"\n"+str(self.k)+
                 "\n"+str(self.F)+"\n"+str(self.Finv))                
@@ -60,25 +60,25 @@ class PinholeCamera:
         fid.readline()            
         line = fid.readline()
         ls = string.split(line)
-        self.s = [int(ls[0]),int(ls[1])]        
+        self.s = (int(ls[0]),int(ls[1]))       
         
         # focal lengths
         fid.readline()            
         line = fid.readline()
         ls = string.split(line)
-        self.f = [float(ls[0]),float(ls[1])]        
+        self.f = (float(ls[0]),float(ls[1]))      
         
         # principal point
         fid.readline()            
         line = fid.readline()
         ls = string.split(line)
-        self.c = [float(ls[0]),float(ls[1])]        
+        self.c = (float(ls[0]),float(ls[1]))        
     
         # distortion parameters
         fid.readline()            
         line = fid.readline()
         ls = string.split(line)
-        self.k = [float(ls[0]),float(ls[1]),float(ls[2]),float(ls[3]),float(ls[4])]
+        self.k = (float(ls[0]),float(ls[1]),float(ls[2]),float(ls[3]),float(ls[4]))
 
         # skew parameter
         fid.readline()            

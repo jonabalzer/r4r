@@ -45,7 +45,7 @@ def unwrap_phase(xw):
 
 class knot_vector:
     
-    def __init__(self,p,periodic):
+    def __init__(self,p = 3,periodic = True):
         self.p = p
         self.periodic = periodic
         
@@ -86,39 +86,7 @@ class knot_vector:
             
             # number of basis functions
             self.ncp = self.data.size - self.p + 1
-            
-    def assemble_interpolation_matrix(self,t):
-        """
-        Creates a sparse matrix needed for interpolating points given at the
-        locations given in t.     
-        """
-
-        #FIXME: This has to be a member of the spline class.
-        ii = []
-        jj = []
-        vals = []
-        
-        for i in range(0,t.size):
-            
-            N,span = bs.cox_de_boor(self.data,self.p,t[i])
-            
-            for j in range(0,self.p+1):
                 
-                index = self.convert_index(span-(self.p-1),j)
-                ii.append(i)
-                jj.append(index)
-                vals.append(N[0,j])
-
-        # convert to numpy arrays
-        ii = np.array(ii,dtype='int')
-        jj = np.array(jj,dtype='int')
-        vals = np.array(vals,dtype='double')
-        
-        A = sparse.coo.coo_matrix((vals,np.vstack((ii,jj))))
-        A = A.tocsc()
-        
-        return A
-    
     def get_domain(self):
         """
         Removes the ghost knots from knot vector.
@@ -249,11 +217,42 @@ class curve:
         self.d = d
         self.cp = np.zeros((d,knots.ncp),dtype='double')
 
+
+    def assemble_interpolation_matrix(self,t):
+        """
+        Creates a sparse matrix needed for interpolating points given at the
+        locations given in t.     
+        """
+        ii = []
+        jj = []
+        vals = []
+        
+        for i in range(0,t.size):
+            
+            N,span = bs.cox_de_boor(self.knots.data,self.knots.p,t[i])
+            
+            for j in range(0,self.knots.p+1):
+                
+                index = self.knots.convert_index(span-(self.knots.p-1),j)
+                ii.append(i)
+                jj.append(index)
+                vals.append(N[0,j])
+
+        # convert to numpy arrays
+        ii = np.array(ii,dtype='int')
+        jj = np.array(jj,dtype='int')
+        vals = np.array(vals,dtype='double')
+        
+        A = sparse.coo.coo_matrix((vals,np.vstack((ii,jj))))
+        A = A.tocsc()
+        
+        return A
+
     def interpolate(self,t,pts):
         """
         Initialize control points by interpolation.
         """
-        A = self.knots.assemble_interpolation_matrix(t) 
+        A = self.assemble_interpolation_matrix(t) 
         
         for i in range(0,self.d):
 
@@ -271,6 +270,46 @@ class curve:
             xt = 0*xt
             xtt = 0*xtt
             return x,xt,xtt
+            
+    def stiffness_matrix(self):
+        """
+        Stiffness matrix for solving elliptic PDEs on the curve by the isogeomtric
+        finite-elements method.
+        """
+        gpts = self.knots.gauss_quadrature_points(self.knots.p - 1)       
+        
+        ii = []
+        jj = []
+        vals = []
+        
+        for element in gpts:
+            
+            for p in element: 
+                
+                N,span = bs.cox_de_boor(self.knots.data,self.knots.p,p)
+                                
+                for i in range(0,self.knots.p+1):
+                
+                    row = self.knots.convert_index(span-(self.knots.p-1),i)
+                    
+                    for j in range(0,self.knots.p+1):
+                             
+                        col = self.knots.convert_index(span-(self.knots.p-1),j)
+                    
+                        ii.append(row)
+                        jj.append(col)
+                        vals.append(N[1,i]*N[1,j])
+
+        # convert to numpy arrays
+        ii = np.array(ii,dtype='int')
+        jj = np.array(jj,dtype='int')
+        vals = np.array(vals,dtype='double')
+        
+        A = sparse.coo.coo_matrix((vals,np.vstack((ii,jj))))
+        A = A.tocsc()
+        
+        return A
+       
             
     def evaluate_batch(self,t):
         """

@@ -1,5 +1,6 @@
 import unittest
 import bsplines as bs
+import cam
 import numpy as np
 
 class TestSplineCurve(unittest.TestCase):
@@ -24,6 +25,8 @@ class TestSplineCurve(unittest.TestCase):
         t = np.linspace(0,1.0,20)
         self.line.interpolate(t,[t,t])
 
+        self.cam = cam.PinholeCamera()
+        
     def test_area(self):
         
         A = self.circle.area(2)
@@ -35,14 +38,12 @@ class TestSplineCurve(unittest.TestCase):
         print x,y,A
         self.assertTrue(np.abs(x-10)<0.1 and np.abs(y-10)<0.1)
         
-        
     def test_integration(self):
 
         f = lambda t:t                 
         res = self.line.integrate(f,2)
         self.assertTrue(np.abs(res-np.sqrt(2)*0.5)<0.01)
         
-
 if __name__ == '__main__':
     try:
         unittest.main()
