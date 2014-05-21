@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 13 13:50:22 2013
-
-@author: jbalzer
-"""
-
 from distutils.core import setup, Extension
 import numpy as np
 

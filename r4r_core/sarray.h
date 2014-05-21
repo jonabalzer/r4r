@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RSARRAY_H_
 #define R4RSARRAY_H_
@@ -298,7 +298,7 @@ public:
      * fit for any Krylov subspace method which only needs matrix-vector-products
      * (without transposition), e.g. the standard CG method. Problem is however
      * that assembly is usually done row-wise! So assembly is followed by
-     * transposition (inefficient), than squaring. Maybe it is faster to do
+     * transposition (inefficient), than squaring. Maybe it is faster to
      * construct CSC matrix from triplets and a heap.
      *
      *
@@ -310,6 +310,15 @@ public:
 
     //! In-place transposition.
     void Transpose() { m_transpose = !m_transpose; }
+
+    //! Low-level access to the column pointer.
+    U* GetColumnPointer() { return &(*m_colptr.get())[0]; }
+
+    //! Low-level access to the row index array.
+    U* GetRowIndices() { return &(*m_rows.get())[0]; }
+
+    //! Low-level access to the value array.
+    T* GetValues() { return &(*m_vals.get())[0]; }
 
 private:
 

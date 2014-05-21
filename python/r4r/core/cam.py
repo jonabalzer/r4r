@@ -28,7 +28,7 @@ class PinholeCamera:
     """
     Pinhole camera model.
     """
-    def __init__(self, s=(0,0), f=(0,0), c=(0,0), k=(0,0,0,0,0), alpha=0, F=np.eye(4,dtype='float64')):
+    def __init__(self, s=(0,0), f=(1,1), c=(0,0), k=(0,0,0,0,0), alpha=0, F=np.eye(4,dtype='float64')):
         self.s = s
         self.f = f
         self.c = c
@@ -43,7 +43,7 @@ class PinholeCamera:
         
     def from_projection_matrix(self,K):
         """
-        Set parameters from a given projection matrix.
+        Sets parameters from a given projection matrix.
         """
         self.f[0] = K[0,0]
         self.f[1] = K[1,1]
@@ -101,7 +101,7 @@ class PinholeCamera:
     
     def write_to_r4r_file(self,fn):
         """
-        Export intrinsic parameters to file in R4R format.
+        Exports intrinsic parameters to file in R4R format.
         """
         fid = open(fn,'w')
         fid.write("# size\n")
@@ -136,3 +136,19 @@ class PinholeCamera:
         K[1,2] = self.c[1]
         K[2,2] = 1.0
         return K
+        
+    def pixel_grid(self):
+        """
+        Creates a mesh grid according to image dimensions.
+        """
+        return np.meshgrid(np.arange(0,self.s[0]),np.arange(0,self.s[1]))
+        
+    def back_project(self,u,v,z):
+        """
+        Back-projects a set of pixels and depths to 3-d. CAVEAT: It is assumed
+        that there is no radial distortion.
+        """
+        x = z*(u-self.c[0])/self.f[0]
+        y = z*(v-self.c[1])/self.f[1]
+                      
+        return x,y,z

@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #include "sarray.h"
 #include "darray.h"
@@ -47,7 +47,7 @@ bool CCSRTriple<T,U>::operator<(const CCSRTriple<T,U>& x) const {
 
     bool result;
 
-    m_i>=x.m_i ? result=true : result = (m_i==x.m_i && m_j>=x.m_j);
+    m_i>x.m_i ? result=true : result = (m_i==x.m_i && m_j>=x.m_j);
 
     return result;
 
@@ -55,13 +55,16 @@ bool CCSRTriple<T,U>::operator<(const CCSRTriple<T,U>& x) const {
 
 template class CCSRTriple<float,size_t>;
 template class CCSRTriple<double,size_t>;
+template class CCSRTriple<float,int>;
+template class CCSRTriple<double,int>;
+
 
 template<typename T,typename U>
 bool CCSCTriple<T,U>::operator<(const CCSCTriple<T,U>& x) const {
 
     bool result;
 
-    m_j>=x.m_j ? result=true : result = (m_j==x.m_j && m_i>=x.m_i);
+    m_j>x.m_j ? result=true : result = (m_j==x.m_j && m_i>=x.m_i);
 
     return result;
 
@@ -69,7 +72,8 @@ bool CCSCTriple<T,U>::operator<(const CCSCTriple<T,U>& x) const {
 
 template class CCSCTriple<float,size_t>;
 template class CCSCTriple<double,size_t>;
-
+template class CCSCTriple<float,int>;
+template class CCSCTriple<double,int>;
 
 template<typename T, typename U>
 CCSRMatrix<T,U>::CCSRMatrix():
@@ -729,6 +733,8 @@ ostream& operator << (ostream& os, const CCSCMatrix<V,W>& x) {
 
 template ostream& operator<<(ostream& os, const CCSCMatrix<float,size_t>& x);
 template ostream& operator<<(ostream& os, const CCSCMatrix<double,size_t>& x);
+template ostream& operator<<(ostream& os, const CCSCMatrix<float,int>& x);
+template ostream& operator<<(ostream& os, const CCSCMatrix<double,int>& x);
 
 template<typename T, typename U>
 CSymmetricCSRMatrix<T,U> CCSCMatrix<T,U>::Square() const {
@@ -748,6 +754,8 @@ CCSCMatrix<T,U> CCSCMatrix<T,U>::Transpose(const CCSCMatrix<T,U>& x) {
 
 template class CCSCMatrix<float,size_t>;
 template class CCSCMatrix<double,size_t>;
+template class CCSCMatrix<float,int>;
+template class CCSCMatrix<double,int>;
 
 template <class T>
 CSparseArray<T>::CSparseArray():
