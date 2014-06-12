@@ -592,13 +592,10 @@ CDenseArray<T> CView<T>::ModelViewProjectionMatrix(T znear, T zfar) const {
 
 }
 
-
-
 template class CView<float>;
 template class CView<double>;
 template ostream& operator << (ostream& os, const CView<float>& x);
 template ostream& operator << (ostream& os, const CView<double>& x);
-
 
 template <typename T>
 bool CDistanceViewComparator<T>::operator ()(const CView<T>& x, const CView<T>& y) {
@@ -632,6 +629,7 @@ T CAngleViewComparator<T>::GetKey(const CView<T>& x) {
 }
 
 template class CAngleViewComparator<double>;
+template class CAngleViewComparator<float>;
 
 template <typename T>
 bool CDistanceViewPairComparator<T>::operator ()(const std::pair<CView<T>,CView<T> >& x, const std::pair<CView<T>,CView<T> >& y) {
@@ -644,6 +642,7 @@ bool CDistanceViewPairComparator<T>::operator ()(const std::pair<CView<T>,CView<
 }
 
 template class CDistanceViewPairComparator<double>;
+template class CDistanceViewPairComparator<float>;
 
 template <typename T>
 bool CAngleViewPairComparator<T>::operator ()(const std::pair<CView<T>,CView<T> >& x, const std::pair<CView<T>,CView<T> >& y) {
@@ -657,5 +656,6 @@ bool CAngleViewPairComparator<T>::operator ()(const std::pair<CView<T>,CView<T> 
 }
 
 template class CAngleViewPairComparator<double>;
+template class CAngleViewPairComparator<float>;
 
 }
