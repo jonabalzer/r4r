@@ -26,10 +26,8 @@
 #include <QProgressDialog>
 #include <QMessageBox>
 
-#include <sys/time.h>
 #include <sys/resource.h>
-
-#include <omp.h>
+#include <chrono>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -46,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_pyramid(),
     m_timer(this),
     m_params(),
-    m_tracker()
+    m_tracker(nullptr)
 {
 
     // set gui
@@ -104,7 +102,7 @@ void MainWindow::on_actionOpen_triggered()
     QString filename = QFileDialog::getOpenFileName(this,
                                                     "Open video file...",
                                                     ".",
-                                                    "(*.mp4);;(*.avi);;(*.mov);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
+                                                    "(*.mov);;(*.avi);;(*.mp4);;(*.png);;(*.jpg);;(*.bmp);;(*.ppm);;(*.pgm)");
 
 
     // check if it is an image or video
@@ -162,7 +160,7 @@ void MainWindow::on_actionOpen_triggered()
 
     // draw
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    m_tracker->Draw(qimg,1);
+    m_tracker->Draw(qimg,0);
 
     // display
     show_image(qimg);
@@ -198,29 +196,27 @@ void MainWindow::on_stepButton_clicked()
     cvtColor(img, img_gray, COLOR_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
-    // start measuring time
-    double t0, t1;
-    t0 = omp_get_wtime();
+    // start measuring wall time
+    chrono::time_point<chrono::system_clock> start, end;
+    start = chrono::system_clock::now();
 
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
-
-    // add new tracks
-    size_t noactive = m_tracker->GetNumberOfActiveTracks();
-    cout << "Number of active tracklets: " << noactive << endl;
-    if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
-         m_tracker->AddTracklets(m_pyramid);
 
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
 
     // check validity of tracks
     m_tracker->Clean(pyramid,m_pyramid);
-    //trackers[i]->DeleteInvalidTracks();
+    m_tracker->DeleteInvalidTracks();
 
-    // compute and display framerate
-    t1 = omp_get_wtime();
-    double fps = 1.0/(t1-t0);
+    // add new tracklets and mark those getting too close to each other as invalid
+    m_tracker->AddTracklets(m_pyramid);
+
+    // calculate fps
+    end = chrono::system_clock::now();
+    chrono::duration<double> dt = end - start;
+    double fps = 1.0/dt.count();
     ui->speedLcdNumber->display(fps);
 
     // draw trails
@@ -263,6 +259,9 @@ void MainWindow::on_actionSave_Tracks_triggered()
     m_timer.stop();
 
     QString dirname = QFileDialog::getExistingDirectory(this,tr("Choose folder..."), ".");
+
+    if(dirname.isEmpty())
+        return;
 
     string dir = dirname.toStdString() + string("/");
     string prefix = string("track");
@@ -323,55 +322,52 @@ void MainWindow::on_actionSave_Descriptors_triggered()
         return;
 
     // create aggregator
-    CDescriptorAggregator<matf>* aggregator;
+    list<imfeature> aggregates;
 
     switch(m_params.GetIntParameter("AGGREGATOR")) {
 
     case 1:
-        cout << "Init frame." << endl;
-        aggregator = new CInitFrameAggregator<matf>(m_tracker,name.c_str());
+    {
+        CInitFrameAggregator<matf,CRingBuffer> aggregator;
+        aggregates = m_tracker->Aggregate(aggregator,name.c_str());
         break;
+    }
     case 2:
-        aggregator = new CSubsampleAggregator<matf>(m_tracker,name.c_str(),m_params.GetIntParameter("AGG_DS"));
+    {
+        CSplineInterpolationAggregator<matf,CRingBuffer> aggregator(10,3);
+        aggregates = m_tracker->Aggregate(aggregator,name.c_str());
         break;
-
+    }
     case 3:
-        aggregator = new CSplineInterpolationAggregator<matf>(m_tracker,name.c_str(),10,3);
-        break;
-
-    case 4:
-        aggregator = new CMeanAggregator<matf>(m_tracker,name.c_str());
-        break;
-
-    default:
-
-        aggregator = new CDescriptorAggregator<matf>(m_tracker,name.c_str());
-
+    {
+        CMeanAggregator<matf,CRingBuffer> aggregator;
+        aggregates = m_tracker->Aggregate(aggregator,name.c_str());
         break;
     }
 
-    // aggregate
-    aggregator->Aggregate();
-    list<imfeature> feats = aggregator->Get();
+    }
 
-    imfeature::SaveToFile(filename.toStdString().c_str(),feats,comment.toStdString().c_str());
-
-    delete aggregator;
+    imfeature::SaveToFile<list>(filename.toStdString().c_str(),aggregates,comment.toStdString().c_str());
 
 }
 
 void MainWindow::on_actionClose_triggered()
 {
 
+    if(m_tracker==nullptr)
+        return;
+
     m_timer.stop();
     ui->labelImage->clear();
+
     delete m_tracker;
+    m_tracker = nullptr;
+
     m_cap.release();
 
     emit show_memoryUsage();
 
     ui->frameLcdNumber->display(0);
-
 
 }
 

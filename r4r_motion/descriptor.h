@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RDESCRIPTOR_H_
 #define R4RDESCRIPTOR_H_
@@ -46,7 +46,7 @@ class CAbstractDescriptor {
 public:
 
 	//! Triggers computation of the descriptor.
-    virtual bool Compute(cv::Mat& img) = 0;
+    virtual bool Compute(const cv::Mat& img) = 0;
 
 	//! Writes descriptor to a stream.
     virtual void Write(std::ofstream& os) = 0;
@@ -86,7 +86,7 @@ public:
     CDescriptor(const Array& data);
 
     //! \copydoc CAbstractDescriptor::Compute(cv::Mat&)
-    virtual bool Compute(cv::Mat& img) { return 0; }
+    virtual bool Compute(const cv::Mat& img) { return 0; }
 
     //! \copydoc CAbstractDescriptor::Write(std::ofstream&)
     virtual void Write(std::ofstream& ofs) { ofs << m_container; }
@@ -141,7 +141,7 @@ public:
     CNeighborhoodDescriptor(const Array& container, const Rect& roi);
 
     //! Access to the region of interest.
-    Rect GetRoI() const { return m_roi; }
+    const Rect& GetRoI() const { return m_roi; }
 
 protected:
 
@@ -150,6 +150,153 @@ protected:
     using CDescriptor<Array>::m_container;
 
 };
+
+
+/*! \brief descriptor that maps an image (patch) to itself
+ *
+ *
+ *
+ */
+class CIdentityDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,matf> {
+
+public:
+
+    //! Constructor.
+    CIdentityDescriptor(CRectangle<double> roi, size_t method, size_t hsize = 7);
+
+    //! \copydoc CDescriptor::Compute(cv::Mat&)
+    bool Compute(const cv::Mat& img);
+
+    //! Normalizes the image patch by subtracting the mean and dividing by the standard deviation.
+    void Normalize();
+
+    //! Normalizes the image patch by dividing by the mean.
+    void NormalizeWeber();
+
+    //! Subtracts the mean from the image patch.
+    void Center();
+
+    //! Computes the correlation coefficient between two normalized images.
+    double Distance(CDescriptor<matf>& desc) const;
+
+private:
+
+    size_t m_method;								//! flag indicating which normalization method to use
+
+
+};
+
+class CIdentityGradientDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,mat> {
+
+public:
+
+    //! Constructor.
+    CIdentityGradientDescriptor(CRectangle<double> roi, double alpha, size_t method, size_t hsize = 7);
+
+    //! \copydoc CDescriptor::Compute(cv::Mat&)
+    bool Compute(const cv::Mat& img);
+
+    /*! \brief Distance between two descriptors.
+     *
+     * \details Forms the scalar product of the gradient in one descriptor with the dual gradient of the other. If both
+     * gradient point into the same direction (or if they both have zero norm), then the contribution to the overall sum
+     * is zero.
+     *
+     * When both gradient fields are unit norm, the distance can be rendered rotation-invariant by first computing all
+     * scalar products on the support of the descriptor then making it mean-free before accumulating the absolute value.
+     *
+     */
+    double Distance(CDescriptor<mat>& desc) const;
+
+protected:
+
+    //! Normalizes all vectors which are greater than a threshold in norm.
+    void Normalize();
+
+    //! Weighting function depending on norm of gradient.
+    double WeightingFunction(double gnorm);
+
+    double m_alpha; 								//! normalization threshold
+    size_t m_method;								//! flag indicating which normalization method to use
+
+
+};
+
+class CCurvatureDescriptor:public CIdentityGradientDescriptor {
+
+public:
+
+    //! Constructor.
+    CCurvatureDescriptor(CRectangle<double> roi, double alpha, size_t method, size_t hsize = 7);
+
+    //! \copydoc CDescriptor::Compute(cv::Mat&)
+    bool Compute(const cv::Mat& img);
+
+    //! Distance between two curvature  descriptors.
+    double Distance(const CCurvatureDescriptor& desc) const;
+
+private:
+
+    mat m_kappa;                        // container for
+
+};
+
+
+/*! \brief topological descriptor
+ *
+ *
+ *
+ */
+/*class CFBDDescriptor:public CNeighborhoodDescriptor<CRectangle<double>,vec> {
+
+public:
+
+    //! Constructor.
+    CFBDDescriptor(CRectangle<double> roi, size_t length);
+
+    //! \copydoc CDescriptor::Compute(cv::Mat&)
+    bool Compute(cv::Mat& img);
+
+    //! Computes the correlation coefficient between two normalized images (not a distance in the strict sense).
+    virtual double Distance(CNeighborhoodDescriptor<CRectangle<double>,vec>& desc) const;
+
+private:
+
+    size_t m_length;				//!< number of
+
+};*/
+
+/*! \brief implementation of BRIEF descriptor proposed in [Calonder2010]
+ *
+ *
+ *
+ */
+class CBRIEF:public CNeighborhoodDescriptor<CRectangle<double>,CDenseVector<bool> > {
+
+public:
+
+    //! Constructor.
+    CBRIEF(CRectangle<double> roi);
+
+    //! \copydoc CDescriptor::Compute(cv::Mat&)
+    bool Compute(const cv::Mat& img);
+
+    //! Generates sampling points.
+    static void GenerateSamplePoints();
+
+    //! Print sampling points.
+    static void PrintSamplePoints();
+
+    //! Distance between two BRIEF descriptors.
+    double Distance(const CBRIEF& desc) const;
+
+protected:
+
+    static vec2 m_pts_0[BITSET_LENGTH];             //! first set of sample points
+    static vec2 m_pts_1[BITSET_LENGTH];             //! second set of sample points
+
+};
+
 
 }
 

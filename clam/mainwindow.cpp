@@ -26,14 +26,11 @@
 #include <QProgressDialog>
 #include <QMessageBox>
 
-#include <sys/time.h>
 #include <sys/resource.h>
-
-#include <omp.h>
+#include <chrono>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
 #include "viewer.h"
 
 using namespace cv;
@@ -48,9 +45,9 @@ MainWindow::MainWindow(QWidget* parent) :
     m_pyramid(),
     m_timer(this),
     m_params(),
-    m_tracker(),
+    m_tracker(nullptr),
     m_cam(),
-    m_map() {
+    m_viewer(nullptr) {
 
     ui->setupUi(this);
     this->setFixedSize(this->width(),this->height());
@@ -63,18 +60,27 @@ MainWindow::MainWindow(QWidget* parent) :
     // set parameters
     m_preferences->on_applyButton_clicked();
 
-    // delete the one we already have and replace it
-    /*CView<float> view(m_cam);
-    ui->openGlWidget = new CViewer(view,this);
-    ui->openGlWidget->setObjectName(QString::fromUtf8("openGlWidget"));
-    ui->openGlWidget->setGeometry(QRect(640, 45, 640, 480));*/
-
 }
 
 MainWindow::~MainWindow() {
 
-    delete m_tracker;
-    m_cap.release();
+    if(m_tracker!=nullptr) {
+
+        delete m_tracker;
+        m_tracker = nullptr;
+
+    }
+
+    if(m_cap.isOpened())
+        m_cap.release();
+
+    if(m_viewer!=nullptr) {
+
+        delete m_viewer;
+        m_viewer = nullptr;
+
+    }
+
     delete ui;
 
 }
@@ -82,13 +88,12 @@ MainWindow::~MainWindow() {
 void MainWindow::set_params(CParameters params) {
 
     m_params = params;
-    m_cam = CPinholeCam(m_params.GetIntParameter("SU"),
-                        m_params.GetIntParameter("SV"),
-                        m_params.GetDoubleParameter("FU"),
-                        m_params.GetDoubleParameter("FV"),
-                        m_params.GetDoubleParameter("CU"),
-                        m_params.GetDoubleParameter("CV"));
-
+    m_cam = CPinholeCam<float>(m_params.GetIntParameter("SU"),
+                               m_params.GetIntParameter("SV"),
+                               m_params.GetDoubleParameter("FU"),
+                               m_params.GetDoubleParameter("FV"),
+                               m_params.GetDoubleParameter("CU"),
+                               m_params.GetDoubleParameter("CV"));
 
 }
 
@@ -146,42 +151,12 @@ void MainWindow::on_stepButton_clicked()
     cvtColor(img, img_gray, COLOR_BGR2GRAY);
     buildPyramid(img_gray,m_pyramid,m_params.GetIntParameter("SCALE"));
 
-    // start measuring time
-    double t0, t1;
-    t0 = omp_get_wtime();
+    // start measuring wall time
+    chrono::time_point<chrono::system_clock> start, end;
+    start = chrono::system_clock::now();
 
     // update motion estimates
     m_tracker->Update(pyramid,m_pyramid);
-
-    // get map and color it
-    if(ui->renderCheckBox->isChecked()) {
-
-        CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
-        CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
-        list<pair<vec2f,vec3f> >& newpts = tracker->GetMap();
-        list<pair<vec3f,rgb> >& allpts = viewer->get_map();
-
-        // color them and send them to the viewer
-        list<pair<vec2f,vec3f> >::iterator it;
-        for(it=newpts.begin(); it!=newpts.end(); it++) {
-
-            CVector<size_t,2> p = CVector<size_t,2>(it->first);
-
-            rgb red = { img.at<Vec3b>(p.Get(1),p.Get(0))[2], img.at<Vec3b>(p.Get(1),p.Get(0))[1], img.at<Vec3b>(p.Get(1),p.Get(0))[0] };
-            allpts.push_back(pair<vec3f,rgb>(it->second,red));
-
-         }
-
-        // update view
-        CView<float> view = tracker->GetLatestView();
-        viewer->update_display(view);
-
-    }
-
-    // add new tracks
-    size_t noactive = m_tracker->GetNumberOfActiveTracks();
-    if(noactive<(size_t)m_params.GetIntParameter("MIN_NO_FEATURES"))
-         m_tracker->AddTracklets(m_pyramid);
 
     // update descriptors
     m_tracker->UpdateDescriptors(m_pyramid);
@@ -190,15 +165,24 @@ void MainWindow::on_stepButton_clicked()
     m_tracker->Clean(pyramid,m_pyramid);
     //trackers[i]->DeleteInvalidTracks();
 
-    // compute and display framerate
-    t1 = omp_get_wtime();
-    double fps = 1.0/(t1-t0);
+    // add new tracks
+    m_tracker->AddTracklets(m_pyramid);
+
+    // calculate fps
+    end = chrono::system_clock::now();
+    chrono::duration<double> dt = end - start;
+    double fps = 1.0/dt.count();
     ui->speedLcdNumber->display(fps);
 
     // draw trails
     QImage qimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-    m_tracker->Draw(qimg,5);
+    m_tracker->Draw(qimg,2);
     show_image(qimg);
+
+    // draw with new view and points
+    CView<float> view(m_cam,m_tracker->GetMotion().GetLatestState());
+    m_viewer->updateView(view);
+    m_viewer->update();
 
     // display frame no and mem usage
     ui->frameLcdNumber->display((int)m_tracker->GetTime());
@@ -287,6 +271,23 @@ void MainWindow::on_actionOpen_triggered()
     show_image(qimg);
     emit show_memoryUsage();
 
+    // only if there is none, create viewer
+    CView<float> view0(m_cam,m_tracker->GetMotion().GetInitialState());
+    if(m_viewer==nullptr) {
+
+        m_viewer = new CPointCloudViewer(view0,&m_tracker->GetMap());
+        m_viewer->setWindowTitle("CLAM");
+
+
+    } else {
+
+        m_viewer->setPointCloud(&m_tracker->GetMap());
+        m_viewer->updateView(view0);
+
+    }
+
+    m_viewer->show();
+
 }
 
 void MainWindow::on_showMemoryUsage_triggered() {
@@ -305,29 +306,7 @@ void MainWindow::on_actionSave_Motion_triggered() {
                                ".",
                                tr("(*.txt)"));
 
-    CMotionTracker* tracker = dynamic_cast<CMotionTracker*>(m_tracker);
-
-    list<vecf> motion = tracker->GetMotion();
-
-    ofstream out(filename.toStdString().c_str());
-
-    if(!out) {
-
-        QMessageBox::critical(this,"Error","Could not save file.");
-        return;
-
-     }
-
-    list<vecf>::iterator it;
-
-    for(it=motion.begin(); it!=motion.end(); it++) {
-
-        vecf m = (*it);
-        out << m.Get(0) << " " << m.Get(1) << " " << m.Get(2) << " " << m.Get(3) << " " << m.Get(4) << " " << m.Get(5) << " " << endl;
-
-    }
-
-    out.close();
+    m_tracker->GetMotion().WriteToFile(filename.toStdString().c_str());
 
 }
 
@@ -338,10 +317,9 @@ void MainWindow::on_actionSave_Map_triggered() {
                                tr("(*.ply)"));
 
 
-    CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
-    list<pair<vec3f,rgb> >& pts = viewer->get_map();
 
-    list<pair<vec3f,rgb> >::iterator it;
+    const vector<CInterestPoint<float,3> >& data = m_tracker->GetMap().GetData();
+    vector<CInterestPoint<float,3> >::const_iterator it;
 
     ofstream out(filename.toStdString().c_str());
 
@@ -355,17 +333,17 @@ void MainWindow::on_actionSave_Map_triggered() {
     out << "ply" << endl;
     out <<  "format ascii 1.0" << endl;
     out <<  "comment" << endl;
-    out << "element vertex " << pts.size() << endl;
+    out << "element vertex " << data.size() << endl;
     out << "property float32 x" << endl;
     out << "property float32 y" << endl;
     out << "property float32 z" << endl;
-    out << "property uchar red" << endl;
-    out << "property uchar green" << endl;
-    out << "property uchar blue" << endl;
+    //out << "property uchar red" << endl;
+    //out << "property uchar green" << endl;
+    //out << "property uchar blue" << endl;
     out << "end_header" << endl;
 
-    for(it=pts.begin(); it!=pts.end(); it++)
-        out << it->first.Get(0) << " " << it->first.Get(1) << " " << it->first.Get(2) << " " << (unsigned int)it->second.Get(0) << " " <<  (unsigned int)it->second.Get(1) << " " <<  (unsigned int)it->second.Get(2) << endl;
+    for(it=data.begin(); it!=data.end(); it++)
+        out << it->GetLocation().Get(0) << " " << it->GetLocation().Get(1) << " " << it->GetLocation().Get(2) << endl; // " " << (unsigned int)it->second.Get(0) << " " <<  (unsigned int)it->second.Get(1) << " " <<  (unsigned int)it->second.Get(2) << endl;
 
     out.close();
 
@@ -387,13 +365,20 @@ void MainWindow::on_actionClose_triggered()
 {
 
     m_timer.stop();
-    ui->labelImage->clear();
-    delete m_tracker;
-    m_cap.release();
 
-    CViewer* viewer = dynamic_cast<CViewer* >(ui->openGlWidget);
-    viewer->get_map().clear();
-    viewer->repaint();
+    ui->labelImage->clear();
+
+    if(m_tracker!=nullptr) {
+        delete m_tracker;
+        m_tracker = nullptr;
+    }
+
+    if(m_cap.isOpened())
+        m_cap.release();
+
+    // disconnect the point cloud (better with slots?)
+    m_viewer->setPointCloud(nullptr);
+    m_viewer->hide();
 
     emit show_memoryUsage();
 

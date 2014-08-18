@@ -21,8 +21,6 @@
 #
 ######################################################################################
 
-#QT -= core gui
-
 QMAKE_CXXFLAGS += -std=c++0x -O3 -msse4
 
 TARGET = r4r_core
@@ -39,7 +37,6 @@ SOURCES += \
     lm.cpp \
     kfilter.cpp \
     iter.cpp \
-    intimg.cpp \
     interp.cpp \
     factor.cpp \
     darray.cpp \
@@ -62,7 +59,6 @@ HEADERS += \
     lm.h \
     kfilter.h \
     iter.h \
-    intimg.h \
     interp.h \
     factor.h \
     darray.h \
@@ -73,42 +69,69 @@ HEADERS += \
     splinecurve.h \
     vecn.h \
     image.h \
-    rbuffer.h
-
-# see if intel tbb existst
-packagesExist(tbb) {
-    DEFINES += HAVE_TBB
-    CONFIG(debug,debug|release):DEFINES += TBB_USE_DEBUG
-}
+    rbuffer.h \
+    unionfind.h
 
 unix:!symbian|win32 {
 
+    # create pkg config files
+    CONFIG += warn_off create_prl no_install_prl create_pc
+
+    # find LAPACK and BLAS
+    LAPACK = $$system(find /usr -name liblapack* 2>/dev/null)
+    isEmpty(LAPACK) {
+        error("Could not resolve dependency on LAPACK.")
+    }
+    else {
+        LIBS += -llapack
+        DEFINES += HAVE_LAPACK
+    }
+    BLAS = $$system(find /usr -name libblas* 2>/dev/null)
+    isEmpty(BLAS) {
+        warning("Could not resolve dependency on BLAS.")
+    }
+    else {
+
+        LIBS += -lblas
+        DEFINES += HAVE_BLAS
+
+    }
+
+    # find OpenCV
+    packagesExist(opencv) {
+
+        LIBS += -lopencv_core \
+                -lopencv_imgproc
+
+        # this is not good, because it will spawn too many dependencies
+        #CONFIG += link_pkgconfig
+        #PKGCONFIG += opencv
+
+    } else {
+       error("Could not resolve mandatory dependence on OpenCV...")
+
+    }
+
+    # find TBB
+    #packagesExist(tbb) { DEFINES += HAVE_TBB }
+
+    # find OpenEXR
+#    packagesExist(OpenEXR) {
+
+#        CONFIG += link_pkgconfig
+#        PKGCONFIG += OpenEXR
+#        DEFINES += HAVE_EXR
+
+#    } else {
+#        warning("Could not resolve dependence on OpenEXR...")
+#    }
+
+    # install target, FIXME: add target for pkg file
     headers.files = $$HEADERS
     headers.path = /usr/include/r4r/
-
     target.path = /usr/lib/
 
     INSTALLS += target \
                 headers
-
-    # what about clean target?
-
-    LIBS += -L/usr/local/lib \
-            -lopencv_core \
-            -lopencv_highgui \
-            -lopencv_video \
-            -lopencv_imgproc \
-            -lopencv_features2d \
-            -lopencv_calib3d \
-            -llapack
-
-    contains(DEFINES,HAVE_TBB) {
-            LIBS += -ltbb
-            #CONFIG(release,debug|release):LIBS+= -ltbb
-            #CONFIG(debug,debug|release):LIBS+= -ltbb_debug
-    }
-
-
-
 
 }

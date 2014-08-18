@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RITER_H_
 #define R4RITER_H_
@@ -51,7 +51,7 @@ protected:
      * This class has pure virtual functions. Block direct creation.
      *
      */
-    CIterativeLinearSolver(const CPreconditioner<Matrix,T>& M, size_t n, double eps, bool silent = true):m_M(M),m_n(n),m_eps(eps),m_silent(silent) {}
+    CIterativeLinearSolver(const CPreconditioner<Matrix,T>& M, size_t n, double eps, bool silent = true, T lambda = 0):m_M(M),m_n(n),m_eps(eps),m_silent(silent),m_lambda(lambda) {}
 
     //! Standard constructor (deleted).
     CIterativeLinearSolver() = delete;
@@ -66,6 +66,9 @@ public:
 
     //! Set silent.
     void SetSilent(bool silent) { m_silent = silent; }
+
+    //! Set the regularization weight.
+    void SetLambda(T lambda) { m_lambda = lambda; }
 
     /*! \brief Iterate.
      *
@@ -100,6 +103,7 @@ protected:
     size_t m_n;                             		//!< number of steps
     double m_eps;                               	//!< absolute accuracy
     bool m_silent;                                  //!< flag that determines whether messages are displayed
+    T m_lambda;                                     //!< regularization parameter for solving LS problems
 
 };
 
@@ -155,12 +159,14 @@ public:
     //! \copydoc CIterativeLinearSolver::Iterate(const Matrix&,const CDenseVector<T>&,CDenseVector<T>&)
     std::vector<double> Iterate(const Matrix& A, const CDenseVector<T>& b, CDenseVector<T>& x) const;
 
+
 private:
 
     using CIterativeLinearSolver<Matrix,T>::m_M;
     using CIterativeLinearSolver<Matrix,T>::m_n;
     using CIterativeLinearSolver<Matrix,T>::m_eps;
     using CIterativeLinearSolver<Matrix,T>::m_silent;
+    using CIterativeLinearSolver<Matrix,T>::m_lambda;
 
 };
 

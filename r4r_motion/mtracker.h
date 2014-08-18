@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RMTRACKER_H_
 #define R4RMTRACKER_H_
@@ -27,8 +27,34 @@
 #include "cam.h"
 #include "stracker.h"
 #include "lm.h"
+#include "pcl.h"
 
 namespace R4R {
+
+class CMotionTrackerTracklet:public CSimpleTrackerTracklet {
+
+    friend class CMotionTracker;
+
+public:
+
+    //! Deleted constructor.
+    CMotionTrackerTracklet() = delete;
+
+    //! Constructor.
+    CMotionTrackerTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200):CSimpleTrackerTracklet(t0,x0,maxlength),m_pmap_point(),m_has_point(false){}
+
+private:
+
+    /*! FIXME: One has to make absolutely sure that the iterator does not get invalidated.
+     * For a list, this never happens, but for a vector it might, if insertion happens
+     * before the element to which the iterator points. Maybe we only store a pointer and
+     * create an iterator from it to inspect neighboring elements in the map?
+     *
+     */
+    std::vector<CInterestPoint<float,3> >::const_iterator m_pmap_point;    //!< iterator initially invalid, later to point to map point
+    bool m_has_point;                                                      //!< flag indicating whether the iterator is valid
+
+};
 
 /*! \brief motion tracker
  *
@@ -38,61 +64,61 @@ class CMotionTracker: public CSimpleTracker {
 
 public:
 
+    typedef CPointCloud<std::vector,float,3> CSfMMap;
+
+    /*! \brief Deleted constructor.
+     *
+     * Cannot construct motion tracker without reference to camera intrinsics.
+     *
+     */
+    CMotionTracker() = delete;
+
     //! Constructor.
-    CMotionTracker(CParameters* params, CPinholeCam& cam);
+    CMotionTracker(const CParameters* params, const CPinholeCam<float>& cam);
 
     /*! \copybrief CTracker::Update(cv::Mat&,cv::Mat&)
      *
      *
      *
      */
-    bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1);
+    void Update(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1);
 
-    /*! \copybrief CTracker::Update(std::vector<cv::Mat>&)
-     *
-     * \param[in] pyramid color image pyramid
-     *
-     * Color is attached to the scene points as a descriptor and can be exported to the .PLY file.
-     *
-     */
-    bool UpdateDescriptors(std::vector<cv::Mat>& pyramid);
+    //! \copydoc CSimpleTracker::AddTracklets(cv::Mat&)
+    void AddTracklets(const std::vector<cv::Mat>& pyramid);
 
     //! Returns a reference to the point cloud.
-    std::list<std::pair<vec2f,vec3f> >& GetMap() { return m_map; }
+    const CSfMMap& GetMap() { return m_map; }
 
     //! Access to the motion.
-    std::list<vecf> GetMotion() { return m_motion; }
+    const C3dTrajectory<std::list,float>& GetMotion() { return m_motion; }
 
     //! Computes the last view.
     CView<float> GetLatestView();
 
 private:
 
-    CPinholeCam m_cam;                                //!< camera
-    std::list<vecf> m_motion;                         //!< motion
-    std::list<std::pair<vec2f,vec3f> > m_map;                           //!< map
+    CPinholeCam<float> m_cam;                    //!< camera
+    C3dTrajectory<std::list,float> m_motion;     //!< motion
+    CSfMMap m_map;                               //!< map
 
 };
 
-class CMagicSfM:public CLeastSquaresProblem<smatf,float> {
+class CMagicSfM:public CLeastSquaresProblem<CCSRMatrix<float>,float> {
 
 public:
 
 	//! Constructor.
-    CMagicSfM(CPinholeCam cam, std::pair<std::vector<vec2f>,std::vector<vec2f> >& corri2i, std::pair<std::vector<vec3f>,std::vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv);
+    CMagicSfM(CPinholeCam<float> cam, std::pair<std::vector<vec2f>,std::vector<vec2f> >& corri2i, std::pair<std::vector<vec3f>,std::vector<vec2f> >& corrs2i, CRigidMotion<float,3> F0inv);
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidual(vec&)
-    void ComputeResidual(vecf& r);
+    void ComputeResidual(vecf& r) const;
 
 	//! \copydoc CLeastSquaresProblem::ComputeResidualAndJacobian(vec&,Matrix&,const vec&)
-    void ComputeResidualAndJacobian(vecf& r, smatf& J);
-
-	//! \copydoc CLeastSquaresProblem::ComputeDispersion(vec&)
-    vecf ComputeDispersion(const vecf& r);
+    void ComputeResidualAndJacobian(vecf& r, CCSRMatrix<float>& J) const;
 
 protected:
 
-    CPinholeCam& m_cam;													//!< intrinsic camera parameters
+    CPinholeCam<float>& m_cam;											//!< intrinsic camera parameters
     std::pair<std::vector<vec2f>,std::vector<vec2f> >& m_corri2i;    	//!< image-to-image correspondences
     std::pair<std::vector<vec3f>,std::vector<vec2f> >& m_corrs2i;		//!< scene-to-image correspondences
     CRigidMotion<float,3> m_F0inv;										//!< transformation from first frame of image pair to world coordinates

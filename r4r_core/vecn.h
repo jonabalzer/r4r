@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,13 +19,18 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RVECN_H
 #define R4RVECN_H
 
 #include <stdlib.h>
 #include <iostream>
+
+#ifdef HAVE_EXR
+#include <half.h>
+#endif
+
 
 namespace R4R {
 
@@ -58,6 +63,9 @@ public:
 
     //! Initializer list constructor.
     CVector(std::initializer_list<T> list);
+
+    //! Fast routine for checking whether the vector is zero.
+    bool IsZero() const;
 
     //! Computes \f$l_p\f$-norm.
     double Norm(double p) const;
@@ -413,6 +421,10 @@ typedef CVector<float,3> vec3f;
 typedef CVector<double,2> vec2;
 typedef CVector<float,2> vec2f;
 typedef CVector<unsigned char,3> rgb;
+
+#ifdef HAVE_EXR
+typedef CVector<half,3> vec3h;
+#endif
 
 }
 

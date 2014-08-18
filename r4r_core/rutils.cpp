@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #include "rutils.h"
 #include "factor.h"
@@ -75,7 +75,7 @@ void CLinearAlgebra::GivensRotation(T a, T b, T& c, T& s, T& r) {
 template void CLinearAlgebra::GivensRotation(double a, double b, double& c, double& s, double& r);
 template void CLinearAlgebra::GivensRotation(float a, float b, float& c, float& s, float& r);
 
-mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const CPinholeCam& cam) {
+mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const CPinholeCam<double>& cam) {
 
 //	mat E0(3,3);
 //	E0.Eye();
@@ -144,67 +144,67 @@ mat CLinearAlgebra::CalibratedNPoint(const vector<pair<vec,vec> >& corr, const C
 
 mat CLinearAlgebra::EstimateHomography(const vector<pair<vec,vec> >& corr) {
 
-    mat H(3,3);
-    H.Eye();
+//    mat H(3,3);
+//    H.Eye();
 
-    if(corr.size()<8) {
+//    if(corr.size()<8) {
 
-        cout << "ERROR: Not enough point correspondences for estimation of essential matrix..." << endl;
-        return H;
+//        cout << "ERROR: Not enough point correspondences for estimation of essential matrix..." << endl;
+//        return H;
 
-    }
+//    }
 
 
-    mat A(2*corr.size(),9);
+//    mat A(2*corr.size(),9);
 
-    for(size_t i=0; i<corr.size(); i++) {
+//    for(size_t i=0; i<corr.size(); i++) {
 
-        A(i,0) = corr[i].first.Get(0);
-        A(i,1) = corr[i].first.Get(1);
-        A(i,2) = 1;
-        A(i,3) = 0;
-        A(i,4) = 0;
-        A(i,5) = 0;
-        A(i,6) = -corr[i].second.Get(0)*corr[i].first.Get(0);
-        A(i,7) = -corr[i].second.Get(0)*corr[i].first.Get(1);
-        A(i,8) = -corr[i].second.Get(0);
+//        A(i,0) = corr[i].first.Get(0);
+//        A(i,1) = corr[i].first.Get(1);
+//        A(i,2) = 1;
+//        A(i,3) = 0;
+//        A(i,4) = 0;
+//        A(i,5) = 0;
+//        A(i,6) = -corr[i].second.Get(0)*corr[i].first.Get(0);
+//        A(i,7) = -corr[i].second.Get(0)*corr[i].first.Get(1);
+//        A(i,8) = -corr[i].second.Get(0);
 
-        A(corr.size()+i,0) = 0;
-        A(corr.size()+i,1) = 0;
-        A(corr.size()+i,2) = 0;
-        A(corr.size()+i,3) = corr[i].first.Get(0);
-        A(corr.size()+i,4) = corr[i].first.Get(1);
-        A(corr.size()+i,5) = 1;
-        A(corr.size()+i,6) = -corr[i].second.Get(1)*corr[i].first.Get(0);
-        A(corr.size()+i,7) = -corr[i].second.Get(1)*corr[i].first.Get(1);
-        A(corr.size()+i,8) = -corr[i].second.Get(1);
+//        A(corr.size()+i,0) = 0;
+//        A(corr.size()+i,1) = 0;
+//        A(corr.size()+i,2) = 0;
+//        A(corr.size()+i,3) = corr[i].first.Get(0);
+//        A(corr.size()+i,4) = corr[i].first.Get(1);
+//        A(corr.size()+i,5) = 1;
+//        A(corr.size()+i,6) = -corr[i].second.Get(1)*corr[i].first.Get(0);
+//        A(corr.size()+i,7) = -corr[i].second.Get(1)*corr[i].first.Get(1);
+//        A(corr.size()+i,8) = -corr[i].second.Get(1);
 
-    }
+//    }
 
-    mat U(A.NRows(),A.NRows());
-    vec s(min(A.NRows(),A.NCols()));
-    mat Vt(A.NCols(),A.NCols());
+//    mat U(A.NRows(),A.NRows());
+//    vec s(min(A.NRows(),A.NCols()));
+//    mat Vt(A.NCols(),A.NCols());
 
-    // SVD
-    CMatrixFactorization<double>::SVD(A,U,s,Vt);
+//    // SVD
+//    CMatrixFactorization<double>::SVD(A,U,s,Vt);
 
-    // assemle homography
-    H(0,0) = Vt(Vt.NRows()-1,0);
-    H(0,1) = Vt(Vt.NRows()-1,1);
-    H(0,2) = Vt(Vt.NRows()-1,2);
-    H(1,0) = Vt(Vt.NRows()-1,3);
-    H(1,1) = Vt(Vt.NRows()-1,4);
-    H(1,2) = Vt(Vt.NRows()-1,5);
-    H(2,0) = Vt(Vt.NRows()-1,6);
-    H(2,1) = Vt(Vt.NRows()-1,7);
-    H(2,2) = Vt(Vt.NRows()-1,8);
+//    // assemle homography
+//    H(0,0) = Vt(Vt.NRows()-1,0);
+//    H(0,1) = Vt(Vt.NRows()-1,1);
+//    H(0,2) = Vt(Vt.NRows()-1,2);
+//    H(1,0) = Vt(Vt.NRows()-1,3);
+//    H(1,1) = Vt(Vt.NRows()-1,4);
+//    H(1,2) = Vt(Vt.NRows()-1,5);
+//    H(2,0) = Vt(Vt.NRows()-1,6);
+//    H(2,1) = Vt(Vt.NRows()-1,7);
+//    H(2,2) = Vt(Vt.NRows()-1,8);
 
-    // normalize
-    H.Scale(1/H.Get(2,2));
-    //if(H(2,2)<0)
-    //	H.Scale(-1);
-
-    return H;
+//    // normalize
+//    H.Scale(1/H.Get(2,2));
+//    //if(H(2,2)<0)
+//    //	H.Scale(-1);
+//
+//    return H;
 
 }
 
@@ -317,7 +317,7 @@ mat CLinearAlgebra::FactorEssentialMatrix(const mat& E) {
 
 }
 
-mat CLinearAlgebra::ZhangFactorization(const mat& H, const CPinholeCam &cam) {
+mat CLinearAlgebra::ZhangFactorization(const mat& H, const CPinholeCam<double> &cam) {
 
 //	mat Kinv = cam.GetInverseProjectionMatrix();
 

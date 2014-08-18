@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,14 +19,13 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
 #include <string.h>
 #include <limits>
-
 
 #include "vecn.h"
 #include "darray.h"
@@ -67,6 +66,21 @@ CVector<T,n>::CVector(initializer_list<T> list) {
         m_data[i] = *it;
 
 }
+
+template<typename T, u_int n>
+bool CVector<T,n>::IsZero() const {
+
+    for(u_int i=0; i<n; i++) {
+
+        if(m_data[i])
+            return false;
+
+    }
+
+    return true;
+
+}
+
 
 template <typename T, u_int n>
 T& CVector<T,n>::operator ()(u_int i) {
@@ -212,6 +226,12 @@ template class CVector<size_t,3>;
 template class CVector<size_t,2>;
 template class CVector<int,2>;
 template class CVector<short,2>;
+template class CVector<float,6>;
+template class CVector<double,6>;
+
+#ifdef HAVE_EXR
+template class CVector<half,3>;
+#endif
 
 template ostream& operator << (ostream& os, const CVector<float,3>& x);
 template ostream& operator << (ostream& os, const CVector<double,3>& x);

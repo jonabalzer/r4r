@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RVIEWER_H
 #define R4RVIEWER_H
@@ -31,6 +31,7 @@
 
 #include "cam.h"
 #include "trimesh.h"
+#include "pcl.h"
 
 namespace R4R {
 
@@ -41,17 +42,20 @@ class CViewer:public QGLWidget {
 public:
 
     //! Constructor.
-    explicit CViewer(const CView<double>& view, QWidget* parent = 0);
+    explicit CViewer(const CView<float>& view, QWidget* parent = 0);
 
     //! Computes depth map for a view.
-    matf getDepthMap(const CView<double>& view);
+    CDenseArray<float> getDepthMap(const CView<float>& view);
+
+    //! Method stump.
+    virtual void updateBoundingBox() {}
 
 signals:
 
 public slots:
 
     //! A slot that processes signals that indicate a change in view point.
-    void updateView(const R4R::CView<double>& view) { m_view = view; loadView(view); updateGL(); }
+    virtual void updateView(const R4R::CView<float>& view) { m_view = view; loadView(view); updateGL(); }
 
     //! Use to trigger changes of the color flag from outside.
     void onShowErrorChanged(int newstate) { m_show_color = bool(newstate);  updateGL(); }
@@ -65,31 +69,32 @@ protected:
     void paintGL();
 
     //! Translating wheel event into zooming.
-    virtual void wheelEvent(QWheelEvent* event);
+    void wheelEvent(QWheelEvent* event);
 
     //! Handling of mouse clicks.
-    virtual void mousePressEvent(QMouseEvent* event);
+    void mousePressEvent(QMouseEvent* event);
 
     //! Handling of mouse drags.
-    virtual void mouseMoveEvent(QMouseEvent* event);
+    void mouseMoveEvent(QMouseEvent* event);
 
     //! Handling of keyboard inputs.
-    virtual void keyPressEvent(QKeyEvent* event);
+    void keyPressEvent(QKeyEvent* event);
 
     //! Method stump.
-    virtual void updateClipDepth(const CView<double>& view, double tolerance = 1.0) {}
+    virtual void updateClipDepth(const CView<float>& view, double tolerance = 1.0) {}
 
 protected:
 
-    CView<double> m_view;                  //!< camera view
-    double m_znear;                        //!< near clipping plane
-    double m_zfar;                         //!< far clipping plane
+    CView<float> m_view;                   //!< camera view
+    float m_znear;                         //!< near clipping plane
+    float m_zfar;                          //!< far clipping plane
     QPoint m_last_point;                   //!< auxiliary variable to store mouse pointer locations
-    vec3 m_center;                         //!< center of camera rotations
+    CVector<float,3> m_center;             //!< center of camera rotations
+    CBoundingBox<float> m_bbox;            //!< bounding box of the scene
     bool m_show_color;                     //!< color flag
 
     //! Sends a view to OpenGL.
-    virtual void loadView(const CView<double>& view);
+    void loadView(const CView<float>& view);
 
     //! Updates projection matrix (e.e. if clip depths changed).
     void loadProjectionMatrix();
@@ -97,18 +102,19 @@ protected:
 
 };
 
+#ifdef HAVE_OM
 
-class CTriMeshViewer : public CViewer {
+class CTriMeshViewer:public CViewer {
 
     Q_OBJECT
 
 public:
 
     //! Constructor.
-    explicit CTriMeshViewer(const R4R::CView<double>& view);
+    explicit CTriMeshViewer(const R4R::CView<float>& view, const CTriangleMesh* mesh = nullptr, QWidget* parent = nullptr);
 
     //! Updates mesh and recompute its bounding box.
-    void setMesh(CTriangleMesh* mesh);
+    void setMesh(const CTriangleMesh* mesh);
 
     /*! \brief Triggers update of bounding box without changing the pointer to the mesh.
      *
@@ -117,34 +123,72 @@ public:
     void updateBoundingBox();
 
     //! Assigns to each pixel in the result the handle of the face it sees.
-    CDenseArray<int> getFaceMap(const CView<double>& view);
+    CDenseArray<int> getFaceMap(const CView<float>& view);
 
 public slots:
+
+    /*! \copybrief CViewer::updateView(const R4R::CView<double>&)
+     *
+     * This needs to be overridden because we have to adjust the clip depths if the
+     * vantage point changes.
+     *
+     */
+    void updateView(const R4R::CView<float>& view);
 
 protected:
 
     //! \copydoc CViewer::paintGL()
     void paintGL();
 
-    /*! \brief Sends a view to OpenGL.
-     *
-     * This is overloaded here because if there is contents, we also need to update the clip depths
-     * everytime the vantage point changes, and hence also reload the intrinsics.
-     *
-     */
-    void loadView(const CView<double>& view);
-
     //! Handling of mouse release event.
-    virtual void mouseReleaseEvent(QMouseEvent* event);
+    void mouseReleaseEvent(QMouseEvent* event);
 
     //! Update clip depth based on the bounding box approximation of the current mesh.
-    virtual void updateClipDepth(const CView<double>& view, double tolerance = 1.0);
+    void updateClipDepth(const CView<float>& view, float tolerance = 1.0);
 
 private:
 
+    const CTriangleMesh* m_mesh;                //!< pointer to the point cloud
 
-    CTriangleMesh* m_mesh;                      //!< pointer to a triangle mesh
-    CBoundingBox<float> m_bbox;                 //!< bounding box of the mesh
+};
+
+#endif
+
+class CPointCloudViewer:public CViewer {
+
+    typedef CPointCloud<std::vector,float,3> C3dPointCloud;
+
+    Q_OBJECT
+
+public:
+
+    //! Constructor.
+    explicit CPointCloudViewer(const R4R::CView<float>& view, const C3dPointCloud* pcl=nullptr, QWidget* parent = nullptr);
+
+    //! Updates point cloud and recompute its bounding box.
+    void setPointCloud(const C3dPointCloud* pcl);
+
+    /*! \brief Triggers update of the point cloud without changing the pointer to it.
+     *
+     * This comes in handy e.g. when new points are added to the cloud.
+     */
+    void updateBoundingBox();
+
+public slots:
+
+
+protected:
+
+    //! \copydoc CViewer::paintGL()
+    void paintGL();
+
+    //! Update clip depth based on the bounding box approximation of the current point cloud.
+    void updateClipDepth(const CView<float>& view, double tolerance = 1.0);
+
+private:
+
+    const C3dPointCloud* m_pcl;     //!< pointer to a point cloud
+
 
 };
 

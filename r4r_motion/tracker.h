@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 /*! \mainpage
  *  \author    J. Balzer
@@ -38,14 +38,16 @@
 #include <QImage>
 #endif
 
-
 #include <opencv2/opencv.hpp>
+
 #include <algorithm>
 #include <memory>
+#include <iterator>
 
 #include "tracklet.h"
 #include "params.h"
-#include "intimg.h"
+#include "image.h"
+#include "dagg.h"
 
 namespace R4R {
 
@@ -53,25 +55,42 @@ namespace R4R {
  *
  *
  */
-class CTracker:public std::list<std::shared_ptr<CTracklet> >  {
+
+template<template<class Tracklet, class Allocator = std::allocator<Tracklet> > class TrackerContainer,template<class T, class Allocator = std::allocator<T> > class TrackletContainer>
+class CTracker {
 
 public:
 
+	//! Standard constructor.
+    CTracker();
 
 	//! Standard constructor.
-	CTracker();
-
-	//! Standard constructor.
-    CTracker(CParameters* params);
+    CTracker(const CParameters* params);
 
     //! Standard destructor.
 	virtual ~CTracker();
 
 	//! Deletes all tracklets which have died from memory.
-	void DeleteInvalidTracks();
+    void DeleteInvalidTracks();
 
-	//! Computes the number of tracklets in the container.
-    size_t Capacity() { return size(); }
+    //! Computes the number of tracklets in the container.
+    size_t Capacity() { return m_data.size(); }
+
+    /*!
+     * \brief Adds a new tracklet.
+     *
+     * Creates a new tracklet on the heap and adds a pointer to the tracker and returns
+     * this pointer. Opposed to CTracklet, here, dynamic memory allocation happens within the
+     * class. The destructor CTracker::~CTracker() de-allocates all tracklets that have been
+     * associated with the tracker.
+     *
+     * \param[in] x feature point
+     *
+     */
+    std::shared_ptr<CTracklet<TrackletContainer> > AddTracklet(const imfeature& x);
+
+    //! Creates a shared pointer and adds it to the tracklet pool.
+    void AddTracklet(CTracklet<TrackletContainer>* trackler);
 
 	//! Computes the number of tracklets in the container that are still alive.
     size_t ActiveCapacity() const;
@@ -82,7 +101,7 @@ public:
 	 * \param[in] img initial image
 	 *
 	 */
-    virtual bool Init(std::vector<cv::Mat>& pyramid) = 0;
+    virtual void Init(const std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Executes one step of differential motion estimation.
 	 *
@@ -90,23 +109,23 @@ public:
      * \param[in] img1 frame at \f$t+1\f$
 	 *
 	 */
-    virtual bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) = 0; // { m_global_t++ ; return 0; }
+    virtual void Update(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1) = 0;
 
-	//! Adds new features to the tracker.
-    virtual bool AddTracklets(std::vector<cv::Mat>& pyramid) = 0;
-
-	/*! \brief Updates all descriptors if any.
-	 *
-	 * \param[in] img0 frame at t
-	 * \param[in] img1 frame at t+1
-	 *
-	 */
-    virtual bool UpdateDescriptors(std::vector<cv::Mat>& pyramid) = 0;
+    /*! \brief Updates all descriptors if any.
+     *
+     * \param[in] img0 frame at t
+     * \param[in] img1 frame at t+1
+     *
+     */
+    virtual void UpdateDescriptors(const std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Marks tracks as invalid.
 	 *
 	 */
-    virtual void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1) = 0;
+    virtual void Clean(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1) = 0;
+
+    //! Adds new features to the tracker.
+    virtual void AddTracklets(const std::vector<cv::Mat>& pyramid) = 0;
 
 	/*! \brief Saves all tracklets to file.
 	 *
@@ -122,16 +141,16 @@ public:
     bool SaveToFile(const char* dir, const char* prefix);
 
 	//! Searches for a tracklet with given initial feature and initial time.
-    std::shared_ptr<CTracklet> SearchTracklet(imfeature x0, size_t t0);
+    std::shared_ptr<CTracklet<TrackletContainer> > SearchTracklet(const std::string& hash) const;
 
 	//! Searches for the tracklet with maximal life time.
-	std::shared_ptr<CTracklet> SearchFittestTracklet();
+    std::shared_ptr<CTracklet<TrackletContainer> > SearchFittestTracklet() const;
 
 	//! Computes the adjacency list of the covisibility graph.
-	std::map<std::shared_ptr<CTracklet>,std::list<std::shared_ptr<CTracklet> > > ComputeCovisibilityGraph();
+    std::map<std::shared_ptr<CTracklet<TrackletContainer> >,std::list<std::shared_ptr<CTracklet<TrackletContainer> > > > ComputeCovisibilityGraph() const;
 
 	//! Sets all tracklets to active.
-	void SetAllTrackletsActive();
+    void SetAllTrackletsActive();
 
 	/*! \brief Computes integral image over locations of active features.
 	 *
@@ -143,91 +162,38 @@ public:
      * \returns
      *
 	 */
-    std::vector<size_t> ComputeFeatureDensity(std::vector<CIntegralImage<size_t> >& imgs);
+    std::vector<size_t> ComputeFeatureDensity(std::vector<CIntImage<size_t> >& imgs) const;
 
 	//! Returns the set of parameters.
-    CParameters GetParameters() { return *m_params; }
-
-    //! Returns the number of tracks still alive.
-    size_t GetNumberOfActiveTracks() { return m_n_active_tracks; }
+    const CParameters& GetParameters() { return *m_params; }
 
     //! Access to the global time.
     size_t GetTime() { return m_global_t; }
 
-    /*!
-     * \brief Adds a new tracklet.
-     *
-     * \details Creates a new tracklet on the heap and adds a pointer to the tracker and returns
-     * this pointer. Opposed to CTracklet, here, dynamic memory allocation happens within the
-     * class. The destructor CTracker::~CTracker() de-allocates all tracklets that have been
-     * associated with the tracker.
-     *
-     * \param[in] x pointer to a dynamically allocated CFeatureDescriptor object
-     *
-     */
-    std::shared_ptr<CTracklet> AddTracklet(imfeature x);
+    //! Read-only access to data.
+    const TrackerContainer<std::shared_ptr<CTracklet<TrackletContainer> > >& GetData() { return m_data; }
+
+    //! Adjusts the size of all tracklet buffer.
+    void ResizeTracklets(size_t n);
 
 #ifdef QT_GUI_LIB
-
     //! Draws active tracklets into an image.
     void Draw(QImage& img, size_t length) const;
-
 #endif
 
-    /*! \brief iterator class for CTracker objects
-     *
-     *
-     *
-     */
-    /*class iterator {
-
-    public:
-
-        //! Constructor.
-        iterator(CTracker* tracker);
-
-        //! Increments iterator.
-        void operator++();
-
-        //! Increments by more than 1.
-        void Advance(size_t step);
-
-        //! Checks termination condition.
-        bool operator()() { return m_t<=m_tracker->m_global_t; }
-
-        //! Dereferencing operator.
-        std::map<shared_ptr<CTracklet>,std::list<imfeature>::iterator > operator*() { return m_data; }
-
-        //! Access to the internal counter.
-        size_t GetTime() const { return m_t; }
-
-    private:
-
-        CTracker* m_tracker;													//!< tracker to iterate through
-        std::map<shared_ptr<CTracklet>,std::list<imfeature>::iterator > m_data;	//!< data container
-        size_t m_t;																//!< global time variable
-
-        //! Advances the iterators that are currently alive.
-        void UpdateTracklets();
-
-        //! Looks for active tracklets at #m_t and adds them to the iterator.
-        void AddTracklets();
-
-        //! Removes dead tracks from iterator.
-        void Clean();
-
-    };
-
-    friend class CTracker::iterator;*/
-
+    //! Triggers aggregation of all tracklets.
+    template<class Array> std::list<imfeature> Aggregate(const CDescriptorAggregator<Array,TrackletContainer>& aggregator, const std::string& name) const;
 
 protected:
 
-    CParameters* m_params;                  //!< container for user-defined parameters
-	size_t m_global_t;						//!< global time variable
-    size_t m_n_active_tracks;               //!< number of active tracks
+    TrackerContainer<std::shared_ptr<CTracklet<TrackletContainer> > >  m_data;     //!< container holding the tracklets
+    const CParameters* m_params;                                                   //!< container for user-defined parameters
+    size_t m_global_t;                                                             //!< global time variable
 
 };
+
+typedef CTracker<std::list,CRingBuffer> CSlidingWindowTracker;
+typedef CTracker<std::list,std::list> CContinuousTracker;
 
 } // end of namespace
 

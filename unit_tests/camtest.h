@@ -21,41 +21,33 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef R4RBBOX_H
-#define R4RBBOX_H
+#ifndef CAMTEST_H
+#define CAMTEST_H
 
-#include "vecn.h"
-#include <vector>
+#include <QtTest/QtTest>
+#include "cam.h"
 
-namespace R4R {
+class CCamTest:public QObject {
 
-template<typename T>
-class CBoundingBox {
+  Q_OBJECT
 
 public:
 
-    //! Constructor.
-    CBoundingBox():m_lower(), m_upper() {}
-
-    //! Constructor.
-    CBoundingBox(const R4R::CVector<T,3>& lower, const R4R::CVector<T,3>& upper);
-
-    //! Get corners.
-    std::vector<R4R::CVector<T,3> > Corners() const;
-
-    //! Access to the lower corner.
-    const R4R::CVector<T,3>& Lower() { return m_lower; }
-
-    //! Access to the upper corner.
-    const R4R::CVector<T,3>& Upper() { return m_upper; }
+  explicit CCamTest(QObject* parent = nullptr);
 
 private:
 
-    R4R::CVector<T,3> m_lower;          //!< lower corner
-    R4R::CVector<T,3> m_upper;          //!< upper corner
+  R4R::CPinholeCam<float>* m_cam;
+  R4R::CView<float>* m_view;
+
+private slots:
+
+  void init();
+
+  void testModelViewProjectionMatrix();
+
+  void cleanup();
 
 };
 
-}
-
-#endif // BBOX_H
+#endif // CAMTEST_H

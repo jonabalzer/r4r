@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RIMAGE_H
 #define R4RIMAGE_H
@@ -27,6 +27,8 @@
 #ifdef QT_GUI_LIB
 #include <QImage>
 #endif
+
+#include <iostream>
 
 #include "darray.h"
 #include "rect.h"
@@ -114,6 +116,9 @@ public:
     std::vector<vec3> Gradient(const vec2& p) const { return CDenseArray::Gradient<vec3>(p); }
 
     //! Compute gradient with centered differences.
+    std::vector<vec3> Gradient(size_t i, size_t j) const { return CDenseArray::Gradient<vec3>(i,j); }
+
+    //! Compute gradient with centered differences.
     //CVector<short,2> Gradient(size_t x, size_t y);
 
     //! Creates a deep copy of a region of interest.
@@ -156,7 +161,22 @@ public:
      * \details If the point falls between grid cells, the mass is distributed between the neighboring
      * vertices according to the individual areas of the cell partition.
      */
-    void AddMass(const CVector<double,2>& x, T val);
+    template<typename U> void AddMass(const CVector<U,2>& x, T val) {
+
+        U dx, dy;
+        dx = x.Get(0) - floor(x.Get(0));
+        dy = x.Get(1) - floor(x.Get(1));
+
+        size_t i, j;
+        i = size_t(x.Get(1));
+        j = size_t(x.Get(0));
+
+        this->operator ()(i,j) += T(dx*dy*val);
+        this->operator ()(i+1,j) += T(dx*(1-dy)*val);
+        this->operator ()(i,j+1) += T(dy*(1-dx)*val);
+        this->operator ()(i+1,j+1) += T((1-dx)*(1-dy)*val);
+
+    }
 
     /*! \brief Increases the density at a point.
      *
@@ -164,7 +184,7 @@ public:
      * \param[in] val amount of mass to add
      *
      */
-    void AddMass(const CVector<size_t,2>& x, T val);
+    void AddMass(size_t i, size_t j, T val);
 
     /*! \brief Evaluates the integral image at corners of a rectangular window around a location.
      *
@@ -174,7 +194,16 @@ public:
      * \details \f$x\f$ is the center pixel. Non-integral locations will be interpolated bi-linearly.
      *
      */
-    template<typename U> U Evaluate(const CVector<double,2>& x, const CVector<double,2>& hsize) const;
+    template<typename U,typename V> U Evaluate(const CVector<V,2>& x, const CVector<V,2>& hsize) const {
+
+        CVector<V,2> tl = this->template ProjectToBoundary<V>(x - hsize);
+        CVector<V,2> br = this->template ProjectToBoundary<V>(x + hsize);
+        CVector<V,2> bl = { tl.Get(0), br.Get(1) };
+        CVector<V,2> tr = { br.Get(0), tl.Get(1) };
+
+        return this->template Get<U>(tl) + this->template Get<U>(br) - this->template Get<U>(bl) - this->template Get<U>(tr);
+
+    }
 
     /*! \brief Evaluates the integral image at corners of a rectangular window around a location.
      *
@@ -184,7 +213,16 @@ public:
      * \details \f$x\f$ is the center pixel. Non-integral locations will be rounded down.
      *
      */
-    T EvaluateApproximately(const CVector<double,2>& x, const CVector<double,2>& hsize) const;
+    template<typename U> T EvaluateApproximately(const CVector<U,2>& x, const CVector<U,2>& hsize) const {
+
+        CVector<U,2> tl = this->ProjectToBoundary(x - hsize);
+        CVector<U,2> br = this->ProjectToBoundary(x + hsize);
+        CVector<U,2> bl = { tl.Get(0), br.Get(1) };
+        CVector<U,2> tr = { br.Get(0), tl.Get(1) };
+
+        return this->Get(tl) + this->Get(br) - this->Get(bl) - this->Get(tr);
+
+    }
 
 private:
 

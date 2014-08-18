@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RLM_H_
 #define R4RLM_H_
@@ -53,11 +53,11 @@ public:
 	 */
 	CLeastSquaresProblem(size_t nopts, size_t noparams);
 
-	//! \brief Jointly computes the residual vector and Jacobian of the least-squares objective function.
-    virtual void ComputeResidualAndJacobian(CDenseVector<T>& r, Matrix& J) = 0;
+    //! \brief Jointly computes the weighted (!) residual vector and Jacobian of the least-squares objective function.
+    virtual void ComputeResidualAndJacobian(CDenseVector<T>& r, Matrix& J) const = 0;
 
-	//! Computes the residual vector of a weighted least-squares objective function.
-    virtual void ComputeResidual(CDenseVector<T>& r) = 0;
+    //! Computes the unwieghted (!) residual vector of the least-squares objective function.
+    virtual void ComputeResidual(CDenseVector<T>& r) const = 0;
 
 	//! Access to the model parameters.
     CDenseVector<T>& Get() { return m_model; }
@@ -66,19 +66,18 @@ public:
     CDenseVector<T>& GetWeights() { return m_weights; }
 
 	//! Access to #m_nopts.
-    size_t GetNumberOfDataPoints() { return m_nopts; }
+    size_t GetNumberOfDataPoints() const { return m_nopts; }
 
 	//! Access to #m_noparams.
-    size_t GetNumberOfModelParameters() { return m_noparams; }
+    size_t GetNumberOfModelParameters() const { return m_noparams; }
 
-	/*! \brief Computes scattering of residuals to normalize them for re-weighting and/or outlier detection.
-	 *
-     * \details ComputeDispersion() is actually a misnomer. This function computes the inverse of a robust
-     * estimate of the variance of residuals, which are later brought to the bi-unit interval by
-     * division with \f$\hat{\sigma}$\f (numerically by multiplication.
+    /*! \brief Computes scattering of residuals to normalize them for re-weighting and/or outlier detection.
      *
-	 */
-    virtual CDenseVector<T> ComputeDispersion(CDenseVector<T>& r);
+     * \details This function computes the inverse of a robust estimate of the variance of residuals, which are
+     * later brought to the bi-unit interval by division with \f$\hat{\sigma}$\f (numerically by multiplication).
+     *
+     */
+    virtual CDenseVector<T> ComputeDispersion(const CDenseVector<T>& r) const;
 
 protected:
 
@@ -89,13 +88,38 @@ protected:
 
 };
 
+/*! weight functor interface
+ */
+template<typename T>
+class CWeightFunction {
+
+public:
+    virtual T operator()(const CDenseVector<T>& r, CDenseVector<T>& w) const = 0;
+
+};
+
+
+/*! Huber weight function \f$w_i(r_i)=\frac{1}{\max(1,|r_i|)}\f$
+ */
+template<typename T>
+class CHuberWeightFunction:public CWeightFunction<T> {
+
+public:
+    T operator()(const CDenseVector<T>& r, CDenseVector<T>& w) const;
+
+};
+
+/*! bi-square weight function \f$w_i(r_i)=\chi_{[-1,1]}(1-r_i^2)^2\f$
+ */
+template<typename T>
+class CBiSquareWeightFunction:public CWeightFunction<T> {
+
+public:
+    T operator()(const CDenseVector<T>& r, CDenseVector<T>& w) const;
+
+};
 
 /*! \brief Levenberg-Marquardt algorithm to solve nonlinear least-squares problems
- *
- *
- * \details The part for robust regression implements the following weight functions:
- * - bi-square: \f$w_i(r_i)=\chi_{[-1,1]}(1-r_i^2)^2\f$
- * - Huber: \f$w_i(r_i)=\frac{1}{\max(1,|r_i|)}\f$
  *
  */
 template<class Matrix,typename T>
@@ -118,7 +142,7 @@ public:
     CDenseVector<T> Iterate(size_t n, T epsilon1, T epsilon2, bool silent = true);
 
 	//! Starts robust re-weighted Levenberg-Marquardt algorithm.
-    CDenseVector<T> Iterate(size_t nouter, size_t ninner, T epsilon, bool silentinner, bool silentouter);
+    CDenseVector<T> Iterate(size_t nouter,  const CWeightFunction<T>& w, size_t ninner, T epsilon, bool silentinner, bool silentouter);
 
 protected:
 
@@ -130,10 +154,10 @@ protected:
     static const T m_params[5];                                     //!< parameters \f$\rho_1,\rho_2,\beta,\frac{1}{\gamma},\tau,p\f$, cf. [Nielsen1999]
 
 	//! Computes weights based on bi-square function.
-    CDenseVector<T> BiSquareWeightFunction(CDenseVector<T>& r, CDenseVector<T>& w);
+    CDenseVector<T> BiSquareWeightFunction(const CDenseVector<T>& r, CDenseVector<T>& w) const;
 
 	//! Computes weights based on Huber function.
-    CDenseVector<T> HuberWeightFunction(CDenseVector<T>& r, CDenseVector<T>& w);
+    CDenseVector<T> HuberWeightFunction(const CDenseVector<T>& r, CDenseVector<T>& w) const;
 
 };
 
@@ -166,21 +190,21 @@ public:
 
 private:
 
-    Matrix m_K;                                             //! stack of two linear operators
-    const Matrix& m_nabla;                                  //! gradient operator
-    const CDenseArray<T>& m_f;                              //! force vector
-    CDenseArray<T>& m_u;                                    //! solution vector
+    Matrix m_K;                                             //!< stack of two linear operators
+    const Matrix& m_nabla;                                  //!< gradient operator
+    const CDenseArray<T>& m_f;                              //!< force vector
+    CDenseArray<T>& m_u;                                    //!< solution vector
     CDenseArray<T> m_nablau;
     CDenseArray<T> m_d;
     CDenseArray<T> m_b;
-    DIM m_dim_grad;                                         //! dimensionality of the gradient
-    const CIterativeLinearSolver<Matrix,T>& m_solver;       //! linear solver
-    T m_mu;                                                 //! \f$\mu\f$
-    T m_lambda;                                             //! \f$\lambda\f$
-    double m_eps;                                           //! tolerance
+    DIM m_dim_grad;                                         //!< dimensionality of the gradient
+    const CIterativeLinearSolver<Matrix,T>& m_solver;       //!< linear solver
+    T m_mu;                                                 //!< \f$\mu\f$
+    T m_lambda;                                             //!< \f$\lambda\f$
+    double m_eps;                                           //!< tolerance
     size_t m_k;
-    std::vector<double> m_total_error;                      //! total error over time
-    std::vector<double> m_constraint_violation;             //! constraint violation over time
+    std::vector<double> m_total_error;                      //!< total error over time
+    std::vector<double> m_constraint_violation;             //!< constraint violation over time
 
     //! Dimensionality-specific shrinking operator.
     void Shrink();

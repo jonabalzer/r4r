@@ -21,37 +21,47 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#include "bbox.h"
+#ifndef KERNELSTEST_H
+#define KERNELSTEST_H
 
-using namespace std;
+#include <QtTest/QtTest>
 
-namespace R4R {
+#include "kernels.h"
 
-template<typename T>
-CBoundingBox<T>::CBoundingBox(const CVector<T,3>& lower, const CVector<T,3>& upper):
-    m_lower(lower),
-    m_upper(upper) {}
+class CKernelsTest:public QObject {
+
+  Q_OBJECT
+
+public:
+
+  explicit CKernelsTest(QObject* parent = nullptr);
+
+private:
+
+    R4R::CMercerKernel<float>* m_kernel;
+    R4R::CChiSquaredKernel<float>* m_chi_squared_kernel;
+    R4R::CIntersectionKernel<float>* m_intersection_kernel;
+    R4R::CHellingerKernel<float>* m_hellinger_kernel;
+    float* m_x;
+    float* m_y;
+    int m_n;
+    double m_tolerance;
+
+private slots:
+
+  void init();
+
+  void testIdendityKernel();
+
+  void testChiSquaredKernel();
+
+  void testIntersectionKernel();
+
+  void testHellingerKernel();
+
+  void cleanup();
+
+};
 
 
-template<typename T>
-vector<CVector<T,3> > CBoundingBox<T>::Corners() const {
-
-    vector<CVector<T,3> > result(8);
-
-    result[0] = m_lower;
-    result[1] = { m_upper.Get(0), m_lower.Get(1), m_lower.Get(2) };
-    result[2] = { m_lower.Get(0), m_upper.Get(1), m_lower.Get(2) };;
-    result[3] = { m_upper.Get(0), m_upper.Get(1), m_lower.Get(2) };;
-    result[4] = m_upper;
-    result[5] = { m_upper.Get(0), m_lower.Get(1), m_upper.Get(2) };
-    result[6] = { m_lower.Get(0), m_upper.Get(1), m_upper.Get(2) };;
-    result[7] = { m_upper.Get(0), m_upper.Get(1), m_upper.Get(2) };;
-
-    return result;
-
-}
-
-template class CBoundingBox<double>;
-template class CBoundingBox<float>;
-
-}
+#endif // KERNELSTEST_H

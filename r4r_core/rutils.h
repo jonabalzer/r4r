@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RUTILS_H_
 #define R4RUTILS_H_
@@ -59,7 +59,7 @@ public:
 	 * second frame (the former being assumed the world coordinate system).
 	 *
 	 */
-    static mat CalibratedNPoint(const std::vector<std::pair<vec,vec> >& corr, const CPinholeCam& cam);
+    static mat CalibratedNPoint(const std::vector<std::pair<vec,vec> >& corr, const CPinholeCam<double>& cam);
 
 	/*! \brief Estimates a homography matrix \f$H:\mathrm{P}^2\to \mathrm{P}^2\f$ by a DLTN technique.
 	 *
@@ -89,7 +89,7 @@ public:
 	 * \returns coordinate transformation from the first to the second frame
 	 *
 	 */
-    static mat ZhangFactorization(const mat& H, const CPinholeCam& cam);
+    static mat ZhangFactorization(const mat& H, const CPinholeCam<double>& cam);
 
 };
 

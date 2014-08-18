@@ -61,8 +61,8 @@ private:
 
     Ui::MainWindow *ui;
     R4R::matf m_f;
-    R4R::smatf m_A;
-    R4R::smatf m_nabla;
+    R4R::CCSRMatrix<float,size_t> m_A;
+    R4R::CCSRMatrix<float,size_t> m_nabla;
     R4R::matf m_u;
 
 };

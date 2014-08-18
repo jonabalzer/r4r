@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RDARRAY_H_
 #define R4RDARRAY_H_
@@ -123,6 +123,9 @@ public:
 	//! Fills in ones.
 	void Ones();
 
+    //! Fills in zeros.
+    void Zeros();
+
 	//! Files the array with uniformly distributed random numbers between \f$0\f$ and \f$1\f$.
     void Rand(T min, T max);
 
@@ -151,9 +154,12 @@ public:
      *
      * Unfortunately, this member cannot be templated because this would lead to
      * ambiguities. But it rarely needs to be because thanks to implicit casting,
-     * this function can also be called with floating point input vectors.
+     * this function can also be called with floating point input vectors. Note
+     * that the indices are w.r.t. to an spatial coordinate system. They do not
+     * refer to row and column indices.
+     *
      */
-    T Get(const CVector<int,2>& p) const { return this->Get(p.Get(0),p.Get(1)); }
+    T Get(const CVector<int,2>& p) const { return this->Get(p.Get(1),p.Get(0)); }
 
     /*! Non-destructive element access.
      *
@@ -167,8 +173,30 @@ public:
     //! Compute central-difference approximation of the gradient of the array data.
     template<typename U> std::vector<U> Gradient(const CVector<double,2>& p) const;
 
+    //! Compute central-difference approximation of the gradient of the array data.
+    template<typename U> std::vector<U> Gradient(size_t i, size_t j) const;
+
     //! Maps a point that is out of bounds to its closest points on the boundary.
-    CVector<double,2> ProjectToBoundary(const CVector<double,2>& x) const;
+    template<typename U>
+    CVector<U,2> ProjectToBoundary(const CVector<U,2>& x) const {
+
+        CVector<U,2> result = x;
+
+        if(x.Get(0)<0)
+            result(0) = 0;
+
+        if(x.Get(0)>=this->NCols())
+            result(0) = this->NCols() - 1;
+
+        if(x.Get(1)<0)
+            result(1) = 0;
+
+        if(x.Get(1)>=this->NRows())
+            result(1) = this->NRows() - 1;
+
+        return result;
+
+    }
 
 	//! Overwrites data.
     void Set(std::shared_ptr<T> data);
@@ -255,7 +283,10 @@ public:
 	size_t NElems() const { return m_nrows*m_ncols; }
 
 	//! Get pointer to the data.
-    std::shared_ptr<T> Data() const { return m_data; }
+    std::shared_ptr<T>& Data() { return m_data; }
+
+    //! Get const pointer to the data.
+    const std::shared_ptr<T>& Data() const { return m_data; }
 
 	//! In-place scalar multiplication.
 	void Scale(T scalar);
@@ -276,13 +307,13 @@ public:
 	T Mean() const { return Sum()/NElems(); }
 
 	//! Empirical variance of matrix entries.
-    T Variance();
+    T Variance() const;
 
 	//! Median of matrix entries;
-    T Median();
+    T Median() const;
 
     //! Median of absolute deviations.
-    T MAD();
+    T MAD() const;
 
 	//! Minimum of matrix entries;
 	T Min() const;
@@ -404,7 +435,7 @@ public:
     CDenseVector<T> operator=(const CDenseVector<T>& array);
 
     //! Deep copy.
-    CDenseVector<T> Clone();
+    CDenseVector<T> Clone() const;
 
 	//! Adds a scalar to a vector.
     CDenseVector<T> operator+(const T& scalar) const;

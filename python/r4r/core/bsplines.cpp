@@ -2,13 +2,17 @@
 #include <numpy/arrayobject.h>
 
 #include "bsplines.h"
+
 #include <float.h>
+#include <iostream>
+#include <algorithm>
 
 static PyMethodDef _bsplinesmethods[] = {
 
     { "cox_de_boor", cox_de_boor, METH_VARARGS, "Evaluates basis functions and their derivatives."},
     { "find_knot_span", find_knot_span, METH_VARARGS, "Finds the knot span of a parameter."},
-    { "evaluate_curve", evaluate_curve, METH_VARARGS, "Computes point, tangent, and curvature vector of a spline curve."},
+    { "evaluate_curve", evaluate_curve, METH_VARARGS, "Evaluates a spline curve and its tangent and curvature vector."},
+    { "evaluate_surface", evaluate_surface, METH_VARARGS, "Evaluates a spline surface and its tangent and curvature vectors."},
     { "unwrap_phase", unwrap_phase, METH_VARARGS, "Phase unwrapping of 1-d signal."},
     { "characteristic_function", characteristic_function, METH_VARARGS, "Tests whether a point is inside or outside of curve."},
     { NULL, NULL, 0, NULL}
@@ -185,6 +189,121 @@ static PyObject* evaluate_curve(PyObject* self, PyObject* args) {
 
 }
 
+static PyObject* evaluate_surface(PyObject* self, PyObject* args) {
+
+    PyArrayObject* knotsu;
+    PyArrayObject* knotsv;
+
+    PyArrayObject* cp;
+    double tu, tv;
+    int pu, pv;
+
+    // parse tuples
+    if (!PyArg_ParseTuple(args,"O!O!O!iidd",&PyArray_Type,&knotsu,&PyArray_Type,&knotsv,&PyArray_Type,&cp,&pu,&pv,&tu,&tv))
+        return NULL;
+
+    if (knotsu==NULL || knotsv==NULL || cp==NULL) return NULL;
+
+    // access to data
+    double* pknotsu = (double*)knotsu->data;
+    double* pknotsv = (double*)knotsv->data;
+    double* pcp = (double*)cp->data;
+
+    // find knot spans
+    int spanu = -1;
+    if(tu>=pknotsu[knotsu->dimensions[0]-1-(pu-1)]) {
+        spanu = knotsu->dimensions[0]-1-(pu-1)-1;
+    }
+    else if(tu<pknotsu[pu-1])
+        spanu = pu-1;
+    else
+        spanu = _find_knot_span(tu,pknotsu,pu-1,knotsu->dimensions[0]-1-(pu-1)-1);
+
+    int spanv = -1;
+    if(tv>=pknotsv[knotsv->dimensions[0]-1-(pv-1)]) {
+        spanv = knotsv->dimensions[0]-1-(pv-1)-1;
+    }
+    else if(tv<pknotsv[pv-1])
+        spanv = pv-1;
+    else
+        spanv = _find_knot_span(tv,pknotsv,pv-1,knotsv->dimensions[0]-1-(pv-1)-1);
+
+
+    // allocate memory for basis function values and output
+    double* Nu = new double[(pu+1)*(pu+1)];
+    double* Nv = new double[(pv+1)*(pv+1)];
+    int dims[] = { cp->dimensions[0] };
+    PyArrayObject* x = (PyArrayObject*)PyArray_FromDims(1,dims,NPY_DOUBLE);
+    PyArrayObject* xu = (PyArrayObject*)PyArray_FromDims(1,dims,NPY_DOUBLE);
+    PyArrayObject* xv = (PyArrayObject*)PyArray_FromDims(1,dims,NPY_DOUBLE);
+    PyArrayObject* xuu = (PyArrayObject*)PyArray_FromDims(1,dims,NPY_DOUBLE);
+    PyArrayObject* xuv = (PyArrayObject*)PyArray_FromDims(1,dims,NPY_DOUBLE);
+    PyArrayObject* xvv = (PyArrayObject*)PyArray_FromDims(1,dims,NPY_DOUBLE);
+
+    double* px = (double*)x->data;
+    double* pxu = (double*)xu->data;
+    double* pxv = (double*)xv->data;
+    double* pxuu = (double*)xuu->data;
+    double* pxuv = (double*)xuv->data;
+    double* pxvv = (double*)xvv->data;
+    std::fill_n(pxu,cp->dimensions[0],0);
+    std::fill_n(pxuu,cp->dimensions[0],0);
+
+    // evaluate basis function
+    _cox_de_boor(pu+1,pknotsu+spanu-(pu-1),tu,Nu);
+    _cox_de_boor(pv+1,pknotsv+spanv-(pv-1),tv,Nv);
+
+    if(pu>1 && pv>1) {
+        _cox_de_boor_derivatives(pu+1,pknotsu+spanu-(pu-1),2,Nu);
+        _cox_de_boor_derivatives(pv+1,pknotsv+spanv-(pv-1),2,Nv);
+ 
+    }
+
+    for(int i=0; i<=pu; i++) {
+
+        for(int j=0; j<=pv; j++) {
+
+            // get cp index
+            int cpu = (spanu - (pu-1) + i)%cp->dimensions[1];
+            int cpv = (spanv - (pv-1) + j)%cp->dimensions[2];
+                
+            for(int d=0; d<cp->dimensions[0]; d++) {
+        
+                px[d] = px[d] + pcp[d*cp->dimensions[1]*cp->dimensions[2]+cpu*cp->dimensions[2]+cpv]*Nu[i]*Nv[j];
+    
+                if(pu>1 && pv>1) {
+
+                    pxu[d] = pxu[d] + pcp[d*cp->dimensions[1]*cp->dimensions[2]+cpu*cp->dimensions[2]+cpv]*Nu[(pu+1)+i]*Nv[j];
+                    pxv[d] = pxv[d] + pcp[d*cp->dimensions[1]*cp->dimensions[2]+cpu*cp->dimensions[2]+cpv]*Nu[i]*Nv[(pv+1)+j];
+                    pxuu[d] = pxuu[d] + pcp[d*cp->dimensions[1]*cp->dimensions[2]+cpu*cp->dimensions[2]+cpv]*Nu[2*(pu+1)+i]*Nv[j];
+                    pxuv[d] = pxuv[d] + pcp[d*cp->dimensions[1]*cp->dimensions[2]+cpu*cp->dimensions[2]+cpv]*Nu[(pu+1)+i]*Nv[(pv+1)+j];
+                    pxvv[d] = pxvv[d] + pcp[d*cp->dimensions[1]*cp->dimensions[2]+cpu*cp->dimensions[2]+cpv]*Nu[i]*Nv[2*(pv+1)+j];
+    
+                }
+    
+            }
+
+        }
+
+    }
+
+    // return array
+    PyObject* tupleresult = PyTuple_New(6);
+    PyTuple_SetItem(tupleresult, 0, PyArray_Return(x));
+    PyTuple_SetItem(tupleresult, 1, PyArray_Return(xu));
+    PyTuple_SetItem(tupleresult, 2, PyArray_Return(xv));
+    PyTuple_SetItem(tupleresult, 3, PyArray_Return(xuu));
+    PyTuple_SetItem(tupleresult, 4, PyArray_Return(xuv));
+    PyTuple_SetItem(tupleresult, 5, PyArray_Return(xvv));
+
+    // clean up
+    delete [] Nu;
+    delete [] Nv;
+
+    return tupleresult;
+
+}
+
 static PyObject* unwrap_phase(PyObject* self, PyObject* args) {
 
     PyArrayObject* x;
@@ -270,7 +389,7 @@ static PyObject* characteristic_function(PyObject* self, PyObject* args) {
 }
 
 
-void _cox_de_boor(int order, double *knot, double t, double* N) {
+void _cox_de_boor(int order, double* knot, double t, double* N) {
 
     double a0, a1, x, y;
     double* k0;
@@ -361,7 +480,7 @@ void _cox_de_boor(int order, double *knot, double t, double* N) {
 
 }
 
-void _cox_de_boor_derivatives(int order, double *knot, int der_count, double* N) {
+void _cox_de_boor_derivatives(int order, double* knot, int der_count, double* N) {
 
     double dN, c;
     double *k0, *k1;

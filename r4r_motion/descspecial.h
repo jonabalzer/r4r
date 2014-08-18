@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RDESCSPECIAL_H
 #define R4RDESCSPECIAL_H
@@ -49,7 +49,7 @@ public:
     CFourierModulusDescriptor(CRectangle<double> roi, size_t hsize);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
-    bool Compute(cv::Mat& img);
+    bool Compute(const cv::Mat& img);
 
 };
 
@@ -66,7 +66,7 @@ public:
     CHistogramOfGradients(CRectangle<double> roi, size_t no_cells, size_t cell_size, size_t no_bins, bool osigned, double sigma);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
-    bool Compute(cv::Mat& img);
+    bool Compute(const cv::Mat& img);
 
     //! Normalize.
     void Normalize(size_t method, double alpha);
@@ -92,7 +92,7 @@ public:
     CFMHoGDescriptor(CRectangle<double> roi, size_t hsize = 30, size_t nbins = 128);
 
     //! \copydoc CDescriptor::Compute(cv::Mat&)
-    bool Compute(cv::Mat& img);
+    bool Compute(const cv::Mat& img);
 
 private:
 

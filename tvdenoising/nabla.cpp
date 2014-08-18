@@ -23,20 +23,24 @@
 
 #include "nabla.h"
 
+#include <vector>
+
 using namespace R4R;
+using namespace std;
 
-void CImageDenoising::ComputeJacobian(smatf& J) {
+void CImageDenoising::ComputeJacobian(CCSRMatrix<float,size_t>& J) {
 
-    J = smatf(m_height*m_width,m_height*m_width);
+    J = CCSRMatrix<float>(m_height*m_width,m_height*m_width);
 
-    for(size_t i=0; i<m_height*m_width; i++)
-        J.Set(i,i,1);
+    J.Eye();
 
 }
 
-void CImageDenoising::ComputeGradientOperator(smatf& nabla) {
+void CImageDenoising::ComputeGradientOperator(CCSRMatrix<float,size_t>& nabla) {
 
-    nabla = smatf(2*m_height*m_width,m_height*m_width);
+    /* this is only done once, so we can assemble it the slow way
+     * with triplets */
+    vector<CCSRTriple<float,size_t> > entries;
 
     size_t i,j;
 
@@ -48,12 +52,12 @@ void CImageDenoising::ComputeGradientOperator(smatf& nabla) {
             size_t row = j*m_height + i;
 
             // dudx
-            nabla.Set(row,row,-1.0);
-            nabla.Set(row,row+m_height,1.0);
+            entries.push_back(CCSRTriple<float,size_t>(row,row,-1.0));
+            entries.push_back(CCSRTriple<float,size_t>(row,row+m_height,1.0));
 
             // dudy
-            nabla.Set(m_width*m_height+row,row,-1.0);
-            nabla.Set(m_width*m_height+row,row+1,1.0);
+            entries.push_back(CCSRTriple<float,size_t>(m_width*m_height+row,row,-1.0));
+            entries.push_back(CCSRTriple<float,size_t>(m_width*m_height+row,row+1,1.0));
 
         }
 
@@ -65,8 +69,8 @@ void CImageDenoising::ComputeGradientOperator(smatf& nabla) {
 
        size_t row = j*m_height + i;
 
-       nabla.Set(row,row,-1.0);
-       nabla.Set(row,row+m_height,1.0);
+       entries.push_back(CCSRTriple<float,size_t>(row,row,-1.0));
+       entries.push_back(CCSRTriple<float,size_t>(row,row+m_height,1.0));
 
    }
 
@@ -76,10 +80,12 @@ void CImageDenoising::ComputeGradientOperator(smatf& nabla) {
 
        size_t row = j*m_height + i;
 
-       nabla.Set(m_width*m_height+row,row,-1.0);
-       nabla.Set(m_width*m_height+row,row+1,1.0);
+       entries.push_back(CCSRTriple<float,size_t>(m_width*m_height+row,row,-1.0));
+       entries.push_back(CCSRTriple<float,size_t>(m_width*m_height+row,row+1,1.0));
 
 
    }
+
+   nabla = CCSRMatrix<float>(2*m_height*m_width,m_height*m_width,entries);
 
 }

@@ -28,14 +28,22 @@ CONFIG += ordered
 SUBDIRS += r4r_core \
            r4r_motion \
            r4r_hardware \
-    r4r_reconstruction
+           r4r_reconstruction
 
+# optionally build unit tests
+equals( HAVE_UNITTESTS, 1 ) {
+
+    SUBDIRS += unit_tests
+
+}
+
+# optionally include examples in the build
 equals( HAVE_EXAMPLES, 1 ) {
 
     SUBDIRS += robust_regression \
+               tvdenoising \
                mv_descriptor_learning \
-               clam \
-               tvdenoising
+               clam
 
 }
 

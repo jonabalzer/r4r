@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #include "sarray.h"
 #include "darray.h"
@@ -40,6 +40,722 @@
 using namespace std;
 
 namespace R4R {
+
+
+template<typename T,typename U>
+bool CCSRTriple<T,U>::operator<(const CCSRTriple<T,U>& x) const {
+
+    bool result;
+
+    m_i>x.m_i ? result=true : result = (m_i==x.m_i && m_j>=x.m_j);
+
+    return result;
+
+}
+
+template class CCSRTriple<float,size_t>;
+template class CCSRTriple<double,size_t>;
+template class CCSRTriple<float,int>;
+template class CCSRTriple<double,int>;
+
+
+template<typename T,typename U>
+bool CCSCTriple<T,U>::operator<(const CCSCTriple<T,U>& x) const {
+
+    bool result;
+
+    m_j>x.m_j ? result=true : result = (m_j==x.m_j && m_i>=x.m_i);
+
+    return result;
+
+}
+
+template class CCSCTriple<float,size_t>;
+template class CCSCTriple<double,size_t>;
+template class CCSCTriple<float,int>;
+template class CCSCTriple<double,int>;
+
+template<typename T, typename U>
+CCSRMatrix<T,U>::CCSRMatrix():
+    m_nrows(),
+    m_ncols(),
+    m_transpose(false),
+    m_rowptr(new vector<U>(1)),
+    m_cols(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    m_rowptr->at(0) = 0;
+
+}
+
+template<typename T, typename U>
+CCSRMatrix<T,U>::CCSRMatrix(size_t m, size_t n):
+    m_nrows(m),
+    m_ncols(n),
+    m_transpose(false),
+    m_rowptr(new vector<U>(m+1)),
+    m_cols(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    fill_n(m_rowptr->begin(),m+1,0);
+
+}
+
+template<typename T, typename U>
+CCSRMatrix<T,U>::CCSRMatrix(size_t m, size_t n, vector<CCSRTriple<T,U> >& data):
+    m_nrows(m),
+    m_ncols(n),
+    m_transpose(false),
+    m_rowptr(new vector<U>()),
+    m_cols(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    // make sure we do not have to resize the containers
+    m_rowptr->reserve(m_nrows+1);
+    m_cols->reserve(data.size());
+    m_vals->reserve(data.size());
+
+    // make the vector a min heap (max heap by definition of comparison operator)
+    std::make_heap(data.begin(),data.end());
+
+    m_rowptr->push_back(0);
+
+    U nnz = 0;
+
+    CCSRTriple<T,U> lastentry = data.front();
+
+    // add trailing zeros if the first nonzero entry comes in cols > 0
+    for(U k=0; k<lastentry.i(); k++)
+        m_rowptr->push_back(nnz);
+
+    while(!data.empty()) {
+
+        // row change?
+        if(data.front().i()>lastentry.i())
+            m_rowptr->push_back(nnz);
+
+        // check whether we have to add to the last element or insert a new one
+        if(data.front()!=lastentry || m_cols->empty()) {
+
+            m_vals->push_back(data.front().v());
+            m_cols->push_back(data.front().j());
+            nnz++;
+
+        } else
+            m_vals->back() += data.front().v();
+
+        // store last element
+        lastentry = data.front();
+
+        // pop element and restore heap property
+        std::pop_heap(data.begin(),data.end());
+        data.pop_back();
+
+    }
+
+    // need to make sure that rowptr has nrows+1 elements
+    while(m_rowptr->size()!=m_nrows+1)
+        m_rowptr->push_back(nnz);
+
+
+}
+
+template<typename T, typename U>
+CCSRMatrix<T,U>::CCSRMatrix(size_t m, size_t n, const std::shared_ptr<std::vector<U> >& rowptr, const std::shared_ptr<std::vector<U> >& cols, const std::shared_ptr<std::vector<T> >& vals):
+    m_nrows(m),
+    m_ncols(n),
+    m_transpose(false),
+    m_rowptr(rowptr),
+    m_cols(cols),
+    m_vals(vals) {}
+
+
+template<typename T, typename U>
+void CCSRMatrix<T,U>::SetData(std::vector<U>* rowptr, std::vector<U>* cols, std::vector<T>* vals) {
+
+    m_rowptr.reset(rowptr);
+    m_cols.reset(cols);
+    m_vals.reset(vals);
+
+}
+
+template<typename T, typename U>
+bool CCSRMatrix<T,U>::Verify() const {
+
+    // the first element in the row pointer must be zero
+    if(m_rowptr->at(0) || m_rowptr->size()!=m_nrows+1)
+        return false;
+
+    // row iteration
+    for(size_t i=0; i<m_nrows; i++) {
+
+        if(m_rowptr->at(i)>m_rowptr->at(i+1))
+            return false;
+
+    }
+
+    return true;
+
+}
+
+template<typename T, typename U>
+void CCSRMatrix<T,U>::Scale(T scalar) {
+
+    typename vector<T>::iterator it;
+
+    for(it=m_vals->begin(); it!=m_vals->end(); ++it)
+        *it *= scalar;
+
+}
+
+template<typename T, typename U>
+void CCSRMatrix<T,U>::Eye() {
+
+    // clear old contents
+    m_rowptr.reset(new vector<U>(m_nrows+1));
+    fill_n(m_rowptr->begin(),m_nrows+1,0);
+    m_cols->clear();
+    m_vals->clear();
+
+    // make sure we do not have to resize the containers
+    size_t ld = max(m_nrows,m_ncols);
+    m_cols->reserve(ld);
+    m_vals->reserve(ld);
+
+    for(size_t i=1; i<=ld; i++) {
+
+        m_rowptr->at(i) = i;
+        m_cols->push_back(U(i-1));
+        m_vals->push_back(T(1.0));
+
+    }
+
+}
+
+template<typename V,typename W>
+ostream& operator << (ostream& os, const CCSRMatrix<V,W>& x) {
+
+    os << "CSR Matrix of size " << x.m_nrows << "x" << x.m_ncols << ":" << endl << endl;
+
+    for(size_t i=0; i<x.m_nrows; i++) {
+
+        for(size_t j=x.m_rowptr->at(i); j<x.m_rowptr->at(i+1); j++) {
+
+            if(!x.m_transpose)
+                os << "(" << i << "," << x.m_cols->at(j) << "," << x.m_vals->at(j) << ")" << endl;
+            else
+                os << "(" << x.m_cols->at(j) << "," << i << "," << x.m_vals->at(j) << ")" << endl;
+
+        }
+        os << endl;
+
+    }
+
+    return os;
+
+}
+
+template ostream& operator<<(ostream& os, const CCSRMatrix<float,size_t>& x);
+template ostream& operator<<(ostream& os, const CCSRMatrix<double,size_t>& x);
+
+template<typename T, typename U>
+template<class Matrix>
+Matrix CCSRMatrix<T,U>::operator*(const Matrix& array) const {
+
+    assert(this->NCols()==array.NRows());
+    Matrix result = Matrix(this->NRows(),array.NCols());
+
+    if(!m_transpose) {
+
+        // columns of the input matrix
+        for(size_t k=0; k<array.NCols(); k++) {
+
+            for(size_t i=0; i<m_nrows; i++) {
+
+                for(size_t j=m_rowptr->at(i); j<m_rowptr->at(i+1); j++)
+                    result(i,k) += m_vals->at(j)*array.Get(m_cols->at(j),k);
+
+            }
+
+        }
+
+    } else {
+
+        // columns of the input matrix
+        for(size_t k=0; k<array.NCols(); k++) {
+
+            for(size_t i=0; i<m_nrows; i++) {
+
+                for(size_t j=m_rowptr->at(i); j<m_rowptr->at(i+1); j++)
+                    result(m_cols->at(j),k) += m_vals->at(j)*array.Get(i,k);
+
+            }
+
+        }
+
+    }
+
+    return result;
+
+}
+
+template R4R::CDenseArray<double> CCSRMatrix<double,size_t>::operator*(const R4R::CDenseArray<double>& array) const;
+template R4R::CDenseVector<double> CCSRMatrix<double,size_t>::operator*(const R4R::CDenseVector<double>& array) const;
+template R4R::CDenseArray<float> CCSRMatrix<float,size_t>::operator*(const R4R::CDenseArray<float>& array) const;
+template R4R::CDenseVector<float> CCSRMatrix<float,size_t>::operator*(const R4R::CDenseVector<float>& array) const;
+
+template<typename T, typename U>
+CCSRMatrix<T,U> CCSRMatrix<T,U>::Transpose(const CCSRMatrix<T,U>& x) {
+
+    CCSRMatrix<T,U> result(x);
+    result.m_transpose = true;
+    return result;
+
+}
+
+template<typename T,typename U>
+void CCSRMatrix<T,U>::Concatenate(const CCSRMatrix<T,U>& x, bool direction) {
+
+    /* make sure transposition is off, that the sizes match, and that
+     * we are not concateting this with it self
+     */
+    assert(!m_transpose && m_ncols==x.m_ncols && this!=&x);
+
+    this->m_rowptr->reserve(this->m_rowptr->size()+x.NRows());
+    this->m_cols->reserve(this->m_cols->size()+x.m_cols->size());
+    this->m_vals->reserve(this->m_vals->size()+x.m_vals->size());
+
+    // adjust size info
+    m_nrows += x.m_nrows;
+
+    U nnz = this->m_rowptr->back();
+
+    typename vector<U>::const_iterator it = x.m_rowptr->begin();
+    it++;
+
+    for(it; it!=x.m_rowptr->end(); ++it)
+        this->m_rowptr->push_back(*it+nnz);
+
+    for(it=x.m_cols->begin(); it!=x.m_cols->end(); ++it)
+        this->m_cols->push_back(*it);
+
+    typename vector<T>::const_iterator it_val;
+    for(it_val=x.m_vals->begin(); it_val!=x.m_vals->end(); ++it_val)
+        this->m_vals->push_back(*it_val);
+
+}
+
+template<typename T,typename U>
+CCSRMatrix<T,U> CCSRMatrix<T,U>::Clone() const {
+
+    CCSRMatrix<T,U> result(m_nrows,m_ncols);
+
+    result.m_rowptr.reset(new vector<U>(*this->m_rowptr));
+    result.m_cols.reset(new vector<U>(*this->m_cols));
+    result.m_vals.reset(new vector<T>(*this->m_vals));
+
+    return result;
+
+}
+
+template class CCSRMatrix<float,size_t>;
+template class CCSRMatrix<double,size_t>;
+
+template<typename T, typename U>
+CSymmetricCSRMatrix<T,U>::CSymmetricCSRMatrix(size_t s):
+    m_size(s),
+    m_rowptr(new vector<U>(s+1)),
+    m_cols(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    fill_n(m_rowptr->begin(),s+1,0);
+
+}
+
+template<typename T, typename U>
+CSymmetricCSRMatrix<T,U>::CSymmetricCSRMatrix(const CCSCMatrix<T,U>& x):
+    m_size(x.NCols()),
+    m_rowptr(new vector<U>()),
+    m_cols(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    m_rowptr->reserve(x.NCols()+1);
+    m_rowptr->push_back(0);
+
+    size_t counter = 0;
+
+    // multiply col i of x with all other cols j>=i
+    for(size_t i=0; i<x.NCols(); i++) {
+
+        // this is one row
+        for(size_t j=i; j<x.NCols(); j++) {
+
+            T prod = 0;
+            size_t k = x.m_colptr->at(i);
+            size_t l = x.m_colptr->at(j);
+
+            /* x.m_colptr->at(i) -> x.m_colptr->at(i+1) picks range in x.m_vals
+             * x.m_colptr->at(j) -> x.m_colptr->at(j+1) picks range in x.m_vals
+             * for cols i respectively j.
+             * but overlap is determined by x.m_rows
+             */
+            while(k!=x.m_colptr->at(i+1) && l!=x.m_colptr->at(j+1)) {
+
+                cout << k << " " << l << endl;
+                if(x.m_rows->at(k)==x.m_rows->at(l)) {
+                    prod += x.m_vals->at(k)*x.m_vals->at(l);
+                    k++;
+                    l++;
+                }
+                else if(x.m_rows->at(k)<x.m_rows->at(l))
+                    k++;
+                else
+                    l++;
+
+            }
+
+            if(prod!=0) {
+                m_cols->push_back(j);
+                m_vals->push_back(prod);
+                counter++;
+            }
+
+        }
+
+        // after row done, save current number of nnz
+        m_rowptr->push_back(counter);
+
+    }
+
+}
+
+template<typename T, typename U>
+size_t CSymmetricCSRMatrix<T,U>::NNz() const {
+
+    if(m_cols->empty())
+        return 0;
+
+    // count nonzeros on the diagonal
+    size_t counter = 0;
+
+    for(size_t i=0; i<m_size; i++) {
+
+        /* upper triangular storage, last column before next row
+         * has to be checked */
+        if(m_cols->at(m_rowptr->at(i))==i)
+            counter++;
+
+    }
+
+    return 2*m_vals->size()-counter;
+
+}
+
+template<typename T, typename U>
+void CSymmetricCSRMatrix<T,U>::Scale(T scalar) {
+
+    typename vector<T>::iterator it;
+
+    for(it=m_vals->begin(); it!=m_vals->end(); ++it)
+        *it *= scalar;
+
+}
+
+template<typename V,typename W>
+ostream& operator << (ostream& os, const CSymmetricCSRMatrix<V,W>& x) {
+
+    os << "Symmetric CSR Matrix of size " << x.m_size << "x" << x.m_size << ":" << endl;
+
+    for(size_t i=0; i<x.m_size; i++) {
+
+        // columns before and including the diagonal
+        for(size_t j=x.m_rowptr->at(i); j<x.m_rowptr->at(i+1); j++) {
+
+            os << "(" << i << "," << x.m_cols->at(j) << "," << x.m_vals->at(j) << ")" << endl;
+
+            if(i!=x.m_cols->at(j))
+                os << "(" << x.m_cols->at(j) << "," << i << "," << x.m_vals->at(j) << ")" << endl;
+
+        }
+
+        //os << endl;
+
+    }
+
+    return os;
+
+}
+
+template ostream& operator<<(ostream& os, const CSymmetricCSRMatrix<float,size_t>& x);
+template ostream& operator<<(ostream& os, const CSymmetricCSRMatrix<double,size_t>& x);
+
+template<typename T, typename U>
+template<class Matrix>
+Matrix CSymmetricCSRMatrix<T,U>::operator*(const Matrix& array) const {
+
+    assert(this->NCols()==array.NRows());
+
+    // zero matrix
+    Matrix result(this->NRows(),array.NCols());
+
+    // columns of the input matrix
+    for(size_t k=0; k<array.NCols(); k++) {
+
+        for(size_t i=0; i<m_size; i++) {
+
+            // columns before and including the diagonal
+            for(size_t j=m_rowptr->at(i); j<m_rowptr->at(i+1); j++) {
+
+                T val = m_vals->at(j)*array.Get(m_cols->at(j),k);
+
+                result(i,k) += val;
+
+                if(i!=m_cols->at(j))
+                    result(m_cols->at(j),k) += val;
+
+            }
+
+        }
+
+    }
+
+    return result;
+
+}
+
+template R4R::CDenseArray<double> CSymmetricCSRMatrix<double,size_t>::operator*(const R4R::CDenseArray<double>& array) const;
+template R4R::CDenseVector<double> CSymmetricCSRMatrix<double,size_t>::operator*(const R4R::CDenseVector<double>& array) const;
+template R4R::CDenseArray<float> CSymmetricCSRMatrix<float,size_t>::operator*(const R4R::CDenseArray<float>& array) const;
+template R4R::CDenseVector<float> CSymmetricCSRMatrix<float,size_t>::operator*(const R4R::CDenseVector<float>& array) const;
+
+template class CSymmetricCSRMatrix<float,size_t>;
+template class CSymmetricCSRMatrix<double,size_t>;
+
+
+template<typename T, typename U>
+CCSCMatrix<T,U>::CCSCMatrix():
+    m_nrows(),
+    m_ncols(),
+    m_transpose(false),
+    m_colptr(new vector<U>(1)),
+    m_rows(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    m_colptr->at(0) = 0;
+
+}
+
+
+template<typename T, typename U>
+CCSCMatrix<T,U>::CCSCMatrix(size_t m, size_t n):
+    m_nrows(m),
+    m_ncols(n),
+    m_transpose(false),
+    m_colptr(new vector<U>(n+1)),
+    m_rows(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    fill_n(m_colptr->begin(),n+1,0);
+
+}
+
+template<typename T, typename U>
+CCSCMatrix<T,U>::CCSCMatrix(std::shared_ptr<std::vector<U> >& colptr, std::shared_ptr<std::vector<U> >& rows, std::shared_ptr<std::vector<T> >& vals):
+    m_nrows(*max_element(rows->begin(),rows->end())),
+    m_ncols(colptr->size()-1),
+    m_transpose(false),
+    m_colptr(colptr),
+    m_rows(rows),
+    m_vals(vals) {}
+
+template<typename T, typename U>
+CCSCMatrix<T,U>::CCSCMatrix(size_t m, size_t n, vector<CCSCTriple<T,U> >& data):
+    m_nrows(m),
+    m_ncols(n),
+    m_transpose(false),
+    m_colptr(new vector<U>()),
+    m_rows(new vector<U>()),
+    m_vals(new vector<T>()) {
+
+    // make sure we do not have to resize the containers
+    m_colptr->reserve(m_ncols+1);
+    m_rows->reserve(data.size());
+    m_vals->reserve(data.size());
+
+    // make the vector a min heap (max heap by definition of comparison operator)
+    std::make_heap(data.begin(),data.end());
+
+    m_colptr->push_back(0);
+
+    U nnz = 0;
+
+    CCSCTriple<T,U> lastentry = data.front();
+
+    // add trailing zeros if the first nonzero entry comes in cols > 0
+    for(U k=0; k<lastentry.j(); k++)
+        m_colptr->push_back(nnz);
+
+    while(!data.empty()) {
+
+        // col change?
+        if(data.front().j()>lastentry.j())
+            m_colptr->push_back(nnz);
+
+        // check whether we have to add to the last element or insert a new one
+        if(data.front()!=lastentry || m_rows->empty()) {
+
+            m_vals->push_back(data.front().v());
+            m_rows->push_back(data.front().i());
+            nnz++;
+
+        } else
+            m_vals->back() += data.front().v();
+
+        // store last element
+        lastentry = data.front();
+
+        // pop element and restore heap property
+        std::pop_heap(data.begin(),data.end());
+        data.pop_back();
+
+    }
+
+    // need to make sure that rowptr has nrows+1 elements
+    while(m_colptr->size()!=m_ncols+1)
+        m_colptr->push_back(nnz);
+
+}
+
+template<typename T, typename U>
+void CCSCMatrix<T,U>::Eye() {
+
+    // clear old contents
+    m_colptr.reset(new vector<U>(m_ncols+1));
+    fill_n(m_colptr->begin(),m_ncols+1,0);
+    m_rows->clear();
+    m_vals->clear();
+
+    // make sure we do not have to resize the containers
+    size_t ld = max(m_nrows,m_ncols);
+    m_rows->reserve(ld);
+    m_vals->reserve(ld);
+
+    for(size_t i=1; i<=ld; i++) {
+
+        m_colptr->at(i) = i;
+        m_rows->push_back(U(i-1));
+        m_vals->push_back(T(1.0));
+
+    }
+
+}
+
+template<typename T, typename U>
+void CCSCMatrix<T,U>::Scale(T scalar) {
+
+    typename vector<T>::iterator it;
+
+    for(it=m_vals->begin(); it!=m_vals->end(); ++it)
+        *it *= scalar;
+
+}
+
+template<typename T, typename U>
+template<class Matrix>
+Matrix CCSCMatrix<T,U>::operator*(const Matrix& array) const {
+
+    assert(this->NRows()==array.NRows());
+
+    // zero matrix
+    Matrix result(this->NCols(),array.NCols());
+
+    if(!m_transpose) {
+
+        // columns of the input matrix
+        for(size_t k=0; k<array.NCols(); k++) {
+
+            for(size_t i=0; i<m_ncols; i++) {
+
+                for(size_t j=m_colptr->at(i); j<m_colptr->at(i+1); j++) {
+                    result(i,k) += m_vals->at(j)*array.Get(m_rows->at(j),k);
+
+                }
+
+            }
+
+        }
+
+    } else {
+
+        // columns of the input matrix
+        for(size_t k=0; k<array.NCols(); k++) {
+
+            for(size_t i=0; i<m_ncols; i++) {
+
+                for(size_t j=m_colptr->at(i); j<m_colptr->at(i+1); j++) {
+                    result(m_rows->at(j),k) += m_vals->at(j)*array.Get(i,k);
+
+                }
+
+            }
+
+        }
+
+    }
+
+    return result;
+
+}
+
+template R4R::CDenseArray<double> CCSCMatrix<double,size_t>::operator*(const R4R::CDenseArray<double>& array) const;
+template R4R::CDenseVector<double> CCSCMatrix<double,size_t>::operator*(const R4R::CDenseVector<double>& array) const;
+template R4R::CDenseArray<float> CCSCMatrix<float,size_t>::operator*(const R4R::CDenseArray<float>& array) const;
+template R4R::CDenseVector<float> CCSCMatrix<float,size_t>::operator*(const R4R::CDenseVector<float>& array) const;
+
+
+template<typename V,typename W>
+ostream& operator << (ostream& os, const CCSCMatrix<V,W>& x) {
+
+    os << "CSC Matrix of size " << x.m_nrows << "x" << x.m_ncols << ":" << endl << endl;
+
+    for(size_t i=0; i<x.m_ncols; i++) {
+
+        for(size_t j=x.m_colptr->at(i); j<x.m_colptr->at(i+1); j++)
+            os << "(" << x.m_rows->at(j) << "," << i << "," << x.m_vals->at(j) << ")" << endl;
+
+        os << endl;
+
+    }
+
+    return os;
+
+}
+
+template ostream& operator<<(ostream& os, const CCSCMatrix<float,size_t>& x);
+template ostream& operator<<(ostream& os, const CCSCMatrix<double,size_t>& x);
+template ostream& operator<<(ostream& os, const CCSCMatrix<float,int>& x);
+template ostream& operator<<(ostream& os, const CCSCMatrix<double,int>& x);
+
+template<typename T, typename U>
+CSymmetricCSRMatrix<T,U> CCSCMatrix<T,U>::Square() const {
+
+    return CSymmetricCSRMatrix<T,U>(*this);
+
+}
+
+template<typename T, typename U>
+CCSCMatrix<T,U> CCSCMatrix<T,U>::Transpose(const CCSCMatrix<T,U>& x) {
+
+    CCSCMatrix<T,U> result(x);
+    result.m_transpose = true;
+    return result;
+
+}
+
+template class CCSCMatrix<float,size_t>;
+template class CCSCMatrix<double,size_t>;
+template class CCSCMatrix<float,int>;
+template class CCSCMatrix<double,int>;
 
 template <class T>
 CSparseArray<T>::CSparseArray():

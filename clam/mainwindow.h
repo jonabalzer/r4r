@@ -33,6 +33,7 @@
 #include "params.h"
 #include "mtracker.h"
 #include "dagg.h"
+#include "viewer.h"
 
 #include "preferences.h"
 
@@ -80,16 +81,15 @@ signals:
 
 private:
 
-    Ui::MainWindow *ui;
+    Ui::MainWindow* ui;
     Preferences* m_preferences;
-
     cv::VideoCapture m_cap;
     vector<cv::Mat> m_pyramid;
     QTimer m_timer;
     CParameters m_params;
-    CTracker* m_tracker;
-    CPinholeCam m_cam;
-    std::map<R4R::vec3f,R4R::rgb> m_map;
+    CMotionTracker* m_tracker;
+    CPinholeCam<float> m_cam;
+    R4R::CPointCloudViewer* m_viewer;
 
     void show_image(const QImage& qimg);
 

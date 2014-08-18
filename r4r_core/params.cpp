@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #include "params.h"
 #include <stdio.h>
@@ -34,7 +34,7 @@ namespace R4R {
 
 void CParameters::Set(const char* name, const char* val) {
 
-	map<string,string>::iterator it = m_string_params.find(name);
+    unordered_map<string,string>::iterator it = m_string_params.find(name);
 
 	if(it!=m_string_params.end())
 		m_string_params.erase(it);
@@ -45,7 +45,7 @@ void CParameters::Set(const char* name, const char* val) {
 
 void CParameters::Set(const char* name, int val) {
 
-	map<string,int>::iterator it = m_int_params.find(name);
+    unordered_map<string,int>::iterator it = m_int_params.find(name);
 
 	if(it!=m_int_params.end())
 		m_int_params.erase(it);
@@ -56,7 +56,7 @@ void CParameters::Set(const char* name, int val) {
 
 void CParameters::Set(const char* name, double val) {
 
-	map<string,double>::iterator it = m_double_params.find(name);
+    unordered_map<string,double>::iterator it = m_double_params.find(name);
 
 	if(it!=m_double_params.end())
 		m_double_params.erase(it);
@@ -65,27 +65,24 @@ void CParameters::Set(const char* name, double val) {
 
 }
 
-
-string CParameters::GetStringParameter(const char* name) {
+string CParameters::GetStringParameter(const char* name) const {
 
 	string param;
 
 	try {
 
-		if(m_string_params.find(name)==m_string_params.end())
+        unordered_map<string,string>::const_iterator it = m_string_params.find(name);
+
+        if(it==m_string_params.end())
 			throw name;
 		else
-			param = m_string_params[name];
+            param = it->second;
 
 	}
 	catch(const char* str) {
 
-        cout << "ERROR: Parameter " << str << " was not loaded." << endl; // Enter it now: ";
-
-        //cin >> param;
-        param = string("-1");
-
-        Set(name,param.c_str());
+        cerr << "ERROR: Parameter " << str << " was not loaded." << endl;
+        param = string("");
 
 	}
 
@@ -93,26 +90,24 @@ string CParameters::GetStringParameter(const char* name) {
 
 }
 
-int CParameters::GetIntParameter(const char* name) {
+int CParameters::GetIntParameter(const char* name) const {
 
 	int param;
 
 	try {
 
-		if(m_int_params.find(name)==m_int_params.end())
+        unordered_map<string,int>::const_iterator it = m_int_params.find(name);
+
+        if(it==m_int_params.end())
 			throw name;
 		else
-			param = m_int_params[name];
+            param = it->second;
 
 	}
 	catch(const char* str) {
 
-        cout << "ERROR: Parameter " << str << " was not loaded." << endl; // Enter it now: ";
-
-        //cin >> param;
+        cerr << "ERROR: Parameter " << str << " was not loaded." << endl;
         param = -1;
-
-		Set(name,param);
 
 	}
 
@@ -120,27 +115,24 @@ int CParameters::GetIntParameter(const char* name) {
 
 }
 
-double CParameters::GetDoubleParameter(const char* name) {
+double CParameters::GetDoubleParameter(const char* name) const {
 
 	double param;
 
 	try {
 
-		if(m_double_params.find(name)==m_double_params.end())
+        unordered_map<string,double>::const_iterator it = m_double_params.find(name);
+
+        if(it==m_double_params.end())
 			throw name;
 		else
-			param = m_double_params[name];
+            param = it->second;
 
 	}
 	catch(const char* str) {
 
-        cout << "ERROR: Parameter " << str << " was not loaded." << endl; // Enter it now: ";
-
-        //cin >> param;
-        param = -1;
-
-		Set(name,param);
-
+        cout << "ERROR: Parameter " << str << " was not loaded." << endl;
+        param = -1.0;
 
 	}
 
@@ -148,8 +140,7 @@ double CParameters::GetDoubleParameter(const char* name) {
 
 }
 
-
-bool CParameters::SaveToFile(const char* filename) {
+bool CParameters::SaveToFile(const char* filename) const {
 
 	ofstream out(filename);
 
@@ -242,19 +233,19 @@ bool  CParameters::OpenFromFile(const char* filename) {
 
 }
 
-ostream& operator<< (ostream& os, CParameters& x) {
+ostream& operator<< (ostream& os, const CParameters& x) {
 
-	map<string,string>::iterator it;
+    unordered_map<string,string>::const_iterator it;
 
 	for(it=x.m_string_params.begin(); it!=x.m_string_params.end(); it++)
 		os << it->first << " " << 1 << " " << it->second << endl;
 
-	map<string,int>::iterator it2;
+    unordered_map<string,int>::const_iterator it2;
 
 	for(it2=x.m_int_params.begin(); it2!=x.m_int_params.end(); it2++)
 		os << it2->first << " " << 2 << " " << it2->second << endl;
 
-	map<string,double>::iterator it3;
+    unordered_map<string,double>::const_iterator it3;
 
 	for(it3=x.m_double_params.begin(); it3!=x.m_double_params.end(); it3++)
 		os << it3->first << " " << 3 << " " << it3->second << endl;

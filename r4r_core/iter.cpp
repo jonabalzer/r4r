@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #include "iter.h"
 #include "darray.h"
@@ -193,10 +193,12 @@ template class CConjugateGradientMethod<CDenseArray<double>,double>;
 template class CConjugateGradientMethod<CSparseArray<double>,double>;
 template class CConjugateGradientMethod<CDenseArray<float>,float>;
 template class CConjugateGradientMethod<CSparseArray<float>,float>;
+template class CConjugateGradientMethod<CSymmetricCSRMatrix<float,size_t>,float>;
+template class CConjugateGradientMethod<CSymmetricCSRMatrix<double,size_t>,double>;
 
 template<class Matrix,typename T>
 CConjugateGradientMethodLeastSquares<Matrix,T>::CConjugateGradientMethodLeastSquares(const CPreconditioner<Matrix,T>& M, size_t n, double eps, bool silent):
-    CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent) {}
+    CIterativeLinearSolver<Matrix,T>::CIterativeLinearSolver(M,n,eps,silent){}
 
 template<class Matrix,typename T>
 vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Matrix& A, const CDenseArray<T>& B, CDenseArray<T>& X) const {
@@ -314,15 +316,14 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
 
     // residual of the non-square system
     CDenseVector<T> r = b - A*x;
+    CDenseVector<T> rlambda = x*(-m_lambda);
 
     // residuals
     vector<double> res;
-    res.push_back(r.Norm2());
+    res.push_back(r.Norm2()+rlambda.Norm2());
 
     // residual of the normal equation
-    //A.Transpose();
-    CDenseVector<T> rnormal = At*r;
-    //A.Transpose();
+    CDenseVector<T> rnormal = At*r + rlambda*m_lambda;
 
     // preconditioning
     CDenseVector<T> z = rnormal.Clone();
@@ -342,26 +343,27 @@ vector<double> CConjugateGradientMethodLeastSquares<Matrix,T>::Iterate(const Mat
         CDenseVector<T> q = A*p;
 
         // step size (recycle deltao for computation of beta)
-        T alpha = deltao/CDenseArray<T>::InnerProduct(q,q);
+        T alpha = deltao/(CDenseArray<T>::InnerProduct(q,q) + m_lambda*m_lambda*CDenseArray<T>::InnerProduct(p,p));
 
         // perform descent step
         x = x + p*alpha;
 
         q.Scale(alpha);
         r = r - q;				// update residual of non-square system
+        rlambda = rlambda - p*(m_lambda*alpha);
 
-        res.push_back(r.Norm2());
+        res.push_back(r.Norm2()+rlambda.Norm2());
 
         k++;
 
         if(!m_silent)
             cout << "k=" << k << ": " << res.back() << endl;
 
-        if(fabs(res.at(res.size()-2)-res.back())<m_eps)
+        if(fabs(res.at(res.size()-2)-res.back())<m_eps || res.back()<m_eps)
             break;
 
         // update residual of normal equation
-        rnormal = At*r;
+        rnormal = At*r + rlambda*m_lambda;
 
         // apply preconditioner
         m_M.Solve(z,rnormal);
@@ -385,5 +387,7 @@ template class CConjugateGradientMethodLeastSquares<CDenseArray<double>,double>;
 template class CConjugateGradientMethodLeastSquares<CSparseArray<double>,double>;
 template class CConjugateGradientMethodLeastSquares<CDenseArray<float>,float>;
 template class CConjugateGradientMethodLeastSquares<CSparseArray<float>,float>;
+template class CConjugateGradientMethodLeastSquares<CCSRMatrix<double,size_t>,double>;
+template class CConjugateGradientMethodLeastSquares<CCSRMatrix<float,size_t>,float>;
 
 }

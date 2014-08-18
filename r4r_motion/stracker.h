@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,15 +19,48 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RSTRACKER_H_
 #define R4RSTRACKER_H_
 
 #include "tracker.h"
+#include "descriptor.h"
+
+
 #include <opencv2/opencv.hpp>
 
 namespace R4R {
+
+// forward declaration
+class CSimpleTracker;
+class CMotionTracker;
+
+
+// only for testing to switch between different implementations
+typedef CCircularTracklet mytracklet;
+
+/*! \brief tracklets for simple tracker
+ *
+ */
+class CSimpleTrackerTracklet:public mytracklet {
+
+    friend class CSimpleTracker;
+    friend class CMotionTracker;
+
+public:
+
+    //! Standard constructor.
+    CSimpleTrackerTracklet() = delete;
+
+    //! Constructor.
+    CSimpleTrackerTracklet(size_t t0, const imfeature& x0, size_t maxlength = 200):CTracklet(t0,x0,maxlength), m_reference_feature(x0) {}
+
+private:
+
+    imfeature m_reference_feature;        //! reference feature
+
+};
 
 /*! \brief simple LK tracker
  *
@@ -53,14 +86,14 @@ namespace R4R {
  * initial configuration of the corresponding tracklet. This provides a simple but efficient mechanism for occlusion
  * detection.
  *
- * \todo Make it faster by using only one integral image during cleaning and addition.
+ *
  */
-class CSimpleTracker: public CTracker {
+class CSimpleTracker: public CSlidingWindowTracker {
 
 public:
 
 	//! Constructor.
-    CSimpleTracker(CParameters* params);
+    CSimpleTracker(const CParameters* params);
 
 	/*! \copydoc CTracker::Init(cv::Mat& img)
 	 *
@@ -69,19 +102,19 @@ public:
 	 * to the tracker.
 	 *
 	 */
-	bool Init(std::vector<cv::Mat>& pyramid);
+    void Init(const std::vector<cv::Mat>& pyramid);
 
 	//! \copydoc CTracker::Update(std::vector<cv::Mat>&,std::vector<cv::Mat>&)
-	bool Update(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1);
+    void Update(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1);
 
 	//! \copydoc CTracker::Update(std::vector<cv::Mat>&)
-	bool UpdateDescriptors(std::vector<cv::Mat>& pyramid);
+    void UpdateDescriptors(const std::vector<cv::Mat>& pyramid);
 
 	//! \copydoc CTracker::Clean(cv::Mat&,cv::Mat&)
-    void Clean(std::vector<cv::Mat>& pyramid0, std::vector<cv::Mat>& pyramid1);
+    void Clean(const std::vector<cv::Mat>& pyramid0, const std::vector<cv::Mat>& pyramid1);
 
 	//! \copydoc CTracker::AddTracklets(cv::Mat&)
-	bool AddTracklets(std::vector<cv::Mat>& pyramid);
+    void AddTracklets(const std::vector<cv::Mat>& pyramid);
 
 protected:
 
@@ -89,6 +122,6 @@ protected:
 
 };
 
-}
+} // end of namespace
 
 #endif /* STRACKER_H_ */

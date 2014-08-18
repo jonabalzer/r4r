@@ -27,8 +27,7 @@
 #include "types.h"
 #include "lm.h"
 
-
-class CImageDenoising:public R4R::CLMTVMatrices<R4R::smatf,float> {
+class CImageDenoising:public R4R::CLMTVMatrices<R4R::CCSRMatrix<float,size_t>,float> {
 
 public:
 
@@ -36,13 +35,13 @@ public:
     CImageDenoising(size_t width, size_t height):m_width(width),m_height(height){}
 
     //! \copydoc CLMTVMatrices::ComputeJacobian(R4R::smatf&)
-    void ComputeJacobian(R4R::smatf& J);
+    void ComputeJacobian(R4R::CCSRMatrix<float,size_t>& J);
 
     //! \copydoc CLMTVMatrices::ComputeJacobianAndResidual(R4R::smatf&,R4R::CDenseArray<float>&)
-    void ComputeJacobianAndResidual(R4R::smatf& J, R4R::CDenseArray<float>& r) {}
+    void ComputeJacobianAndResidual(R4R::CCSRMatrix<float,size_t>& J, R4R::CDenseArray<float>& r) {}
 
     //! \copydoc CLMTVMatrices::ComputeGradientOperator(R4R::smatf&)
-    void ComputeGradientOperator(R4R::smatf& nabla);
+    void ComputeGradientOperator(R4R::CCSRMatrix<float,size_t>& nabla);
 
 private:
 

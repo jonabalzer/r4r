@@ -28,6 +28,11 @@
 
 #include <QFileDialog>
 
+#ifdef HAVE_TBB
+#include <tbb/tick_count.h>
+using namespace tbb;
+#endif
+
 using namespace R4R;
 using namespace std;
 
@@ -62,6 +67,9 @@ void MainWindow::on_actionOpen_triggered()
                                                     "Open image file...",
                                                     ".",
                                                     "(*.png);;(*.bmp);;(*.jpg)");
+
+    if(filename.isEmpty())
+        return;
 
     // open qimag
     QImage qimg(filename);
@@ -135,24 +143,24 @@ void MainWindow::on_actionReload_triggered()
 
 }
 
-void MainWindow::on_iterButton_clicked()
-{
+void MainWindow::on_iterButton_clicked() {
 
     // nothing to do if there is no image
     if(m_f.NElems()==0)
         return;
 
     // create linear solver
-    CConjugateGradientMethodLeastSquares<smatf,float> linsolver(CPreconditioner<smatf,float>(),
+    CPreconditioner<CCSRMatrix<float,size_t>,float> M;
+    CConjugateGradientMethodLeastSquares<CCSRMatrix<float,size_t>,float> linsolver(M,
                                                                 ui->linIterSpinBox->value(),
                                                                 1e-20,
                                                                 true);
-    // get reshaped of f and u
+    // get reshaped version of f and u
     vecf u = vecf(m_u);
     vecf f = vecf(m_f);
 
     // create SB solver
-    CSplitBregman<smatf,float> solver(m_A,
+    CSplitBregman<CCSRMatrix<float,size_t>,float> solver(m_A,
                                       m_nabla,
                                       f,
                                       u,
@@ -162,8 +170,17 @@ void MainWindow::on_iterButton_clicked()
                                       ui->lambdaEdit->text().toFloat(),
                                       ui->epsEdit->text().toFloat());
 
+
+#ifdef HAVE_TBB
+    tick_count t0, t1;
+    t0 = tick_count::now();
+#endif
     // iterate
     solver.Iterate(ui->niterSpinBox->value());
+#ifdef HAVE_TBB
+    t1 = tick_count::now();
+    cout << "Time to execute step: " << (t1-t0).seconds() << " s" << endl;
+#endif
 
     // convert back to image
     m_u = matf(m_u.NRows(),m_u.NCols(),u);
@@ -171,8 +188,13 @@ void MainWindow::on_iterButton_clicked()
     // show errors
     vector<double>& error = solver.GetTotalError();
     vector<double>& constraint = solver.GetConstraintViolation();
-    ui->errorLcdNumber->display(error.back());
-    ui->constraintLcdNumber->display(constraint.back());
+
+    if(!error.empty() && !constraint.empty()) {
+
+        ui->errorLcdNumber->display(error.back());
+        ui->constraintLcdNumber->display(constraint.back());
+
+    }
 
     // show image
     show_image();

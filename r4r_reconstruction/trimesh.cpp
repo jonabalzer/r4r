@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,9 +19,13 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_OM
 
 #include <assert.h>
+#include <limits>
+#include <algorithm>
 
 #include <OpenMesh/Tools/Subdivider/Uniform/LoopT.hh>
 
@@ -190,6 +194,24 @@ vec3f CTriangleMesh::Barycenter(FaceHandle fh) {
 	cog = cog/valence;
 
 	return cog;
+
+}
+
+vec3f CTriangleMesh::Barycenter() const {
+
+    vec3f barycenter;
+    size_t counter = 0;
+
+    TriangleMesh::VertexIter v_it;
+
+    for (v_it=vertices_begin(); v_it!=vertices_end(); ++v_it) {
+
+        barycenter = barycenter + Point(v_it);
+        counter++;
+
+    }
+
+    return (1.0/float(counter))*barycenter;
 
 }
 
@@ -610,7 +632,7 @@ void CTriangleMesh::ComputeGradientOperator(smatf& nabla) {
 
 
 
-vec3f CTriangleMesh::Point(VertexHandle vh) {
+vec3f CTriangleMesh::Point(VertexHandle vh) const {
 
     vec3f point = { this->point(vh)[0], this->point(vh)[1], this->point(vh)[2] };
 
@@ -618,7 +640,7 @@ vec3f CTriangleMesh::Point(VertexHandle vh) {
 
 }
 
-vec3f CTriangleMesh::Normal(VertexHandle vh) {
+vec3f CTriangleMesh::Normal(VertexHandle vh) const {
 
     vec3f normal = { this->normal(vh)[0], this->normal(vh)[1], this->normal(vh)[2] };
 
@@ -626,7 +648,7 @@ vec3f CTriangleMesh::Normal(VertexHandle vh) {
 
 }
 
-vec3f CTriangleMesh::Normal(FaceHandle fh) {
+vec3f CTriangleMesh::Normal(FaceHandle fh) const {
 
     vec3f normal = { this->normal(fh)[0], this->normal(fh)[1], this->normal(fh)[2] };
 
@@ -634,7 +656,7 @@ vec3f CTriangleMesh::Normal(FaceHandle fh) {
 
 }
 
-void CTriangleMesh::BoundingBox(vec3f& lower, vec3f& upper) {
+void CTriangleMesh::BoundingBox(vec3f& lower, vec3f& upper) const {
 
     for(u_int i=0; i<3; i++) {
 
@@ -664,7 +686,7 @@ void CTriangleMesh::BoundingBox(vec3f& lower, vec3f& upper) {
 }
 
 
-CBoundingBox<float> CTriangleMesh::BoundingBox() {
+CBoundingBox<float> CTriangleMesh::BoundingBox() const {
 
     vec3f lower, upper;
 
@@ -687,4 +709,104 @@ float CTriangleMesh::MeanEdgeLength() {
 
 }
 
+
+void CTriangleMesh::Deform(VertexHandle vh, size_t n, float h) {
+
+    // first get neighborhood
+    // then distances in neighborhood
+    // then exponential function of -d (sigma \propto n)
+
 }
+
+void CTriangleMesh::GetNRingNeighborhood(VertexHandle vh, size_t h, set<VertexHandle>& neighbors) {
+
+    neighbors.insert(vh);
+
+    // base case of recursion
+    if(h==0)
+        return;
+
+    TriangleMesh::VertexVertexIter vv_it;
+    for (vv_it = this->vv_iter(vh); vv_it; ++vv_it) {
+
+        if(neighbors.find(vv_it.handle()) == neighbors.end())
+            GetNRingNeighborhood(vv_it.handle(),h-1,neighbors);
+
+    }
+
+}
+
+map<VertexHandle,float> CTriangleMesh::Dijkstra(VertexHandle vh, const set<VertexHandle>& vertices) {
+
+    map<VertexHandle,float> result;     // distance container
+    map<VertexHandle,bool> visited;     // visited vertices
+    vector<vd> vds;                     // heap storage
+
+    // if the seed is not even in the subset of vertices, do nothing
+    if(vertices.find(vh)==vertices.end())
+        return result;
+
+    set<VertexHandle>::const_iterator it;
+    for(it=vertices.begin(); it!=vertices.end(); ++it) {
+
+        if((*it)==vh) {
+
+            result.insert(pair<VertexHandle,float>(vh,0));
+            visited.insert(pair<VertexHandle,bool>(vh,true));
+            vds.push_back(pair<VertexHandle,float>(vh,0));
+
+        }
+        else {
+
+            result.insert(pair<VertexHandle,float>(*it,std::numeric_limits<float>::max()));
+            visited.insert(pair<VertexHandle,bool>(*it,false));
+
+        }
+
+    }
+
+    // move the initial value to the top of the heap
+    std::make_heap(vds.begin(),vds.end(),CVertexDistanceComparator());
+
+    while(!vds.empty()) {
+
+        // get the current smallest element
+        vd current = vds.front();
+
+        // remove it from the priority queue
+        std::pop_heap(vds.begin(),vds.end(),CVertexDistanceComparator());
+        vds.pop_back();
+
+        TriangleMesh::VertexOHalfedgeIter voh_it;
+        for (voh_it=this->voh_iter(current.first); voh_it; ++voh_it) {
+
+            VertexHandle tv = this->to_vertex_handle(voh_it.handle());
+
+            if(vertices.find(tv)!=vertices.end() && !visited[tv]) {
+
+                float tentdist = this->calc_edge_length(voh_it) + result[current.first];
+
+                if(tentdist<result[tv]) {
+
+                    // set trsult
+                    result[tv]  = tentdist;
+
+                    // update the heap
+                    vds.push_back(pair<VertexHandle,float>(tv,tentdist));
+                    std::make_heap(vds.begin(),vds.end(),CVertexDistanceComparator());
+
+                }
+
+            }
+
+        }
+
+    }
+
+    return result;
+
+}
+
+}
+
+#endif

@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RKERNELS_H
 #define R4RKERNELS_H
@@ -42,6 +42,9 @@ public:
     //! Constructor.
     CMercerKernel(int n):m_n(n),m_offset(n-n%4){}
 
+    //! Virtual destructor stump.
+    virtual ~CMercerKernel() {}
+
     //! Evaluate kernel.
     virtual double Evaluate(T* x, T* y);
 
@@ -53,9 +56,6 @@ public:
 
     //! Create a kernel by number. Make sure to de-allocate it later.
     static CMercerKernel<T>* Create(KERNEL no, int n);
-
-    //! Tests the kernel.
-    static void TestKernel(KERNEL no, int n, size_t notests);
 
     //! Access to the size.
     int GetN() { return m_n; }

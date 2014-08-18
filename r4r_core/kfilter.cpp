@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #include "kfilter.h"
 #include "factor.h"
@@ -94,7 +94,9 @@ void CKalmanFilter::Update(vec& y) {
 
 	mat S = m_C*m_P*m_Ct + m_R;
 
+#ifdef HAVE_LAPACK
     CMatrixFactorization<double>::InvertSymmetric(S);
+#endif
 
 	mat K = m_P*m_Ct*S;
 

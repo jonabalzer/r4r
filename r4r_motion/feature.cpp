@@ -23,6 +23,8 @@
 
 #include "feature.h"
 #include "descriptor.h"
+#include "rbuffer.h"
+
 #include <stdio.h>
 #include <assert.h>
 
@@ -35,14 +37,68 @@ template<typename T,u_int n>
 CInterestPoint<T,n>::CInterestPoint():
     m_location(),
     m_scale(0),
-    m_quality(0) {}
+    m_quality(0),
+    m_descriptors() {}
 
 template<typename T,u_int n>
-CInterestPoint<T,n>::CInterestPoint(CVector<T,n>& location, float scale, T quality):
+CInterestPoint<T,n>::CInterestPoint(std::initializer_list<T> ilist):
+    m_location(),
+    m_scale(0),
+    m_quality(0),
+    m_descriptors() {
+
+    u_int i = 0;
+
+    for(auto it = ilist.begin(); it!=ilist.end(); ++i, ++it)
+        m_location(i) = *it;
+
+}
+
+template<typename T,u_int n>
+CInterestPoint<T,n>::CInterestPoint(const CVector<T,n>& location):
+    m_location(location),
+    m_scale(0),
+    m_quality(0),
+    m_descriptors() {}
+
+template<typename T,u_int n>
+CInterestPoint<T,n>::CInterestPoint(const CVector<T,n>& location, float scale, T quality):
     m_location(location),
     m_scale(scale),
-    m_quality(quality) {}
+    m_quality(quality),
+    m_descriptors() {}
 
+template<typename T,u_int n>
+CInterestPoint<T,n>::CInterestPoint(const CInterestPoint<T,n>& x, string name):
+    m_location(x.m_location),
+    m_scale(x.m_scale),
+    m_quality(x.m_quality),
+    m_descriptors() {
+
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it;
+
+    for(it=x.m_descriptors.begin(); it!=x.m_descriptors.end(); ++it) {
+
+        if(it->first==name) {
+
+            shared_ptr<CAbstractDescriptor> pdesc = x.GetDescriptor(name.c_str());
+            this->AttachDescriptor(name.c_str(),pdesc);
+
+        }
+
+    }
+
+}
+
+template<typename T,u_int n>
+CInterestPoint<T,n>::~CInterestPoint() {
+
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::iterator it;
+
+    for(it=m_descriptors.begin(); it!=m_descriptors.end(); ++it)
+        it->second.reset();
+
+}
 
 template<typename T,u_int n>
 bool CInterestPoint<T,n>::operator==(const CInterestPoint<T,n>& x) {
@@ -76,22 +132,22 @@ CVector<T,n> CInterestPoint<T,n>::GetLocationAtNativeScale() const {
 }
 
 template<typename T,u_int n>
-shared_ptr<CAbstractDescriptor> CInterestPoint<T,n>::GetDescriptor(const char* name) {
+const shared_ptr<CAbstractDescriptor>& CInterestPoint<T, n>::GetDescriptor(const char* name) const {
 
     if(m_descriptors.find(name)==m_descriptors.end())
         return nullptr;
     else
-        return m_descriptors[name];
+        return m_descriptors.at(name);
 
 }
 
 template<typename T,u_int n>
-shared_ptr<CAbstractDescriptor> CInterestPoint<T,n>::GetDescriptor(u_int no) {
+const shared_ptr<CAbstractDescriptor>& CInterestPoint<T,n>::GetDescriptor(u_int no) const {
 
     if(no>=m_descriptors.size())
         return nullptr;
 
-    map<string,shared_ptr<CAbstractDescriptor> >::iterator it = m_descriptors.begin();
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it = m_descriptors.begin();
 
     for(size_t i=0; i<no; i++)
         it++;
@@ -106,7 +162,7 @@ string CInterestPoint<T,n>::GetDescriptorName(u_int no) {
     if(no>=m_descriptors.size())
         return nullptr;
 
-    map<string,shared_ptr<CAbstractDescriptor> >::iterator it = m_descriptors.begin();
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::iterator it = m_descriptors.begin();
 
     for(size_t i=0; i<no; i++)
         it++;
@@ -116,7 +172,7 @@ string CInterestPoint<T,n>::GetDescriptorName(u_int no) {
 }
 
 template<typename U,u_int m>
-ostream& operator<<(ostream& os, CInterestPoint<U,m>& x) {
+ostream& operator<<(ostream& os, const CInterestPoint<U,m>& x) {
 
     os << "Location: " << x.m_location << endl;
     os << "Scale: " << x.m_scale << endl;
@@ -127,8 +183,11 @@ ostream& operator<<(ostream& os, CInterestPoint<U,m>& x) {
 
 }
 
+template ostream& operator<<(ostream& os, const CInterestPoint<float,2>& x);
+template ostream& operator<<(ostream& os, const CInterestPoint<float,3>& x);
+
 template<typename U,u_int m>
-ofstream& operator<<(ofstream& os, CInterestPoint<U,m>& x) {
+ofstream& operator<<(ofstream& os, const CInterestPoint<U,m>& x) {
 
     // location, scale, and quality
     for(uint i=0; i<m; i++) {
@@ -152,7 +211,7 @@ ofstream& operator<<(ofstream& os, CInterestPoint<U,m>& x) {
     else
         os << x.NoDescriptors();
 
-    map<string,shared_ptr<CAbstractDescriptor> >::iterator it;
+    unordered_map<string,shared_ptr<CAbstractDescriptor> >::const_iterator it;
 
     // write all descriptors
     u_int counter = 0;
@@ -169,6 +228,9 @@ ofstream& operator<<(ofstream& os, CInterestPoint<U,m>& x) {
     return os;
 
 }
+
+template ofstream& operator<<(ofstream& os, const CInterestPoint<float,2>& x);
+template ofstream& operator<<(ofstream& os, const CInterestPoint<float,3>& x);
 
 template<typename U,u_int m>
 ifstream& operator>>(ifstream& is, CInterestPoint<U,m>& x) {
@@ -288,10 +350,13 @@ ifstream& operator>>(ifstream& is, CInterestPoint<U,m>& x) {
 
 }
 
-template<typename T,u_int n>
-bool CInterestPoint<T,n>::SaveToFile(const char* filename, std::list<CInterestPoint<T,n> >& features, const char* comment) {
+template ifstream& operator>>(ifstream& is, CInterestPoint<float,2>& x);
 
-    typename list<CInterestPoint<T,n> >::iterator it;
+template<typename T,u_int n>
+template<template<class U, class Allocator = std::allocator<U> > class Container>
+bool CInterestPoint<T,n>::SaveToFile(const char* filename, const Container<CInterestPoint<T,n> >& features, const char* comment) {
+
+    typename Container<CInterestPoint<T,n> >::const_iterator it;
 
     ofstream out(filename);
 
@@ -312,7 +377,7 @@ bool CInterestPoint<T,n>::SaveToFile(const char* filename, std::list<CInterestPo
 
     size_t counter = 0;
 
-    for(it=features.begin(); it!=features.end(); it++, counter++) {
+    for(it=features.begin(); it!=features.end(); ++it, ++counter) {
 
         // write feature itself
         out << *it;
@@ -328,6 +393,14 @@ bool CInterestPoint<T,n>::SaveToFile(const char* filename, std::list<CInterestPo
     return 0;
 
 }
+
+template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const vector<CInterestPoint<float,2> >& features, const char* comment);
+template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const list<CInterestPoint<float,2> >& features, const char* comment);
+template bool CInterestPoint<float,2>::SaveToFile(const char* filename, const CRingBuffer<CInterestPoint<float,2> >& features, const char* comment);
+template bool CInterestPoint<float,3>::SaveToFile(const char* filename, const vector<CInterestPoint<float,3> >& features, const char* comment);
+template bool CInterestPoint<float,3>::SaveToFile(const char* filename, const list<CInterestPoint<float,3> >& features, const char* comment);
+template bool CInterestPoint<float,3>::SaveToFile(const char* filename, const CRingBuffer<CInterestPoint<float,3> >& features, const char* comment);
+
 
 template<typename T,u_int n>
 int CInterestPoint<T,n>::LoadFromFile(const char* filename, std::vector<CInterestPoint<T,n> >& features, string& comment) {
@@ -373,9 +446,7 @@ int CInterestPoint<T,n>::LoadFromFile(const char* filename, std::vector<CInteres
 }
 
 template class CInterestPoint<float,2>;
-template ostream& operator<<(ostream& os, CInterestPoint<float,2>& x);
-template ofstream& operator<<(ofstream& os, CInterestPoint<float,2>& x);
-template ifstream& operator>>(ifstream& is, CInterestPoint<float,2>& x);
+template class CInterestPoint<float,3>;
 
 }
 

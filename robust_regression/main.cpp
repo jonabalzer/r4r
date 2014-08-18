@@ -39,8 +39,8 @@ int main(int argc, char *argv[]) {
         CPreconditioner<mat,double> M;
         CConjugateGradientMethodLeastSquares<mat,double> solver(M,10,1e-20,true);
 
-        CRosenbrockFunction problem;
-        CLevenbergMarquardt<mat,double> lms(problem,solver,0);
+        CRosenbrockFunction problem = CRosenbrockFunction();
+        CLevenbergMarquardt<mat,double> lms(problem,solver,1.0);
 
         // access solution vector
         vec& model = problem.Get();
@@ -82,7 +82,8 @@ int main(int argc, char *argv[]) {
         model(3) = 0.01;
         model(4) = 0.02;
 
-        lms.Iterate(1000,4,1e-20,false,true);
+        CBiSquareWeightFunction<double> weight;
+        lms.Iterate(100,weight,4,1e-20,false,true);
 
         cout << "Relative error RWLS:" << endl;
         vec error = model - problem.GetGroundTruth();
@@ -91,22 +92,22 @@ int main(int argc, char *argv[]) {
             cout << error.Get(i)/problem.GetGroundTruth().Get(i) << endl;
 
         // compare with standard LM
-        vec& weights = problem.GetWeights();
-        weights.Ones();
+//        vec& weights = problem.GetWeights();
+//        weights.Ones();
 
-        model(0) = 0.5;
-        model(1) = 2;
-        model(2) = 0;
-        model(3) = 0.01;
-        model(4) = 0.02;
+//        model(0) = 0.5;
+//        model(1) = 2;
+//        model(2) = 0;
+//        model(3) = 0.01;
+//        model(4) = 0.02;
 
-        lms.Iterate(1000,1e-15,1e-15,false);
+//        lms.Iterate(1000,1e-15,1e-15,false);
 
-        cout << "Relative error LS:" << endl;
-        error = model - problem.GetGroundTruth();
+//        cout << "Relative error LS:" << endl;
+//        error = model - problem.GetGroundTruth();
 
-        for(size_t i=0; i<error.NElems(); i++)
-            cout << error.Get(i)/problem.GetGroundTruth().Get(i) << endl;
+//        for(size_t i=0; i<error.NElems(); i++)
+//            cout << error.Get(i)/problem.GetGroundTruth().Get(i) << endl;
 
     }
     else
@@ -121,22 +122,22 @@ CRosenbrockFunction::CRosenbrockFunction():
 
 }
 
-void CRosenbrockFunction::ComputeResidual(vec& r) {
+void CRosenbrockFunction::ComputeResidual(vec& r) const {
 
-    r(0) = m_weights(0)*10*(m_model(1) - m_model(0)*m_model(0));
-    r(1) = m_weights(1)*(1 - m_model(0));
+    r(0) = 10*(m_model.Get(1) - m_model.Get(0)*m_model.Get(0));
+    r(1) = (1 - m_model.Get(0));
 
 }
 
-void CRosenbrockFunction::ComputeResidualAndJacobian(vec& r, mat& J) {
+void CRosenbrockFunction::ComputeResidualAndJacobian(vec& r, mat& J) const {
 
-    r(0) = m_weights(0)*(10*(m_model(1) - m_model(0)*m_model(0)));
-    r(1) = m_weights(1)*(1 - m_model(0));
+    r(0) = m_weights.Get(0)*(10*(m_model.Get(1) - m_model.Get(0)*m_model.Get(0)));
+    r(1) = m_weights.Get(1)*(1 - m_model.Get(0));
 
-    J(0,0) = -m_weights(0)*20*m_model(0);
-    J(0,1) = m_weights(0)*10;
-    J(1,0) = -m_weights(1)*1;
-    J(1,1) = m_weights(1)*0;
+    J(0,0) = -m_weights.Get(0)*20*m_model.Get(0);
+    J(0,1) = m_weights.Get(0)*10;
+    J(1,0) = -m_weights.Get(1)*1;
+    J(1,1) = m_weights.Get(1)*0;
 
 }
 
@@ -155,24 +156,24 @@ COsbourneFunction::COsbourneFunction():
 
 }
 
-void COsbourneFunction::ComputeResidual(vec& r) {
+void COsbourneFunction::ComputeResidual(vec& r) const {
 
     for(size_t i=0; i<GetNumberOfDataPoints(); i++)
-        r(i) = m_weights(i)*(m_y[i] - (m_model(0) + m_model(1)*exp(-m_model(3)*m_t[i]) + m_model(2)*exp(-m_model(4)*m_t[i])));
+        r(i) = (m_y[i] - (m_model.Get(0) + m_model.Get(1)*exp(-m_model.Get(3)*m_t[i]) + m_model.Get(2)*exp(-m_model.Get(4)*m_t[i])));
 
 }
 
-void COsbourneFunction::ComputeResidualAndJacobian(vec& r, mat& J) {
+void COsbourneFunction::ComputeResidualAndJacobian(vec& r, mat& J) const {
 
     for(size_t i=0; i<GetNumberOfDataPoints(); i++) {
 
-        r(i) = m_weights(i)*((m_model(0) + m_model(1)*exp(-m_model(3)*m_t[i]) + m_model(2)*exp(-m_model(4)*m_t[i])) - m_y[i]);
+        r(i) = m_weights.Get(i)*((m_model.Get(0) + m_model.Get(1)*exp(-m_model.Get(3)*m_t[i]) + m_model.Get(2)*exp(-m_model.Get(4)*m_t[i])) - m_y[i]);
 
-        J(i,0) = m_weights(i)*1;
-        J(i,1) = m_weights(i)*exp(-m_model(3)*m_t[i]);
-        J(i,2) = m_weights(i)*exp(-m_model(4)*m_t[i]);
-        J(i,3) = -m_weights(i)*m_t[i]*m_model(1)*exp(-m_model(3)*m_t[i]);
-        J(i,4) = -m_weights(i)*m_t[i]*m_model(2)*exp(-m_model(4)*m_t[i]);
+        J(i,0) = m_weights.Get(i);
+        J(i,1) = m_weights.Get(i)*exp(-m_model.Get(3)*m_t[i]);
+        J(i,2) = m_weights.Get(i)*exp(-m_model.Get(4)*m_t[i]);
+        J(i,3) = -m_weights.Get(i)*m_t[i]*m_model.Get(1)*exp(-m_model.Get(3)*m_t[i]);
+        J(i,4) = -m_weights.Get(i)*m_t[i]*m_model.Get(2)*exp(-m_model.Get(4)*m_t[i]);
 
     }
 

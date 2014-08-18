@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RTRAFO_H_
 #define R4RTRAFO_H_
@@ -43,11 +43,14 @@ public:
 	//! Constructor.
 	CTransformation();
 
-    //! Concatenates two transformations.
+    //! Constructor which concatenates two transformations.
     CTransformation<T,n> operator*(const CTransformation<T,n>& x) const;
 
     //! Constructor.
     CTransformation(const CDenseArray<T>& F);
+
+    //! Constructor using pointer to raw data.
+    CTransformation(T* data);
 
     //! Non-destructive access.
     T Get(u_int i, u_int j) const;
@@ -62,7 +65,7 @@ public:
     CVector<T,n> DifferentialTransform(const CVector<T,n>& x) const;
 
     //! Forward transformation.
-    CVector<T,n> Transform(const T* x);
+    CVector<T,n> Transform(const T* x) const;
 
     //! Typecast.
     operator CDenseArray<T>() const;
@@ -77,7 +80,7 @@ public:
     template <class U,u_int m> friend std::istream& operator >> (std::istream& is, CTransformation<U,m>& x);
 
     //! Low-level access to data.
-    T* Data() { return m_F; }
+    const T* Data() const { return m_F; }
 
     //! Parallelized mass transformation.
     std::vector<CVector<T,n> > Transform(const std::vector<CVector<T,n> >& x) const;
@@ -86,7 +89,7 @@ public:
     std::vector<CVector<T,n> > DifferentialTransform(const std::vector<CVector<T,n> >& x) const;
 
     //! Returns Jacobian of the transformation, i.e., its linear part.
-    CDenseArray<T> GetJacobian();
+    CDenseArray<T> GetJacobian() const;
 
     //! Access to translation vector.
     CVector<T,n> GetTranslation() const;
@@ -95,7 +98,7 @@ public:
     CVector<T,n> GetPrincipalAxis() const;
 
     //! Checks if two transformations are equal.
-    bool operator==(const CTransformation<T,n>& x);
+    bool operator==(const CTransformation<T,n>& x) const;
 
 
 protected:
@@ -253,8 +256,6 @@ public:
     //! Checks if two transformations are equal.
     bool operator==(CRigidMotion<T,n>& x) { return CTransformation<T,n>::operator ==(x); }
 
-
-
 protected:
 
     using CTransformation<T,n>::m_F;
@@ -303,7 +304,7 @@ public:
     CRigidMotion(T t1, T t2, T t3, T o1, T o2, T o3);
 
     //! Constructor.
-    CRigidMotion(const CDenseVector<T>& m);
+    CRigidMotion(const CVector<T,6>& m);
 
     //! Constructor. FIXME: This has to project to SE(3)!
     CRigidMotion(const CDenseArray<T>& x):CTransformation<T,3>(x) {}
@@ -317,6 +318,52 @@ protected:
 
 };
 
+/*! \brief (time) sequence of coordinate frames
+ *
+ * The dimension is not a template parameter, because the excessive specialization
+ * required would amount to implementing the class for each dimension separately
+ * in the first place.
+ *
+ */
+template<template<class U, class Allocator = std::allocator<U> > class Container,typename T>
+class C3dTrajectory {
+
+public:
+
+    //! Constructor.
+    C3dTrajectory():m_data() {}
+
+    //! Inserts a new frame into the container.
+    void Update(T t1, T t2, T t3, T o1, T o2, T o3);
+
+    //! Inserts a new frame into the container.
+    void Update(const CVector<T,6>& x) { m_data.push_back(x); }
+
+    //! Inserts a new frame into the container.
+    void Update(const CRigidMotion<T,3>& F);
+
+    //! Returns latest state.
+    CRigidMotion<T,3> GetLatestState() const;
+
+    //! Returns the first state
+    CRigidMotion<T,3> GetInitialState() const;
+
+    //! Provides read-only access to the data.
+    const Container<CVector<T,6> >& GetData() const { return m_data; }
+
+    /*! Writes the trajectory to file.
+     *
+     * \param[in] filename file name
+     * \param[in] format flag indicating whether to store the motion in
+     * exponential coordinates or as full frames
+     */
+    bool WriteToFile(const char* filename, bool format = false) const;
+
+private:
+
+    Container<CVector<T,6> > m_data;
+
+};
 
 
 }

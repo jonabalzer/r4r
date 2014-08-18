@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #include "darray.h"
 #include "types.h"
@@ -37,7 +37,10 @@
 
 #ifdef HAVE_TBB
 #include <parallel/algorithm>
-#include <tbb/tbb.h>
+#endif
+
+#ifdef HAVE_EXR
+#include <half.h>
 #endif
 
 using namespace std;
@@ -143,7 +146,6 @@ void CDenseArray<T>::Concatenate(const CDenseArray& array, bool direction) {
 
 }
 
-
 template <typename T>
 CDenseArray<T>::CDenseArray(const CDenseArray& array):
 	m_nrows(array.m_nrows),
@@ -201,7 +203,7 @@ CDenseArray<T> CDenseArray<T>::Clone() const {
 
     // copy data
     T* newdata = result.Data().get();
-    T* thisdata = m_data.get();
+    const T* thisdata = m_data.get();
     memcpy(newdata,thisdata,m_nrows*m_ncols*sizeof(T));
 
     return result;
@@ -330,6 +332,15 @@ void CDenseArray<T>::Ones() {
     T* pdata = m_data.get();
 
     fill_n(pdata,NElems(),1);
+
+}
+
+template <typename T>
+void CDenseArray<T>::Zeros() {
+
+    T* pdata = m_data.get();
+
+    fill_n(pdata,NElems(),0);
 
 }
 
@@ -942,6 +953,25 @@ double CDenseArray<vec3>::Norm(double p) const {
 
 }
 
+template <>
+double CDenseArray<vec3f>::Norm(double p) const {
+
+    assert(p>0);
+
+    double sum = 0;
+
+    vec3f* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            sum += pow(fabs(pdata[i].Get(j)),p);
+
+    }
+
+    return pow(sum,1/p);
+
+}
 
 template <>
 double CDenseArray<rgb>::Norm(double p) const {
@@ -998,6 +1028,16 @@ void CDenseArray<vec3>::Abs() {
 
 }
 
+
+template <>
+void CDenseArray<vec3f>::Abs() {
+
+    vec3f* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pdata[i] = pdata[i].Abs();
+
+}
 template <>
 void CDenseArray<rgb>::Abs() {
 
@@ -1057,6 +1097,7 @@ U CDenseArray<T>::Get(const CVector<double,2> &p) const {
 
 template double CDenseArray<double>::Get<double>(const CVector<double,2>& p) const;
 template double CDenseArray<float>::Get<double>(const CVector<double,2>& p) const;
+template float CDenseArray<float>::Get<float>(const CVector<double,2>& p) const;
 template double CDenseArray<unsigned char>::Get<double>(const CVector<double,2>& p) const;
 template vec3 CDenseArray<rgb>::Get<vec3>(const CVector<double,2>& p) const;
 template vec3 CDenseArray<vec3>::Get<vec3>(const CVector<double,2>& p) const;
@@ -1089,27 +1130,50 @@ template vector<double> CDenseArray<double>::Gradient<double>(const CVector<doub
 template vector<double> CDenseArray<unsigned char>::Gradient<double>(const CVector<double,2>& p) const;
 template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(const CVector<double,2>& p) const;
 
-
 template <typename T>
-CVector<double,2> CDenseArray<T>::ProjectToBoundary(const CVector<double,2>& x) const {
+template<typename U>
+vector<U> CDenseArray<T>::Gradient(size_t i, size_t j) const {
 
-    CVector<double,2> result = x;
+    if(i<1 || j<1 || j>NCols()-2 || i>NRows()-2)
+        return vector<U>(2);
 
-    if(x.Get(0)<0)
-        result(0) = 0;
+    U I0x, I0y, I1x, I1y;
+    I0x = U(this->Get(i,j-1));
+    I0y = U(this->Get(i-1,j));
+    I1x = U(this->Get(i,j+1));
+    I1y = U(this->Get(i+1,j));
 
-    if(x.Get(0)>=this->NCols())
-        result(0) = this->NCols() - 1;
+    vector<U> grad;
+    grad.push_back(0.5*(I1x-I0x));
+    grad.push_back(0.5*(I1y-I0y));
 
-    if(x.Get(1)<0)
-        result(1) = 0;
-
-    if(x.Get(1)>=this->NRows())
-        result(1) = this->NRows() - 1;
-
-    return result;
-
+    return grad;
 }
+
+template vector<double> CDenseArray<double>::Gradient<double>(size_t i, size_t j) const;
+template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(size_t i, size_t j) const;
+
+//template <typename T>
+//template <typename U>
+//CVector<U,2> CDenseArray<T>::ProjectToBoundary(const CVector<U,2>& x) const {
+
+//    CVector<U,2> result = x;
+
+//    if(x.Get(0)<0)
+//        result(0) = 0;
+
+//    if(x.Get(0)>=this->NCols())
+//        result(0) = this->NCols() - 1;
+
+//    if(x.Get(1)<0)
+//        result(1) = 0;
+
+//    if(x.Get(1)>=this->NRows())
+//        result(1) = this->NRows() - 1;
+
+//    return result;
+
+//}
 
 template <typename T>
 CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {
@@ -1262,7 +1326,6 @@ CDenseArray<T> CDenseArray<T>::operator+(const CDenseArray& array) const {
 	return result;
 
 }
-
 
 template <typename T>
 CDenseArray<T> CDenseArray<T>::operator^(const CDenseArray& array) const {
@@ -1474,7 +1537,6 @@ template<class Array> Array CDenseArray<T>::operator*(const Array& array) const 
 
     Array result(m_nrows,array.m_ncols);
 
-#pragma omp parallel for
     for(size_t i=0; i<m_nrows; i++) {
 
         for(size_t j=0; j<array.m_ncols; j++) {
@@ -1577,11 +1639,11 @@ void CDenseArray<T>::Subtract(const T& scalar) {
 }
 
 template <typename T>
-T CDenseArray<T>::Median() {
+T CDenseArray<T>::Median() const {
 
     CDenseArray<T> temp = this->Clone();
 
-#ifdef _OPENMP
+#ifdef HAVE_TBB
     __gnu_parallel::sort(temp.m_data.get(),temp.m_data.get()+temp.NElems());
 #else
     sort(temp.m_data.get(),temp.m_data.get()+temp.NElems());
@@ -1595,14 +1657,14 @@ T CDenseArray<T>::Median() {
 }
 
 template <typename T>
-T CDenseArray<T>::Variance() {
+T CDenseArray<T>::Variance() const {
 
 	T mean = this->Mean();
 
     CDenseArray<T> temp = this->Clone();
 
     T* pdata = temp.m_data.get();
-    T* pthisdata = m_data.get();
+    const T* pthisdata = m_data.get();
 
 	for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] = (pthisdata[i] - mean)*(pthisdata[i] - mean);
@@ -1612,14 +1674,14 @@ T CDenseArray<T>::Variance() {
 }
 
 template <typename T>
-T CDenseArray<T>::MAD() {
+T CDenseArray<T>::MAD() const {
 
     T median = Median();
 
     CDenseArray<T> temp = this->Clone();
 
     T* pdata = temp.m_data.get();
-    T* pthisdata = m_data.get();
+    const T* pthisdata = m_data.get();
 
     for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] = fabs(pthisdata[i]-median);
@@ -1629,14 +1691,14 @@ T CDenseArray<T>::MAD() {
 }
 
 template <>
-rgb CDenseArray<rgb>::MAD() {
+rgb CDenseArray<rgb>::MAD() const {
 
     rgb median = Median();
 
     CDenseArray<rgb> temp = this->Clone();
 
     rgb* pdata = temp.m_data.get();
-    rgb* pthisdata = m_data.get();
+    const rgb* pthisdata = m_data.get();
 
     for(size_t i=0; i<m_nrows*m_ncols; i++) {
 
@@ -1650,7 +1712,7 @@ rgb CDenseArray<rgb>::MAD() {
 }
 
 template <>
-vec3 CDenseArray<vec3>::MAD() {
+vec3 CDenseArray<vec3>::MAD() const {
 
     //! FIXME: This is not per channel but w.r.t. to order-relation of vec3.
     vec3 median = Median();
@@ -1658,7 +1720,29 @@ vec3 CDenseArray<vec3>::MAD() {
     CDenseArray<vec3> temp = this->Clone();
 
     vec3* pdata = temp.m_data.get();
-    vec3* pthisdata = m_data.get();
+    const vec3* pthisdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            pdata[i](j) = fabs(pthisdata[i].Get(j)-median.Get(j));
+
+    }
+
+    return temp.Median();
+
+}
+
+template <>
+vec3f CDenseArray<vec3f>::MAD() const {
+
+    //! FIXME: This is not per channel but w.r.t. to order-relation of vec3.
+    vec3f median = Median();
+
+    CDenseArray<vec3f> temp = this->Clone();
+
+    vec3f* pdata = temp.m_data.get();
+    const vec3f* pthisdata = m_data.get();
 
     for(size_t i=0; i<m_nrows*m_ncols; i++) {
 
@@ -1758,7 +1842,13 @@ template class CDenseArray<size_t>;
 template class CDenseArray<bool>;
 template class CDenseArray<rgb>;
 template class CDenseArray<vec3>;
+template class CDenseArray<vec3f>;
 template class CDenseArray<unsigned char>;
+
+#ifdef HAVE_EXR
+template class CDenseArray<half>;
+//template class CDenseArray<vec3h>;
+#endif
 
 template <typename T>
 CDenseVector<T>::CDenseVector():
@@ -1822,13 +1912,13 @@ template CDenseVector<float>::CDenseVector<3>(CVector<float,3>& x);
 template CDenseVector<float>::CDenseVector<2>(CVector<float,2>& x);
 
 template <typename T>
-CDenseVector<T> CDenseVector<T>::Clone() {
+CDenseVector<T> CDenseVector<T>::Clone() const {
 
     CDenseVector<T> result(m_nrows,m_ncols);
 
     // copy data
     T* newdata = result.Data().get();
-    T* thisdata = m_data.get();
+    const T* thisdata = m_data.get();
     memcpy(newdata,thisdata,m_nrows*m_ncols*sizeof(T));
 
     return result;

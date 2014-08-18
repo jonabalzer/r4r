@@ -34,27 +34,23 @@ SOURCES += tracker.cpp \
     lk.cpp \
     feature.cpp \
     descriptor.cpp \
-    basic.cpp \
     tracklet.cpp \
     dagg.cpp \
-    descspecial.cpp
+    descspecial.cpp \
+    pcl.cpp \
+    bbox.cpp
 
-HEADERS += \
-    tracker.h \
+HEADERS += tracker.h \
     stracker.h \
     mtracker.h \
     lk.h \
     feature.h \
     descriptor.h \
-    basic.h \
     tracklet.h \
     dagg.h \
-    descspecial.h
-
-# add last flag depending on whether FFTW is present
-packagesExist(fftw3) {
-    DEFINES += HAVE_FFTW
-}
+    descspecial.h \
+    pcl.h \
+    bbox.h
 
 # make sure that r4r_core is up to date
 DEPENDPATH += $$PWD/../r4r_core
@@ -62,32 +58,41 @@ DEPENDPATH += $$PWD/../r4r_core
 # local inlude path
 INCLUDEPATH += $$PWD/../r4r_core
 
-# since we have dependencies, create a pc file
-CONFIG += create_prl no_install_prl create_pc
-
 unix:!symbian|win32 {
+
+    # since we have dependencies, create a pkg file
+    CONFIG += create_prl no_install_prl create_pc
+
+    # add last flag depending on whether FFTW is present
+    packagesExist(fftw3) {
+        DEFINES += HAVE_FFTW
+        LIBS += -lfftw3
+    }
+    else {
+        warning("Optional dependency on FFTW could not be resolved.")
+    }
 
     # set install path
     headers.files = $$HEADERS
     headers.path = /usr/include/r4r/
     target.path = /usr/lib/
 
+    # create install target
     INSTALLS += target \
                 headers
 
-    # include paths
-    INCLUDEPATH += /usr/include/r4r/
-
-    LIBS += -L/usr/local/lib/ \
-            -lopencv_features2d \
-            -lopencv_video \
-            -L$$OUT_PWD/../r4r_core \
+    LIBS += -L$$OUT_PWD/../r4r_core \
             -lr4r_core
 
-    contains(DEFINES,HAVE_FFTW) {
+    # add opencv
+    packagesExist(opencv) {
 
-        LIBS += -lfftw3
+        LIBS += -lopencv_video \
+                -lopencv_features2d
 
+    }
+    else {
+        error("Could not resolve mandatory dependency on OpenCV...")
     }
 
 }

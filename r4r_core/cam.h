@@ -1,6 +1,6 @@
-/*////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2013, Jonathan Balzer
+// Copyright (c) 2014, Jonathan Balzer
 //
 // All rights reserved.
 //
@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with the R4R library. If not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifndef R4RCAM_H_
 #define R4RCAM_H_
@@ -30,14 +30,18 @@
 
 namespace R4R {
 
-/*! \brief abstract camera class
+/*! \brief camera interface
  *
  *
  *
  */
+template<typename T>
 class CAbstractCam {
 
 public:
+
+    //! Virtual destructor stump.
+    virtual ~CAbstractCam() {}
 
     /*! \brief Projects a point into the image plane.
      *
@@ -45,8 +49,7 @@ public:
      * \returns point in pixel coordinates
      *
      */
-    virtual vec2 Project(const vec3& x) const = 0;
-    virtual vec2f Project(const vec3f& x) const = 0;
+    virtual CVector<T,2> Project(const CVector<T,3>& x) const = 0;
 
     /*! \brief Projects a set of points into the image plane.
      *
@@ -54,8 +57,7 @@ public:
      * \returns points in pixel coordinates
      *
      */
-    std::vector<vec2> Project(const std::vector<vec3>& x) const;
-    std::vector<vec2f> Project(const std::vector<vec3f>& x) const;
+    std::vector<CVector<T,2> > Project(const std::vector<CVector<T,3> >& x) const;
 
     /*! \brief Computes the projection of a point into the image plane and its Jacobian.
      *
@@ -64,8 +66,7 @@ public:
      * \param[out] J Jacobian of the projection mapping in u
      *
      */
-    virtual void Project(const vec3& x, vec2& u, mat& J) const = 0;
-    virtual void Project(const vec3f& x, vec2f& u, matf& J) const = 0;
+    virtual void Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J) const = 0;
 
     /*! \brief Converts a pixel into a viewing direction.
      *
@@ -73,8 +74,7 @@ public:
      * \returns direction vector, normalized s.t. \f$z\f$-component equals \f$1\f$
      *
      */
-    virtual vec3 Normalize(const vec2& u) const = 0;
-    virtual vec3f Normalize(const vec2f& u) const = 0;
+    virtual CVector<T,3> Normalize(const CVector<T,2>& u) const = 0;
 
     /*! \brief Converts a set of pixels into viewing directions.
      *
@@ -82,8 +82,7 @@ public:
      * \returns direction vectors
      *
      */
-    std::vector<vec3> Normalize(const std::vector<vec2>& u) const;
-    std::vector<vec3f> Normalize(const std::vector<vec2f>& u) const;
+    std::vector<CVector<T,3> > Normalize(const std::vector<CVector<T,2> >& u) const;
 
     /*! \brief Projects differential motion to optical flow vector.
      *
@@ -92,12 +91,10 @@ public:
      * \returns direction vectors
      *
      */
-    virtual vec2 Flow(const vec3& x, const vec3& dx) const = 0;
-    virtual vec2f Flow(const vec3f& x, const vec3f& dx) const = 0;
+    virtual CVector<T,2> Flow(const CVector<T,3>& x, const CVector<T,3>& dx) const = 0;
 
     //! Batch computation of optical flow.
-    std::vector<vec2> Flow(const std::vector<vec3>& x, const std::vector<vec3>& dx) const;
-    std::vector<vec2f> Flow(const std::vector<vec3f>& x, const std::vector<vec3f>& dx) const;
+    std::vector<CVector<T,2> > Flow(const std::vector<CVector<T,3> >& x, const std::vector<CVector<T,3> >& dx) const;
 
     //! Writes the camera parameters to a stream.
     virtual void Write(std::ostream& os) const = 0;
@@ -118,7 +115,8 @@ protected:
  *
  *
  */
-class CPinholeCam:public CAbstractCam {
+template<typename T=double>
+class CPinholeCam:public CAbstractCam<T> {
 
 public:
 
@@ -129,55 +127,59 @@ public:
     CPinholeCam(size_t w, size_t h);
 
     //! Constructor.
-    CPinholeCam(double fu, double fv, double cu, double cv);
+    CPinholeCam(T fu, T fv, T cu, T cv);
 
     //! Constructor.
-    CPinholeCam(size_t w, size_t h, double fu, double fv, double cu, double cv);
+    CPinholeCam(size_t w, size_t h, T fu, T fv, T cu, T cv);
 
-    //! \copydoc CAbstractCamera::Project(const vec3&) const
-    vec2 Project(const vec3& x) const;
-    vec2f Project(const vec3f& x) const;
+    //! \copydoc CAbstractCamera::Project(const CVector<T,3>&) const
+    CVector<T,2> Project(const CVector<T,3>& x) const;
 
-    //! \copydoc CAbstractCamera::Project(const vec3&,vec2&,mat&) const
-    void Project(const vec3& x, vec2& u, mat& J) const;
-    void Project(const vec3f& x, vec2f& u, matf& J) const;
+    //! \copydoc CAbstractCamera::Project(const CVector<T,3>&,CVector<T,2>&,CDenseArray<T>&) const
+    void Project(const CVector<T,3>& x, CVector<T,2>& u, CDenseArray<T>& J) const;
 
-    //! \copydoc CAbstractCamera::Normalize()
-    vec3 Normalize(const vec2& u) const;
-    vec3f Normalize(const vec2f& u) const;
+    //! \copydoc CAbstractCamera::Normalize(const CVector<T,2>&)
+    CVector<T,3> Normalize(const CVector<T,2>& u) const;
 
-    //! \copydoc CAbstractCamera::Flow(const vec3&,const vec3&) const
-    vec2 Flow(const vec3& x, const vec3& dx) const;
-    vec2f Flow(const vec3f& x, const vec3f& dx) const;
+    //! \copydoc CAbstractCamera::Flow(const CVector<T,3>&,const CVector<T,3>&) const
+    CVector<T,2> Flow(const CVector<T,3>& x, const CVector<T,3>& dx) const;
 
     //! \copydoc CAbstractCamera::Write(std::ostream&) const
     void Write(std::ostream& os) const { os << *this; }
 
     //! Writes the camera parameters to a stream.
-    friend std::ostream& operator << (std::ostream& os, const CPinholeCam& x);
+    template<typename U> friend std::ostream& operator << (std::ostream& os, const CPinholeCam<U>& x);
 
     //! \copydoc CAbstractCamera::Read(std::istream&)
     void Read(std::istream& is) { is >> *this; }
 
     //! Reads the camera parameters from a stream.
-    friend std::istream& operator >> (std::istream& is, CPinholeCam& x);
+    template<typename U> friend std::istream& operator >> (std::istream& is, CPinholeCam<U>& x);
 
     //! Checks if two cameras are the same.
-    bool operator==(CAbstractCam& cam);
+    bool operator==(CAbstractCam<T>& cam);
 
     //! Access to image size.
     CVector<size_t,2> GetSize() const {  return { m_size[0], m_size[1] }; }
 
     //! Projection matrix.
-    mat GetProjectionMatrix() const;
+    CDenseArray<T> GetProjectionMatrix() const;
+
+    /*! \brief Projection matrix for use in OpenGL context.
+     *
+     * OpenGL matrices are also column-major, so the result can be directly sent
+     * to the graphics card via a pointer to the data.
+     *
+     */
+    CDenseArray<T> GetOpenGLProjectionMatrix(T znear, T zfar) const;
 
 private:
 
     size_t m_size[2];			//!< pixel size
-    double m_f[2];				//!< focal length
-    double m_c[2];				//!< principle point
-    double m_alpha;				//!< skew coefficient
-    double m_k[5];				//!< distortion coefficients
+    T m_f[2];   				//!< focal length
+    T m_c[2];       			//!< principle point
+    T m_alpha;          		//!< skew coefficient
+    T m_k[5];               	//!< distortion coefficients
 
 };
 
@@ -196,10 +198,10 @@ public:
     CView() = delete;
 
     //! Constructor.
-    CView(CAbstractCam& cam, u_int index = -1);
+    CView(CAbstractCam<T>& cam, u_int index = -1);
 
     //! Constructor.
-    CView(CAbstractCam& cam, const CRigidMotion<T,3>& F, u_int index = -1);
+    CView(CAbstractCam<T>& cam, const CRigidMotion<T,3>& F, u_int index = -1);
 
     //! Copy constructor.
     CView(const CView<T>& view);
@@ -240,6 +242,16 @@ public:
      *
      */
     CVector<T,3> Normalize(const CVector<T,2>& u) const;
+
+    /*! \brief Converts matrix indices into a viewing direction.
+     *
+     * \param[in] i image row
+     * \param[in] j image column
+     * \returns direction vector, normalized s.t. \f$z\f$-component equals \f$1\f$ and transformed
+     * to world coordinates
+     *
+     */
+    CVector<T,3> Normalize(size_t i, size_t j, T depth = 1.0) const;
 
     /*! \brief Converts a set of pixels into viewing directions.
      *
@@ -289,7 +301,7 @@ public:
     void SetInverseTransformation(const CRigidMotion<T,3>& Finv) { m_Finv = Finv; m_F = Finv; m_F.Invert(); }
 
     //! Access to the cam.
-    const CAbstractCam& GetCam() const { return m_cam; }
+    const CAbstractCam<T>& GetCam() const { return m_cam; }
 
     //! Gets the location of the projection center in world coordinates.
     CVector<T,3> GetLocation() const;
@@ -321,12 +333,16 @@ public:
      */
     void Orbit(const CVector<T,3>& center, const CVector<T,3>& axis);
 
-    //! Rotates the view so that it looks at a given point.
-    void LookAt(CVector<T,3> x);
+    /*! \brief Computes a combined OpenGL model view/projection matrix.
+     *
+     * This requires the camera to be of type CPinholeCam<T>.
+     *
+     */
+    CDenseArray<T> ModelViewProjectionMatrix(T znear, T zfar) const;
 
 protected:
 
-    CAbstractCam& m_cam;               //!< intrinsic parameters
+    CAbstractCam<T>& m_cam;               //!< intrinsic parameters
     CRigidMotion<T,3> m_F;             //!< extrinsic parameters
     CRigidMotion<T,3> m_Finv;          //!< inverse extrinsic parameters
     int m_index;                       //!< view counter
@@ -409,4 +425,4 @@ public:
 
 
 
-#endif /* CAM_H_ */
+#endif
