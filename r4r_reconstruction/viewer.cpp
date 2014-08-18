@@ -574,7 +574,9 @@ void CTriMeshViewer::paintGL() {
     for (f_it=m_mesh->faces_begin(); f_it!=m_mesh->faces_end(); ++f_it) {
 
         // load normal
-        glNormal3fv(&m_mesh->normal(f_it)[0]);
+        TriangleMesh::Normal temp = -m_mesh->normal(f_it);
+        glNormal3fv(&temp[0]);
+        //glNormal3fv(&m_mesh->normal(f_it)[0]);
 
         for (fv_it = m_mesh->cfv_iter(f_it.handle()); fv_it; ++fv_it) {
 
