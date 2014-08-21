@@ -63,7 +63,7 @@ void CViewer::loadProjectionMatrix() {
     float proj[16];
     fill_n(&proj[0],16,0.0);
     proj[0] = 2.0*K.Get(0,0) / float(ws.width());
-    proj[8] = 2.0*(K.Get(0,2)/ float(ws.width())) - 1.0;
+    proj[8] = -2.0*(K.Get(0,2)/ float(ws.width())) + 1.0;
     proj[5] = 2.0*K.Get(1,1) /  float(ws.height());
     proj[9] = 2.0*(K.Get(1,2)/  float(ws.height())) - 1.0;
     proj[10] = (-m_zfar - m_znear)/(m_zfar - m_znear);
