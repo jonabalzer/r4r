@@ -297,7 +297,7 @@ CDenseArray<T> CPinholeCam<T>::GetOpenGLProjectionMatrix(T znear, T zfar) const 
     CDenseArray<T> P(4,4);
 
     P(0,0) = 2.0*m_f[0] / T(m_size[0]);
-    P(0,2) = 2.0*(m_c[0]/ T(m_size[0])) - 1.0;
+    P(0,2) = -2.0*(m_c[0]/ T(m_size[0])) + 1.0;
     P(1,1) = 2.0*m_f[1] /  T(m_size[1]);
     P(1,2) = 2.0*(m_c[1]/  T(m_size[1])) - 1.0;
     P(2,2) = (-zfar - znear)/(zfar - znear);

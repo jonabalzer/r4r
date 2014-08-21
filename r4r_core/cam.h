@@ -342,7 +342,7 @@ public:
 
 protected:
 
-    CAbstractCam<T>& m_cam;               //!< intrinsic parameters
+    CAbstractCam<T>& m_cam;            //!< intrinsic parameters
     CRigidMotion<T,3> m_F;             //!< extrinsic parameters
     CRigidMotion<T,3> m_Finv;          //!< inverse extrinsic parameters
     int m_index;                       //!< view counter
