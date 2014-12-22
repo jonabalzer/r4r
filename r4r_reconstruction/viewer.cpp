@@ -600,6 +600,8 @@ void CTriMeshViewer::paintGL() {
 
     glEnd();
 
+    const TriangleMesh::Point* pts = m_mesh->points();
+
 }
 
 #endif
@@ -697,6 +699,7 @@ void CPointCloudViewer::paintGL() {
     }
 
     glEnd();
+
 
 }
 

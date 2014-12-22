@@ -126,10 +126,10 @@ public:
 
 #ifdef QT_GUI_LIB
 
-    static const Qt::GlobalColor COLORS[10];
+     static const Qt::GlobalColor COLORS[10];
 
-    //! Draws the trajectory into a single image.
-    void Draw(QImage& img, size_t length) const;
+     //! Draws the trajectory into a single image.
+     void Draw(QImage& img, size_t length) const;
 
 #endif
 

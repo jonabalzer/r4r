@@ -340,6 +340,7 @@ void CTriangleMesh::UniformMeshRefinement(size_t n) {
 
     OpenMesh::Subdivider::Uniform::LoopT<TriangleMesh> sd;
 
+    sd.init_weights(1);
     sd.attach(*this);
     sd(n);
     sd.detach();
