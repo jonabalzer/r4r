@@ -62,7 +62,7 @@ An automatic build requires the following items:
 
 Make sure that aforementioned dependencies are installed in default locations. __In particular, it is highly recommended to build the latest OpenCV version (i.e., the trunk) from source.__ To build R4R, clone this repository by typing
 ```
-git clone https://bitbucket.org/jbalzer/r4r.git
+git clone https://github.com/jonabalzer/r4r.git
 ```
 This will automatically create a subfolder `r4r`. Change into this directory
 ```
