@@ -95,5 +95,5 @@ This will install libraries and header files into the appropriate system paths (
 
 ### License
 
-R4R is distributed under the GNU General Public License. QT is distributed under 
-the GNU Lesser General Public License. 
+R4R is distributed under the [GNU General Public License](GPL). QT is distributed under 
+the [GNU Lesser General Public License](LGPL). 
