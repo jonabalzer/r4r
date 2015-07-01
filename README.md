@@ -1,6 +1,5 @@
 ### Features
 
-
 * Linear algebra
     * Sparse and dense matrix data structures
     * Iterative linear solvers
@@ -59,7 +58,6 @@ An automatic build requires the following items:
 
 #### Build instructions (LINUX)
 
-
 Make sure that aforementioned dependencies are installed in default locations. __In particular, it is highly recommended to build the latest OpenCV version (i.e., the trunk) from source.__ To build R4R, clone this repository by typing
 ```
 git clone https://github.com/jonabalzer/r4r.git
@@ -94,3 +92,8 @@ If you plan to use the core libraries outside of Qt Creator, run
 sudo make install
 ```
 This will install libraries and header files into the appropriate system paths (which probably requires root privileges).
+
+### License
+
+R4R is distributed under the GNU General Public License. QT is distributed under 
+the GNU Lesser General Public License. 
